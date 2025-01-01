@@ -38,6 +38,8 @@ include("Downloader.js");
 include("UpdateChecker.js");
 include("ZoomHandler.js");
 include("SplashScreen.js");
+
+Engine.setFrontendMacros(["Macro1", "Macro2"]);
 function onNoteOn()
 {
 	

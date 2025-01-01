@@ -92,7 +92,7 @@ namespace Library
 		if (!Server.isOnline())
 			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
 	
-		if (cooldownTimer.isTimerRunning())
+		if (cooldownTimer.isTimerRunning() && App.mode == "release")
 			return Engine.showMessageBox("Cool Down", "Please wait a few seconds before syncing again.", 0);
 
 		if (Content.isCtrlDown())
@@ -100,7 +100,9 @@ namespace Library
 
 		updateCache(false);
 		Expansions.refresh();
-		UpdateChecker.checkForAppUpdate();
+
+		if (App.mode == "release")
+			UpdateChecker.checkForAppUpdate();
 	}
 	
 	App.broadcasters.isDownloading.addListener(btnSync, "Disable sync button while downloads are in progress", function(state)

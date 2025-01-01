@@ -10,6 +10,8 @@
           <ChildProcessors/>
           <Content>
             <Control type="ScriptedViewport" id="vptGrid" value="0.0"/>
+            <Control type="ScriptSlider" id="Knob1" value="0.0"/>
+            <Control type="ScriptSlider" id="Knob2" value="0.0"/>
           </Content>
           <UIData Source="RhapsodyUIData"/>
         </Processor>
@@ -31,14 +33,22 @@
                  Send7="-1" Channel8="0" Send8="-1" Channel9="1" Send9="-1" Channel10="0"
                  Send10="-1" Channel11="1" Send11="-1"/>
   <macro_controls>
-    <macro name="Macro 1" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 2" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 3" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 4" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 5" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 6" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 7" value="0.0" midi_cc="-1"/>
-    <macro name="Macro 8" value="0.0" midi_cc="-1"/>
+    <macro name="Macro1" value="0.0" midi_cc="-1">
+      <controlled_parameter id="Interface" parameter="49" parameter_name="Knob1" min="0.0"
+                            max="1.0" low="0.0" high="1.0" skew="1.0" step="0.01" inverted="0"
+                            readonly="0" converter="37.nT6K8CBGgC..VEFa0U1Pu4lckIGckIG.ADPXiQWZ1UF.ADf..."/>
+    </macro>
+    <macro name="Macro2" value="0.0" midi_cc="-1">
+      <controlled_parameter id="Interface" parameter="50" parameter_name="Knob2" min="0.0"
+                            max="1.0" low="0.0" high="1.0" skew="1.0" step="0.01" inverted="0"
+                            readonly="0" converter="37.nT6K8CBGgC..VEFa0U1Pu4lckIGckIG.ADPXiQWZ1UF.ADf..."/>
+    </macro>
+    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="" value="0.0" midi_cc="-1"/>
   </macro_controls>
   <MidiAutomation/>
   <MPEData Enabled="0"/>

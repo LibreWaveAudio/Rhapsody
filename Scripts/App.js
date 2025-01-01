@@ -29,8 +29,8 @@ namespace App
 	const apiPrefix = "wp-json/librewave/v1/";
 	
 	const baseUrl = {
-		"development": "http://192.168.0.184/",
-		"testing": "http://192.168.0.184/",
+		"development": "http://192.168.0.40/",
+		"testing": "http://192.168.0.40/",
 		"staging": "https://librewave.com/",
 		"release": "https://librewave.com/"
 	};
