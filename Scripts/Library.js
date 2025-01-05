@@ -40,36 +40,7 @@ namespace Library
 
 		component.setValue(-1);
 	}
-	
-	const lafcmbAdd = Content.createLocalLookAndFeel();
-	cmbAdd.setLocalLookAndFeel(lafcmbAdd);
-	
-	lafcmbAdd.registerFunction("drawComboBox", function(g, obj)
-	{
-		var a = obj.area;
-
-		g.setColour(Colours.withAlpha(obj.itemColour1, obj.hover && obj.enabled ? 1.0 : 0.9 - (0.3 * !obj.enabled)));
-		g.fillPath(Paths.icons.add, [a[0], a[3] / 2 - 12 / 2, 12, 12]);
 		
-		g.setFont("regular", 18);
-		g.drawAlignedText(obj.text, a, "right");
-	});
-	
-	lafcmbAdd.registerFunction("drawPopupMenuBackground", function(g, obj)
-	{
-		LookAndFeel.drawPopupMenuBackground(); 
-	});
-	
-	lafcmbAdd.registerFunction("drawPopupMenuItem", function(g, obj)
-	{
-		LookAndFeel.drawPopupMenuItem();
-	});
-
-	lafcmbAdd.registerFunction("getIdealPopupMenuItemSize", function(obj)
-	{
-		return [140, 30];
-	});
-	
 	App.broadcasters.isDownloading.addListener(cmbAdd, "Disable the add combo box while downloads are in progress", function(state)
 	{
 		this.set("enabled", !state);
@@ -78,37 +49,28 @@ namespace Library
 	// btnSync
 	const btnSync = Content.getComponent("btnSync");
 	btnSync.set("enabled", Account.isLoggedIn());
-	btnSync.setLocalLookAndFeel(LookAndFeel.textIconButton);
-	btnSync.setControlCallback(onbtnSyncControl);
+	//btnSync.setControlCallback(onbtnSyncControl);
 
-	inline function onbtnSyncControl(component, value)
+	inline function sync()
 	{
-		if (value)
-			return;
-
 		if (!Account.isLoggedIn())
 			return Engine.showMessageBox("Login Required", "Please login to sync your account.", 0);
 			
 		if (!Server.isOnline())
 			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
-	
+			
 		if (cooldownTimer.isTimerRunning() && App.mode == "release")
 			return Engine.showMessageBox("Cool Down", "Please wait a few seconds before syncing again.", 0);
-
+		
 		if (Content.isCtrlDown())
 			clearCache();
-
+		
 		updateCache(false);
 		Expansions.refresh();
 
 		if (App.mode == "release")
 			UpdateChecker.checkForAppUpdate();
 	}
-	
-	App.broadcasters.isDownloading.addListener(btnSync, "Disable sync button while downloads are in progress", function(state)
-	{
-		this.set("enabled", !state);
-	});
 
 	// Cooldown Timer
 	const cooldownTimer = Engine.createTimerObject();
@@ -485,7 +447,7 @@ namespace Library
 	}
 
 	// Listeners	
-	App.broadcasters.loginChanged.addListener("Library login", "Respond to login changes", function(state)
+	App.broadcasters.isLoggedIn.addListener("Library login", "Respond to login changes", function(state)
 	{
 		clearCache();
 

@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,11 +17,12 @@
 
 namespace App
 {
-	const mode = "release";
+	const mode = "development";
 	
+	const isOnline = Server.isOnline();
+
 	Synth.deferCallbacks(true);
 	
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/JosefinSans-Bold.ttf", "title");
 	Engine.loadAudioFilesIntoPool();
 	
 	const systemId = FileSystem.getSystemId();
@@ -37,8 +38,18 @@ namespace App
 	
 	const broadcasters = {
 		isDownloading: Engine.createBroadcaster({"id": "Global download State", "args": ["state"]}),
-		loginChanged: Engine.createBroadcaster({"id": "Triggered when user logs in or out", "args": ["state"]})
+		isLoggedIn: Engine.createBroadcaster({"id": "Triggered when user logs in or out", "args": ["state"]})
 	};
 	
 	broadcasters.isDownloading.state = false;
+	
+	/*broadcasters.isDownloading.addListener(["btnSync", "cmbAdd"], "Disable buttons while downloads are in progress", function(state)
+	{
+		this.set("enabled", !state);
+	});
+	
+	App.broadcasters.isDownloading.addListener(btnAccount, "Disable logout button while downloads are in progress", function(state)
+	{
+		this.set("enabled", !state);
+	});*/
 }

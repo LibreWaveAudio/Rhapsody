@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,10 +17,12 @@
 
 namespace Grid
 {
+	reg filterValue = 1;
+
 	const MARGIN = 10;
 	const NUM_COLS = 4;
 
-	// pnlGridContainer
+	//! pnlGridContainer
 	const pnlGridContainer = Content.getComponent("pnlGridContainer");
 	
 	pnlGridContainer.setPaintRoutine(function(g)
@@ -34,10 +36,10 @@ namespace Grid
 		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 45], "centred");
 	});
 
-	// vptGrid
+	//! vptGrid
 	const vptGrid = Content.getComponent("vptGrid");
 
-	// pnlGrid
+	//! pnlGrid
 	const pnlGrid = Content.getComponent("pnlGrid");
 	
 	pnlGrid.setPaintRoutine(function(g)
@@ -51,17 +53,81 @@ namespace Grid
 			g.drawDropShadow([a[0], a[1] + 8, a[2], a[3] - 10], Colours.withAlpha(Colours.black, 0.8), 20);
 			
 			g.setColour(this.get("bgColour"));
-			g.fillRoundedRectangle(a, 5);
+			g.fillRoundedRectangle(a, 2);
 		}
 	});
 
-	reg TILE_WIDTH = pnlGrid.getWidth() / NUM_COLS - MARGIN;
-	reg TILE_HEIGHT = TILE_WIDTH + 40;
+	//! pnlFilter
+	const pnlFilter = Content.getComponent("pnlFilter");
+	pnlFilter.set("text", "Search...");
 
-	// Functions
-	inline function update(data)
+	pnlFilter.setPaintRoutine(function(g)
+	{
+		var a = this.getLocalBounds(0);
+		var radius = this.get("borderRadius");
+
+		g.setColour(this.get("bgColour"));
+		g.fillRoundedRectangle(a, radius);
+
+		g.setFont("phosphor", 16);
+		g.setColour(this.get("textColour"));
+		g.drawAlignedText("\ue30c", [a[0] + 9, a[1], a[2], a[3]], "left");
+
+		g.drawVerticalLine(a[0] + 35, a[1] + 30 / 2 - a[3] / 2 / 2, a[1] + 30 / 2 - a[3] / 2 / 2 + a[3] / 2);
+	});
+
+	//! lblFilter
+	const lblFilter = Content.getComponent("lblFilter");
+	lblFilter.set("text", "Search...");
+	lblFilter.setControlCallback(onlblFilterControl);
+	
+	inline function onlblFilterControl(component, value)
+	{
+		btnFilterClear.showControl(value != "Search...");
+		refresh();
+	}
+
+	lblFilter.setConsumedKeyPresses({description: "escape", keyCode: 27});
+	
+	lblFilter.setKeyPressCallback(function(event)
+	{
+		if (event.isFocusChange)
+			return;
+	
+		clearFilter();
+	});
+
+	//! btnFilterClear
+	const btnFilterClear = Content.getComponent("btnFilterClear");
+	btnFilterClear.setLocalLookAndFeel(LookAndFeel.iconButton);
+	btnFilterClear.showControl(false);
+	btnFilterClear.setControlCallback(onbtnFilterClearControl);
+	
+	inline function onbtnFilterClearControl(component, value)
+	{
+		if (value)
+			return;
+
+		clearFilter();
+	}
+	
+	//! btnFavourites
+	const btnFavourites = Content.getComponent("btnFavourites");
+	btnFavourites.setValue(0);
+	btnFavourites.setControlCallback(onbtnFavouritesControl);
+	
+	inline function onbtnFavouritesControl(component, value)
+	{
+		filterValue = value == 1 ? 5 : 1;
+		refresh();
+	}
+
+	//! Functions
+	inline function update(data: Array)
 	{
 		local isOnline = false;
+		local width = pnlGrid.getWidth() / NUM_COLS - MARGIN;
+		local height = width + 40;
 
 		if (Account.isLoggedIn())
 			isOnline = Server.isOnline();
@@ -70,47 +136,100 @@ namespace Grid
 
 		for (x in data)
 		{
-			local cp = Tile.create(pnlGrid, [0, 0, TILE_WIDTH, TILE_HEIGHT], x, isOnline);
+			local cp = Tile.create(pnlGrid, [0, 0, width, height], x, isOnline);
 			updateImage(x.projectName);
 		}
 
-		filterTiles();
+		refresh();
 	}
 
-	inline function filterTiles()
+	inline function refresh()
 	{
 		local childPanels = pnlGrid.getChildPanelList();	
+		local width = pnlGrid.getWidth() / NUM_COLS - MARGIN;
+		local height = width + 40;
 		
 		for (x in childPanels)
 			x.showControl(false);
 
-		local indexes = Filter.getTileIndexes(childPanels);
-		local numRows = Math.ceil(indexes.length / NUM_COLS);		
-		local filteredChildren = [];
-		
-		for (index in indexes)
-			filteredChildren.push(childPanels[index]);
+		local filteredChildren = getFilteredTiles(childPanels);
+		local numRows = Math.ceil(filteredChildren.length / NUM_COLS);		
 
 		Engine.sortWithFunction(filteredChildren, sortChildPanels);
 
 		pnlGridContainer.set("text", filteredChildren.length > 0 ? "" : "Nothing to see here.");
 		pnlGridContainer.repaint();
 
-		pnlGrid.set("height", Math.max(TILE_HEIGHT, numRows * TILE_HEIGHT + MARGIN * numRows));
+		pnlGrid.set("height", Math.max(height, numRows * height + MARGIN * numRows));
 
 		for (i = 0; i < filteredChildren.length; i++)
 		{
 			local index = (i % NUM_COLS);
 			local childPanel = filteredChildren[i];
-			local x = MARGIN + (index * TILE_WIDTH) + (index * MARGIN);
-			local y = Math.floor(i / NUM_COLS) * (TILE_HEIGHT + MARGIN);
+			local x = MARGIN + (index * width) + (index * MARGIN);
+			local y = Math.floor(i / NUM_COLS) * (height + MARGIN);
 
-			childPanel.setPosition(x, y, TILE_WIDTH, TILE_HEIGHT);
+			childPanel.setPosition(x, y, width, height);
 			childPanel.showControl(true);
 			childPanel.repaint();
 		}
 		
 		pnlGrid.repaint();
+	}
+	
+	inline function: Array getFilteredTiles(tiles: Array)
+	{
+		local result = [];
+		local query = lblFilter.getValue() == "Search..." ? "" : lblFilter.getValue().toLowerCase();
+		local index = 0;
+		
+		for (tile in tiles)
+		{
+			local x = tile.data;
+			local tags = x.tags.length > 0 ? x.tags : [""];
+	
+			for (i = 0; i < tags.length; i++)
+			{
+				local t = tags[i].toLowerCase();
+				local value;
+	
+				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(x.name.toLowerCase(), query))
+					continue;
+	
+				switch (filterValue)
+				{
+					case 1:
+						value = index;
+						break;
+						
+					case 2:
+						value = isDefined(x.installedVersion) ? index : undefined;
+						break;
+						
+					case 3:
+						if ((x.hasLicense && !isDefined(x.installedVersion)) || (x.regularPrice == "0"))
+							value = index;
+						break;
+	
+					case 4:
+						value = (isDefined(x.hasUpdate) && x.hasUpdate) ? index : undefined;
+						break;
+						
+					case 5:
+						value = (isDefined(x.favourite) && x.favourite) ? index : undefined;
+						break;
+				}
+				
+				if (isDefined(value))
+					result.push(tiles[value]);
+	
+				break;				
+			}
+			
+			index++;
+		}
+	
+		return result;
 	}
 
 	inline function sortChildPanels(a, b)
@@ -121,7 +240,7 @@ namespace Grid
 			return a.data.projectName > b.data.projectName;
 	}
 
-	inline function getChildPanel(projectName)
+	inline function: object getChildPanel(projectName: string)
 	{
 		for (x in pnlGrid.getChildPanelList())
 		{
@@ -129,10 +248,10 @@ namespace Grid
 				return x;
 		}
 
-		return undefined;
+		return {};
 	}
 	
-	inline function updateTileData(projectName, data)
+	inline function updateTileData(projectName: string, data: object)
 	{
 		local cp = getChildPanel(projectName);
 		cp.data = data;
@@ -141,36 +260,27 @@ namespace Grid
 		cp.repaint();	
 	}
 
-	inline function updateImage(projectName)
+	inline function updateImage(projectName: string)
 	{
 		local cp = getChildPanel(projectName);
 
 		if (!isDefined(cp))
 			return;
+			
+		if (cp.data.format != "expansion")
+			return;
 
-		cp.unloadAllImages();
-	
-		local img;
-		
-		if (cp.data.format == "expansion")
-			img = Expansions.getImagePath(projectName, "Icon");
-		else
-			img = Plugins.getImagePath(projectName, "Icon");
+		cp.unloadAllImages();		
 
-		if (isDefined(img))
-			cp.loadImage(img, projectName);
+		local img = Expansions.getImagePath(projectName, "Icon");
 
 		if (!isDefined(img))
-		{
-			cp.unloadAllImages();
-
 			img = getCachedImagePath(projectName);
+		
+		if (isDefined(img) && img != "")
+			cp.loadImage(img, projectName);
 
-			if (isDefined(img))
-				cp.loadImage(img, projectName);
-		}
-
-		cp.data.img = img;
+		cp.data.img = img;			
 		cp.repaint();
 	}
 	
@@ -183,14 +293,30 @@ namespace Grid
 		}
 	}
 	
-	inline function getCachedImagePath(projectName)
+	inline function: string getCachedImagePath(projectName: string)
 	{
 		local cache = FileSystem.getFolder(FileSystem.AppData).getChildFile("cache");
 		local img = cache.getChildFile(projectName + ".jpg");
 
 		if (isDefined(img) && img.isFile())
 			return img.toString(img.FullPath);
-		
-		return undefined;
+
+		return "";
 	}
+	
+	inline function clearFilter()
+	{
+		lblFilter.set("text", "Search...");
+		lblFilter.changed();
+	}
+	
+	//! Broadcasters
+	const var bcStatusBarVisibility = Engine.createBroadcaster({"id": "bcStatusBarVisibility", "args": ["component", "isVisible"]});
+	bcStatusBarVisibility.attachToComponentVisibility("pnlStatusBar", "");
+	
+	bcStatusBarVisibility.addListener(pnlGridContainer, "Resize grid based on status bar visibility", function(component, isVisible)
+	{
+		this.set("height", 640 - 50 * isVisible);
+		refresh();
+	});	
 }

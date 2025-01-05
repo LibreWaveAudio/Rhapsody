@@ -182,7 +182,7 @@ namespace UpdateChecker
 	}
 	
 	// Listeners
-	App.broadcasters.loginChanged.addListener("Update Checker Login", "Respond to login changes", function(state)
+	App.broadcasters.isLoggedIn.addListener("Update Checker Login", "Respond to login changes", function(state)
 	{
 		if (state)
 			checkForAppUpdate();

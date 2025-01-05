@@ -19,11 +19,13 @@ namespace LookAndFeel
 {
 	Content.setUseHighResolutionForPanels(true);
 	
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Regular.ttf", "regular");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Medium.ttf", "medium");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-SemiBold.ttf", "semibold");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Bold.ttf", "bold");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/JosefinSans-Bold.ttf", "title");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/Inter-Regular.ttf", "regular");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/Inter-Medium.ttf", "medium");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/Inter-SemiBold.ttf", "semibold");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/Inter-Bold.ttf", "bold");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/JosefinSans-Bold.ttf", "title");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor.ttf", "phosphor");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Fill.ttf", "phosphorFill");
 	
     const laf = Engine.createGlobalScriptLookAndFeel();
     
@@ -67,7 +69,21 @@ namespace LookAndFeel
     
     iconButton.registerFunction("drawToggleButton", function(g, obj)
     {
-		var a = obj.area;
+		var icons = {
+			"show password": "\ue220",
+			"backspace": "\ue0ae"
+		};
+	
+		if (!isDefined(icons[obj.text]))
+			return;
+
+	    var c = Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.0 - 0.3 * obj.down : 0.8);
+	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
+
+	    g.setFont("phosphor", 18);
+	    g.drawAlignedText(icons[obj.text], obj.area, "centred");
+
+		/*var a = obj.area;
 		var icon = obj.text;
 
 		if (icon.indexOf("iconOff") != -1 && !obj.value)
@@ -93,7 +109,7 @@ namespace LookAndFeel
 		var colour = obj.value == 0 ? obj.itemColour1 : obj.itemColour2;
 		g.setColour(Colours.withAlpha(colour, obj.over && obj.enabled ? 1.0 - (0.2 * obj.down) : 0.8 - (0.2 * obj.down) - (0.3 * !obj.enabled)));
 
-		g.fillPath(Paths.icons[icon], a);  
+		g.fillPath(Paths.icons[icon], a);  */
     });
     
     // textIconButton
@@ -102,36 +118,31 @@ namespace LookAndFeel
     textIconButton.registerFunction("drawToggleButton", function(g, obj)
     {
 		var a = obj.area;
-		var icon = obj.text;
-		var text = obj.text;
-		var size = [12, 12];
+		var down = obj.text == "favourites" ? obj.down : (obj.value && obj.over);
 		
-		switch (obj.text)
-		{
-			case "sync":
-				break;
+		var icons = {
+			"sync": "\ue094",
+			"favourites": "\ue2a8",
+			"log out": "\ue42a",
+			"login": "\ue428",
+			"work offline": "\ue4f2"
+		};
 
-			case "favourites":
-				icon = obj.value ? "heartFilled" : "heart";
-				size = [12, 11];
-				break;
+		if (!isDefined(icons[obj.text]))
+			return;
 
-			case "log out":
-				icon = "logout";
-				size = [12, 11];
-				break;
+		var c = Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.0 - 0.1 * down : 0.9);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-			case "login":
-				text = "Sign In";
-				size = [12, 11];
-				break;
-		}
-
-		g.setColour(Colours.withAlpha(obj.itemColour1, obj.over && obj.enabled ? 1.0 : 0.9 - (0.3 * !obj.enabled)));
-		g.fillPath(Paths.icons[icon], [a[0], a[3] / 2 - size[1] / 2, size[0], size[1]]);
+		g.setFont("phosphor", 18);
+		
+		if (obj.text == "favourites" && obj.value)
+			g.setFont("phosphorFill", 18);
+				
+		g.drawAlignedText(icons[obj.text], a, "left");
 		
 		g.setFont("regular", 18);
-		g.drawAlignedText(text.capitalize(), a, "right");
+		g.drawAlignedText(obj.text.capitalize(), a, "right");
     });
     
     // filledIconButton
@@ -245,11 +256,15 @@ namespace LookAndFeel
     {
 		local alignment = "centred";
 		local down = obj.down || obj.value;
+		
+		local c = Colours.withMultipliedBrightness(obj.bgColour, obj.over ? 1.0 - 0.2 * obj.down : 0.9);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-		g.setColour(Colours.withAlpha(obj.bgColour, obj.over && obj.enabled ? 1.0 - 0.2 * down : 0.8 - (0.4 * !obj.enabled)));
-        g.fillRoundedRectangle(area, 5);
+        g.fillRoundedRectangle(area, 2);
 
-        g.setColour(Colours.withAlpha(obj.textColour, obj.over && obj.enabled ? 1.0 - 0.2 * down : 0.9 - (0.3 * !obj.enabled)));
+		c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * obj.down : 0.9);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
+
         g.setFont("semibold", 16);
         g.drawAlignedText(text, [area[0], area[1], area[2], area[3]], alignment);
     }
@@ -271,34 +286,33 @@ namespace LookAndFeel
 		if (obj.isHighlighted)
 			g.fillAll(Colours.withAlpha(0xffa8b2bd, 0.8));
 
-    	local iconData = {
-	    	"Manual Install": ["deploy", 11, 12],
-			"Add a License": ["key", 15, 8],
-    		"Add to Favourites": ["heart", 12, 11],
-    		"Remove Favourite": ["heartFilled", 12, 11],
-    		"Locate Samples": ["search", 12, 12],
-    		"Uninstall": ["trash", 10, 12],
-    		"Visit Webpage": ["openInNew", 12, 12]
-    	};
+		local icons = {
+			"Manual Install": "\ue390",
+			"Add a License": "\ue2d6",
+			"Add to Favourites": "\ue2a8",
+			"Remove Favourite": "\uebe8",
+			"Locate Samples": "\ue238",
+			"Uninstall": "\ue4a8",
+			"Visit Webpage": "\ue0f4"
+		};
 
-    	if (!obj.isSeparator)
-    	{
-	    	g.setFont("medium", 18);
-	    	obj.isHighlighted ? g.setColour(Colours.black): g.setColour(Colours.lightgrey);
+		if (obj.isSeparator)
+		{
+			g.setColour(Colours.white);
+			g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
+			return;
+		}
 
-	    	if (!isDefined(Paths.icons[iconData[obj.text][0]]))
-		    	return g.drawFittedText(obj.text, [a[0] + 10, a[1], a[2] - 20, a[3]], "left", 1, 1.0);	
-
-			local icon = iconData[obj.text];
-
-			g.fillPath(Paths.icons[icon[0]], [a[0] + 10, a[3] / 2 - icon[2] / 2, icon[1], icon[2]]);
-			g.drawFittedText(obj.text, [a[0] + 30, a[1], a[2] - 20, a[3]], "left", 1, 1.0);	    	
-    	}
-    	else
-    	{	
-    		g.setColour(Colours.white);
-	    	g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
-    	}
+		obj.isHighlighted ? g.setColour(Colours.black): g.setColour(Colours.lightgrey);
+		g.setFont("regular", 16);
+	
+		if (!isDefined(icons[obj.text]))
+			return g.drawFittedText(obj.text, [a[0] + 10, a[1], a[2] - 20, a[3]], "left", 1, 1.0);
+	
+		g.drawFittedText(obj.text, [a[0] + 30, a[1], a[2] - 20, a[3]], "left", 1, 1.0);
+	
+		g.setFont("phosphor", 16);
+		g.drawAlignedText(icons[obj.text], [a[0] + 7, a[1], a[2], a[3]], "left");
     }
         
 	inline function fullPageBackground()

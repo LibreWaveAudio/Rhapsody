@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,12 +26,12 @@ include("Spinner.js");
 include("FilePicker.js");
 include("LicenseHandler.js");
 include("Header.js");
-include("Filter.js");
 include("Expansions.js");
 include("Plugins.js");
 include("Installer.js");
 include("Grid.js");
 include("Account.js");
+include("LoginPage.js");
 include("Library.js");
 include("Tile.js");
 include("Downloader.js");
@@ -39,7 +39,8 @@ include("UpdateChecker.js");
 include("ZoomHandler.js");
 include("SplashScreen.js");
 
-Engine.setFrontendMacros(["Macro1", "Macro2"]);
+
+
 function onNoteOn()
 {
 	

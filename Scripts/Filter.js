@@ -1,5 +1,5 @@
 /*
-    Copyright 2023, 2024 David Healey
+    Copyright 2023, 2024, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ namespace Filter
 {
 	reg filterValue = 1;
 
-	// pnlFilter
+	//! pnlFilter
 	const pnlFilter = Content.getComponent("pnlFilter");
 	pnlFilter.set("text", "Search...");
 
@@ -34,37 +34,30 @@ namespace Filter
 		g.fillPath(Paths.icons.search, [a[0] + 14.5, a[3] / 2 - 13 / 2, 13, 13]);
 
 		g.drawVerticalLine(a[0] + 41, a[1] + 11, a[3] - 11);
-		
-		g.setFont(lblFilter.get("fontName"), lblFilter.get("fontSize"));
-		g.drawAlignedText(this.get("text"), [lblFilter.get("x"), lblFilter.get("y"), lblFilter.getWidth(), lblFilter.getHeight()], "left");
 	});
 	
-	// lblFilter
+	//! lblFilter
 	const lblFilter = Content.getComponent("lblFilter");
-	lblFilter.set("text", "");
-	lblFilter.setConsumedKeyPresses("all");
+	lblFilter.set("text", "Search...");
 	lblFilter.setControlCallback(onlblFilterControl);
-	
+
 	inline function onlblFilterControl(component, value)
 	{
-		Grid.filterTiles();
+		btnFilterClear.showControl(value != "Search...");
+		//Grid.filterTiles();
 	}
 	
-	lblFilter.setKeyPressCallback(function(obj)
+	lblFilter.setConsumedKeyPresses({description: "escape", keyCode: 27});
+
+	lblFilter.setKeyPressCallback(function(event)
 	{
-		var grabbedFocus = (obj.isFocusChange && !obj.hasFocus);
+		if (event.isFocusChange)
+			return;
 
-		if (this.get("text") == "" && !isDefined(obj.character) && !grabbedFocus)
-			pnlFilter.set("text", "Search...");
-		else
-			pnlFilter.set("text", "");
-
-		btnFilterClear.showControl(this.get("text") != "" || isDefined(obj.character));
-
-		pnlFilter.repaint();
+		clear();
 	});
 	
-	// btnFilterClear
+	//! btnFilterClear
 	const btnFilterClear = Content.getComponent("btnFilterClear");
 	btnFilterClear.showControl(false);
 	btnFilterClear.setLocalLookAndFeel(LookAndFeel.iconButton);
@@ -74,14 +67,11 @@ namespace Filter
 	{
 		if (value)
 			return;
-
-		pnlFilter.set("text", "Search...");
-		pnlFilter.repaint();
-		lblFilter.set("text", "");
-		lblFilter.changed();
+		
+		clear();
 	}
-	
-	// btnFavourites
+
+	//! btnFavourites
 	const btnFavourites = Content.getComponent("btnFavourites");
 	btnFavourites.setValue(0);
 	btnFavourites.setLocalLookAndFeel(LookAndFeel.textIconButton);
@@ -90,14 +80,14 @@ namespace Filter
 	inline function onbtnFavouritesControl(component, value)
 	{
 		filterValue = value == 1 ? 5 : 1;
-		Grid.filterTiles();
+		//Grid.filterTiles();
 	}
 	
-	// Functions
-	inline function getTileIndexes(tiles)
+	//! Functions
+	inline function: Array getTileIndexes(tiles: Array)
 	{
 		local result = [];
-		local query = lblFilter.getValue().toLowerCase();
+		local query = lblFilter.getValue() == "Search..." ? "" : lblFilter.getValue().toLowerCase();
 		local index = 0;
 		
 		for (tile in tiles)
@@ -147,5 +137,11 @@ namespace Filter
 		}
 
 		return result;
+	}
+	
+	inline function clear()
+	{
+		lblFilter.set("text", "Search...");
+		lblFilter.changed();
 	}
 }

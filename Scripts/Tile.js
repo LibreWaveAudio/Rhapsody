@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 namespace Tile
 {
-	inline function create(panel, area, data, isOnline)
+	inline function: ScriptObject create(panel: ScriptObject, area: Array, data: object, isOnline: number)
 	{
 		local cp = panel.addChildPanel();
 		
@@ -147,25 +147,18 @@ namespace Tile
 			
 		menuItems.push("Uninstall");
 
-		b.setPosition(area[2] - 17, area[3] - 28, 8, 16);
+		b.setPosition(area[2] - 22, area[3] - 30, 22, 22);
 		b.set("itemColour", 0xffa8b2bd);
 		b.set("allowCallbacks", "All Callbacks");
 		b.set("popupMenuItems", menuItems.join("\n"));
 		b.set("popupMenuAlign", true);
 		b.set("popupOnRightClick", false);
 		b.setControlCallback(oncmbEditControl);
-		b.data.icon = "ellipsisVertical";
 
 		b.setPaintRoutine(function(g)
 		{
-			var a = this.getLocalBounds(0);
-
-			if (this.get("enabled"))
-				g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 1.0 : 0.8));
-			else
-				g.setColour(Colours.withAlpha(this.get("itemColour"), 0.2));
-
-			g.fillPath(Paths.icons[this.data.icon], [a[0] + a[2] / 4, a[1], a[2] / 2, a[3]]);
+			var fontSize = 22;
+			drawButton(this.getLocalBounds(0), "\ue208");
 		});
 
 		b.setMouseCallback(function(event)
@@ -196,38 +189,27 @@ namespace Tile
 		local area = parent.getLocalBounds(0);
 		local b = parent.addChildPanel();
 	
-		b.setPosition(area[2] - 28, area[3] - 27, 16, 16);	
+		b.setPosition(area[2] - 28, area[3] - 27, 18, 18);	
 		b.set("tooltip", type + " " + parent.get("text") + ".");
 		b.set("itemColour", 0xffa8b2bd);
 		b.set("allowCallbacks", "Clicks & Hover");
-		b.data.icon = Paths.icons.openInNew;
 		b.data.url = parent.data.url;
 	
 		b.setPaintRoutine(function(g)
 		{
-			var a = this.getLocalBounds(0);
-	
-			if (this.get("enabled"))
-				g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8));
-			else
-				g.setColour(Colours.withAlpha(this.get("itemColour"), 0.2));
-	
-			g.fillPath(this.data.icon, a);
+			drawButton(this.getLocalBounds(0), "\ue41e");
 		});
 	
 		b.setMouseCallback(function(event)
 		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
+			buttonMouseCallback();
 	
 			if (event.mouseUp)
 				Engine.openWebsite(this.data.url);
 		});
-	
+
 		return b;		
-	}
+	}	
 
 	inline function createInstallButton(parent, type)
 	{
@@ -243,29 +225,16 @@ namespace Tile
 		b.set("itemColour", 0xff7fff74);
 		b.set("allowCallbacks", "Clicks & Hover");
 		b.setControlCallback(onbtnInstallControl);
-		b.data.icon = type == "Install" ? Paths.icons.download : Paths.icons.update;
+		b.data.icon = type == "Install" ? "\ue20c" : "\ue1ac";
 
 		b.setPaintRoutine(function(g)
-		{
-			var a = this.getLocalBounds(0);
-	
-			if (this.get("enabled"))
-				g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8));
-			else
-				g.setColour(Colours.withAlpha(this.get("itemColour"), 0.2));
-
-			g.fillPath(this.data.icon, a);
+		{			
+			drawButton(this.getLocalBounds(0), this.data.icon);
 		});
 
 		b.setMouseCallback(function(event)
 		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
-	
-			if (event.mouseUp)
-				this.changed();
+			buttonMouseCallback();
 		});
 		
 		parent.data.bcIsDownloading.addListener(b, "Hide the install/update button while downloading", function(state)
@@ -302,13 +271,7 @@ namespace Tile
 			
 		b.setMouseCallback(function(event)
 		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
-	
-			if (event.mouseUp)
-				this.changed();
+			buttonMouseCallback();
 		});
 
 		parent.data.bcIsDownloading.addListener(b, "Show abort button during download", function(state)
@@ -318,6 +281,26 @@ namespace Tile
 		});
 	
 		return b;
+	}
+	
+	inline function buttonMouseCallback()
+	{
+		this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
+		this.setValue(event.clicked);
+		this.data.hover = event.hover;
+		this.repaint();
+			
+		if (event.mouseUp)
+			this.changed();
+	}
+	
+	inline function drawButton(area, icon)
+	{			
+		local c = Colours.withMultipliedBrightness(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8);
+		g.setColour(Colours.withAlpha(c, this.get("enabled") ? 1.0 : 0.5));
+	
+		g.setFont("phosphor", isDefined(fontSize) ? fontSize : 18);
+		g.drawAlignedText(icon, area, "centred");
 	}
 
 	inline function drawPlaceholderImage()
@@ -383,7 +366,7 @@ namespace Tile
 				addButtons(parent, true);
 
 				if (!data.favourite)
-					Grid.filterTiles();
+					Grid.refresh();
 				break;
 
 			case "Locate Samples":
