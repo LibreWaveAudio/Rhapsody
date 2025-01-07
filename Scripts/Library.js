@@ -21,31 +21,6 @@ namespace Library
 
 	reg cache = appData.createDirectory("cache");
 	
-	// cmbAdd
-	const cmbAdd = Content.getComponent("cmbAdd");
-	cmbAdd.setControlCallback(oncmbAddControl);
-
-	inline function oncmbAddControl(component, value)
-	{
-		switch (value)
-		{
-			case 1:
-				Installer.install();
-				break;
-
-			case 2:
-				LicenseHandler.show();
-				break;
-		}		
-
-		component.setValue(-1);
-	}
-		
-	App.broadcasters.isDownloading.addListener(cmbAdd, "Disable the add combo box while downloads are in progress", function(state)
-	{
-		this.set("enabled", !state);
-	});
-	
 	// btnSync
 	const btnSync = Content.getComponent("btnSync");
 	btnSync.set("enabled", Account.isLoggedIn());
@@ -449,17 +424,17 @@ namespace Library
 	// Listeners	
 	App.broadcasters.isLoggedIn.addListener("Library login", "Respond to login changes", function(state)
 	{
-		clearCache();
+		/*clearCache();
 
 		if (state)
 			updateCache(true);
 		else
 			updateCatalogue();
 			
-		btnSync.set("enabled", state);
+		btnSync.set("enabled", state);*/
 	});
 	
 	// Calls
-	updateCatalogue();
-	autoSync();
+	//updateCatalogue();
+	//autoSync();
 }

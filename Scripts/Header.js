@@ -130,6 +130,23 @@ namespace Header
 	//! cmbAdd
 	const cmbAdd = Content.getComponent("cmbAdd");
 	cmbAdd.setLocalLookAndFeel(lafcmbAdd);
+	cmbAdd.setControlCallback(oncmbAddControl);
+	
+	inline function oncmbAddControl(component, value)
+	{
+		switch (value)
+		{
+			case 1:
+				Installer.manualInstall();
+				break;
+		
+			case 2:
+				LicenseHandler.show();
+				break;
+		}
+
+		component.setValue(-1);
+	}
 	
 	//! btnFavourites
 	const btnFavourites = Content.getComponent("btnFavourites");

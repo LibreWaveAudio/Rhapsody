@@ -51,5 +51,11 @@ namespace App
 	App.broadcasters.isDownloading.addListener(btnAccount, "Disable logout button while downloads are in progress", function(state)
 	{
 		this.set("enabled", !state);
-	});*/
+	});
+	
+	App.broadcasters.isDownloading.addListener(cmbAdd, "Disable the add combo box while downloads are in progress", function(state)
+	{
+		this.set("enabled", !state);
+	});
+	*/
 }

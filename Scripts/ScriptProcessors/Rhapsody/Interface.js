@@ -22,7 +22,7 @@ include("Paths.js");
 include("LookAndFeel.js");
 include("UserSettings.js");
 include("About.js");
-include("Spinner.js");
+include("Progress.js");
 include("FilePicker.js");
 include("LicenseHandler.js");
 include("Header.js");
@@ -38,8 +38,6 @@ include("Downloader.js");
 include("UpdateChecker.js");
 include("ZoomHandler.js");
 include("SplashScreen.js");
-
-
 
 function onNoteOn()
 {

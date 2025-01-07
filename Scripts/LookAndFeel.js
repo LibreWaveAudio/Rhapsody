@@ -71,7 +71,8 @@ namespace LookAndFeel
     {
 		var icons = {
 			"show password": "\ue220",
-			"backspace": "\ue0ae"
+			"backspace": "\ue0ae",
+			"folder": "\ue256"
 		};
 	
 		if (!isDefined(icons[obj.text]))
@@ -80,7 +81,7 @@ namespace LookAndFeel
 	    var c = Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.0 - 0.3 * obj.down : 0.8);
 	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-	    g.setFont("phosphor", 18);
+	    g.setFont("phosphor", obj.area[2]);
 	    g.drawAlignedText(icons[obj.text], obj.area, "centred");
 
 		/*var a = obj.area;
@@ -287,7 +288,7 @@ namespace LookAndFeel
 			g.fillAll(Colours.withAlpha(0xffa8b2bd, 0.8));
 
 		local icons = {
-			"Manual Install": "\ue390",
+			"Install from File": "\ue390",
 			"Add a License": "\ue2d6",
 			"Add to Favourites": "\ue2a8",
 			"Remove Favourite": "\uebe8",

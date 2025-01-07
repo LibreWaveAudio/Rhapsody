@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023 David Healey
+    Copyright 2022, 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,39 +24,46 @@ namespace FilePicker
 	reg filter = "";
 	reg file;
 	reg callback;
+	reg data;
 
-	// pnlFilePicker
+	//! pnlFilePicker
 	const pnlFilePicker = Content.getComponent("pnlFilePicker");
 	pnlFilePicker.showControl(false);
 
 	pnlFilePicker.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-				
+
 		LookAndFeel.fullPageBackground();
-		
+
 		var lblArea = [lblFilePicker.get("x") - 5, lblFilePicker.get("y") - 8, lblFilePicker.getWidth() + 40, lblFilePicker.getHeight() + 16];
 		g.setColour(this.get("itemColour"));
 		g.fillRoundedRectangle(lblArea, 5);
 
 		g.setFont("semibold", 26);
 		g.setColour(Colours.withAlpha(this.get("textColour"), 1.0));
-		g.drawAlignedText(this.data.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
-		
+
+		if (isDefined(this.data.title))
+			g.drawAlignedText(this.data.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
+
+		if (!isDefined(this.data.message))
+			return;
+
 		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.9));
+
+		g.setFont("phosphor", 18);
+		g.drawAlignedText("\ue2ce", [lblArea[0] + 2, lblArea[1] - 40, 20, 20], "left");
 		
-		g.fillPath(Paths.icons.infoCircle, [lblArea[0] + 2, lblArea[1] - 37, 13, 13]);
-		
-		g.setFont("regular", 16);
-		g.drawAlignedText(this.data.message, [lblArea[0] + 22, lblArea[1] - 40, lblArea[2], 20], "left");
+		g.setFont("regular", 16);		
+		g.drawAlignedText(this.data.message, [lblArea[0] + 25, lblArea[1] - 40, lblArea[2], 20], "left");
 	});
 	
-	// lblFilePicker
+	//! lblFilePicker
 	const lblFilePicker = Content.getComponent("lblFilePicker");
 	lblFilePicker.setLocalLookAndFeel(LookAndFeel.empty);
 	lblFilePicker.set("text", "");
 
-	// btnFilePicker
+	//! btnFilePicker
 	const btnFilePicker = Content.getComponent("btnFilePicker");
 	btnFilePicker.setLocalLookAndFeel(LookAndFeel.iconButton);
 	btnFilePicker.setControlCallback(onbtnFilePickerControl);
@@ -67,7 +74,7 @@ namespace FilePicker
 			mode == 0 ? showFileBrowser() : showDirectoryBrowser();			
 	}
 
-	// btnFilePickerCancel
+	//! btnFilePickerCancel
 	const btnFilePickerCancel = Content.getComponent("btnFilePickerCancel");
 	btnFilePickerCancel.setLocalLookAndFeel(LookAndFeel.textButton);
 	btnFilePickerCancel.setControlCallback(onbtnFilePickerCancelControl);
@@ -78,7 +85,7 @@ namespace FilePicker
 	    	hide();
 	}
 	
-	// btnFilePickerSubmit
+	//! btnFilePickerSubmit
     const btnFilePickerSubmit = Content.getComponent("btnFilePickerSubmit");
     btnFilePickerSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
     btnFilePickerSubmit.setControlCallback(onbtnFilePickerSubmitControl);
@@ -90,11 +97,11 @@ namespace FilePicker
 			if (hideOnSubmit)
 	        	hide();
 
-	        callback(file);
+	        callback(file, data);
         }
     }
 
-    // Functions
+    //! Functions
 	inline function show(properties, cb)
 	{
 		pnlFilePicker.data.title = properties.title;
@@ -105,8 +112,9 @@ namespace FilePicker
 		hideOnSubmit = !isDefined(properties.hideOnSubmit) || properties.hideOnSubmit;
 		storePath = !isDefined(properties.startFolder);
 		callback = cb;
+		data = isDefined(properties.data) ? properties.data : {};
 		btnFilePickerSubmit.set("text", properties.buttonText);
-		btnFilePickerSubmit.set("enabled", false);
+		btnFilePickerSubmit.set("enabled", false);		
 
 		if (isDefined(properties.startFolder) && properties.startFolder != "" && properties.startFolder.isDirectory())
 			startFolder = properties.startFolder;
@@ -141,12 +149,12 @@ namespace FilePicker
     {
 	    FileSystem.browse(startFolder, false, filter, function(f)
 	    {
-			if (isDefined(f) && f.isFile())
-			{
-				file = f;
-				btnFilePickerSubmit.set("enabled", true);
-				lblFilePicker.set("text", f.toString(f.Filename));
-			}
+			if (!isDefined(f) || !f.isFile())
+				return;
+
+			file = f;
+			btnFilePickerSubmit.set("enabled", true);
+			lblFilePicker.set("text", f.toString(f.Filename));
 	    });
     }
 
@@ -154,16 +162,15 @@ namespace FilePicker
     {
 	    FileSystem.browseForDirectory(startFolder, function(dir)
 	    {
-		    if (isDefined(dir) && dir.isDirectory())
-		    {
-		    	file = dir;
+		    if (!isDefined(dir) || !dir.isDirectory())
+		    	return;
 
-		    	if (storePath)
-		    		writePathToDisk(dir.toString(dir.FullPath));
+	    	file = dir;
+	    	if (storePath)
+	    		writePathToDisk(dir.toString(dir.FullPath));
 
-		    	btnFilePickerSubmit.set("enabled", true);
-		    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
-		    }
+	    	btnFilePickerSubmit.set("enabled", true);
+	    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
 	    });
     }
         
