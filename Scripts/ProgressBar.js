@@ -15,75 +15,24 @@
     along with This file. If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace Progress
+namespace ProgressBar
 {
-	// pnlProgressContainer
-	const pnlProgressContainer = Content.getComponent("pnlProgressContainer");
+	//! pnlProgressBarContainer
+	const pnlProgressBarContainer = Content.getComponent("pnlProgressBarContainer");
 	
-	pnlProgressContainer.setPaintRoutine(function(g)
+	pnlProgressBarContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-		
+
 		LookAndFeel.fullPageBackground();
 	});
 
-	// pnlProgress
-	const pnlProgress = Content.getComponent("pnlProgress");
+	//! pnlProgressBar
+	const pnlProgressBar = Content.getComponent("pnlProgressBar");
 
-	pnlProgress.setPaintRoutine(function(g)
+	pnlProgressBar.setPaintRoutine(function(g)
 	{
-       	if (isDefined(this.data.mode) && this.data.mode)
-       		drawBar();
-       	else
-       		drawSpinner();       		
-	});
-
-	pnlProgress.setLoadingCallback(function(isPreloading)
-	{
-		if (isPreloading)
-			show(1);
-		else
-			hide();
-	});
-	
-	pnlProgress.setTimerCallback(function()
-	{
-    	this.setValue(Engine.getPreloadProgress());
-    	this.set("text", Engine.getPreloadMessage());
-    	this.repaint();
-	});
-	
-	inline function drawSpinner()
-	{
-		local a = [this.getWidth() / 2 - 50, this.getHeight() / 2 - 50, 100, 100];
-
-		g.fillAll(Colours.withAlpha(Colours.black, 0.5));
-
-		for (i = 0; i < 10; i++)
-		{
-			this.getValue() == i ? g.setColour(Colours.white) : g.setColour(Colours.grey);
-			
-			local x = this.getWidth() / 2 - 0;
-			local y1 = a[1] + 20;
-			local y2 = this.getHeight() / 2 - 70;        
-			
-			g.drawLine(x, x, y1, y2, 4);
-			
-			g.rotate(Math.toRadians(360 / 10), [this.getWidth() / 2, this.getHeight() / 2]);
-		}
-
-		g.setColour(Colours.withAlpha(Colours.white, 1 / 10 * this.getValue()));
-
-		if (this.data.msg == "")
-			return;
-
-		g.setFont("medium", 26);
-		g.drawAlignedText(this.data.msg, [0, a[1] + a[3] + 50, this.getWidth(), 30], "centred");
-	}
-	
-	inline function drawBar()
-	{
-		local a = [this.getWidth() / 2 - 300 / 2, this.getHeight() / 2 - 4 / 2, 300, 4];
+		var a = [this.getWidth() / 2 - 300 / 2, this.getHeight() / 2 - 4 / 2, 300, 4];
 
 		g.setColour(this.get("itemColour"));
 		g.fillRoundedRectangle(a, 2);
@@ -99,7 +48,14 @@ namespace Progress
 
 		g.setFont("regular", 14);
 		g.drawAlignedText(this.get("text"), [a[0], a[1] + a[3] + 2, a[2], 26], "centred");
-	}
+	});
+	
+	pnlProgressBar.setTimerCallback(function()
+	{	
+		this.setValue(Engine.getPreloadProgress());
+   		this.set("text", Engine.getPreloadMessage());
+   		this.repaint();    	
+	});
 
 	//! btnProgressCancel
 	const btnProgressCancel = Content.getComponent("btnProgressCancel");
@@ -122,33 +78,32 @@ namespace Progress
 		g.drawAlignedText(obj.text, a, "centred");
 	});
 	
-	// Functions
+	//! Functions
 	inline function set(key: string, value: NotUndefined)
 	{
-		pnlProgress.data[key] = value;
+		pnlProgressBar.data[key] = value;
 	}
 	
 	inline function setMessage(msg: string)
 	{
-		pnlProgress.data.msg = msg;
-		pnlProgress.set("text", msg);
+		pnlProgressBar.data.msg = msg;
+		pnlProgressBar.set("text", msg);
 	}
 	
-	inline function show(mode: number)
+	inline function show()
 	{
-		pnlProgress.startTimer(50);
-		pnlProgress.data.mode = mode;
-		pnlProgressContainer.showControl(true);
+		pnlProgressBar.startTimer(50);
+		pnlProgressBarContainer.showControl(true);
 	}
 	
 	inline function hide()
 	{
-		pnlProgress.setValue(0);
-		pnlProgress.stopTimer();
-		pnlProgress.set("text", "");
-		pnlProgress.data.title = "";
-		pnlProgressContainer.showControl(false);
-		//btnProgressCancel.showControl(false);
+		pnlProgressBarContainer.showControl(false);
+		btnProgressCancel.showControl(false);
+		pnlProgressBar.stopTimer();
+		pnlProgressBar.setValue(0);
+		pnlProgressBar.set("text", "");
+		pnlProgressBar.data.title = "";
 	}
 
 	inline function showCancelButton(shouldShow)
@@ -156,11 +111,6 @@ namespace Progress
 		btnProgressCancel.showControl(shouldShow);
 	}
 
-	inline function: number isVisible()
-	{
-		return pnlProgress.get("visible");
-	}
-
-	// Calls
-	//hide();
+	//! Calls
+	hide();
 }

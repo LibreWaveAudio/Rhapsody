@@ -1,5 +1,5 @@
 /*
-    Copyright 2023, 2024 David Healey
+    Copyright 2023, 2024, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,307 +17,332 @@
 
 namespace Library
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData);
+	const catalogue = [];
+	reg syncCooldown = 0;
 
-	reg cache = appData.createDirectory("cache");
-	
-	// btnSync
-	const btnSync = Content.getComponent("btnSync");
-	btnSync.set("enabled", Account.isLoggedIn());
-	//btnSync.setControlCallback(onbtnSyncControl);
-
+	//! Functions
 	inline function sync()
 	{
+		if (App.mode == "release" && Engine.getUptime() - syncCooldown < 15)
+			return Engine.showMessageBox("Cool Down", "Please wait " + Math.round(15 - (Engine.getUptime() - syncCooldown)) + " seconds before syncing again.", 0);
+
 		if (!Account.isLoggedIn())
 			return Engine.showMessageBox("Login Required", "Please login to sync your account.", 0);
-			
-		if (!Server.isOnline())
-			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
-			
-		if (cooldownTimer.isTimerRunning() && App.mode == "release")
-			return Engine.showMessageBox("Cool Down", "Please wait a few seconds before syncing again.", 0);
-		
-		if (Content.isCtrlDown())
-			clearCache();
-		
-		updateCache(false);
-		Expansions.refresh();
 
-		if (App.mode == "release")
-			UpdateChecker.checkForAppUpdate();
+		if (!App.isOnline)
+			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
+
+		syncCooldown = Engine.getUptime();
+
+		if (Content.isCtrlDown())
+			CacheHandler.clearCache();
+
+		updateCache();
 	}
 
-	// Cooldown Timer
-	const cooldownTimer = Engine.createTimerObject();
-	
-	cooldownTimer.setTimerCallback(function()
-	{
-		btnSync.set("enabled", true);
-		this.stopTimer();
-	});
-
-	// Functions
 	inline function autoSync()
 	{
+		if (App.mode == "release" && Engine.getUptime() - syncCooldown < 15)
+			return;	
+
 		if (!Account.isLoggedIn())
 			return;
 
-		if (!Server.isOnline() || cooldownTimer.isTimerRunning())
+		if (!App.isOnline)
 			return;
 
-		local lastSync = UserSettings.getProperty(Engine.getName(), "lastSync");
+		local lastSync = UserSettings.getProperty("rhapsody", "lastSync");
 		local now = Date.getSystemTimeMs();
 
 		if ((now - lastSync) / 86400000 > 1)
-			updateCache(true);
+			updateCache();
+		else
+			updateCatalogue();
 	}
 
-	inline function getCombinedCacheAndManifestData()
-	{
-		local manifest = loadManifest();
-		local f = cache.getChildFile("cache.json");
-		local result = [];
-
-		if (isDefined(f) && f.isFile())
-			result = f.loadEncryptedObject(App.systemId);
-
-		if (!isDefined(manifest))
-			return result;
-			
-		for (projectName in manifest)
-		{
-			local item;
-		
-			for (x in result)
-			{
-				if (x.projectName == projectName)
-				{
-					item = x;
-					break;
-				}					
-			}
-		
-			if (!isDefined(item) && isDefined(manifest[projectName].format))
-			{
-				item = {"projectName": projectName, "name": projectName, "source": "offline"};
-				result.push(item);
-			}
-		
-			if (!isDefined(item))
-				continue;
-			
-			for (key in manifest[projectName])
-				item[key] = manifest[projectName][key];
-				
-			if (isDefined(item.installedVersion) && item.latestVersion > item.installedVersion)
-				item.hasUpdate = true;
-		}
-		
-		return result;
-	}
-
-	inline function updateCatalogue()
-	{
-		local items = [];
-		local localData = getCombinedCacheAndManifestData();
-		local installedExpansions = Expansions.getInstalledExpansionsData();
-
-		for (expName in installedExpansions)
-			items.push(installedExpansions[expName]);
-
-		if (!localData.length)
-			return Grid.update(items);
-
-		for (x in localData)
-		{
-			if (!isDefined(x.format) || !isDefined(x.projectName) || isDefined(x.hidden)) continue;
-
-			if (!isDefined(x.tags) || x.tags == "")
-				x.tags = [];
-
-			x.tags.push("licensed");
-
-			if (!isDefined(installedExpansions[x.projectName]))
-			{
-				items.push(x);
-				continue;
-			}
-
-			local e = installedExpansions[x.projectName];
-			local index = items.indexOf(e);
-			local item = items[index];
-
-			for (property in x)
-			{
-				if (property == "tags")
-				{
-					mergeTags(item, x);
-					continue;
-				}
-
-				item[property] = x[property];
-			}
-
-			if (item.latestVersion > item.installedVersion)
-				item.hasUpdate = true;
-		}
-
-		Grid.update(items);
-	}
-
-	inline function mergeTags(obj1, obj2)	
-	{
-		if (!isDefined(obj2["tags"]) || !Array.isArray(obj2["tags"]))
-			return;	
-
-		if (!isDefined(obj1["tags"]))
-			return obj1["tags"] = obj2["tags"];
-
-		for (t in obj2["tags"])
-			obj1["tags"].pushIfNotAlreadyThere(t);
-	}
-
-	inline function clearCache()
-	{
-		if (isDefined(cache) && cache.isDirectory())
-			cache.deleteFileOrDirectory();
-
-		Server.cleanFinishedDownloads();
-		cache = appData.createDirectory("cache");
-	}
-
-	inline function updateCache(suppressErrors)
+	inline function updateCache()
 	{
 		local token = Account.readToken();
 		
-		if (!isDefined(token) || !Server.isOnline())
+		if (!isDefined(token) || !App.isOnline)
 			return;
-
+			
 		local endpoint = App.apiPrefix + "get_catalogue/";
 		local headers = ["Authorization: Bearer " + token];
 		local p = {};
-
+		
 		Server.setBaseURL(App.baseUrl[App.mode]);
 		Server.setHttpHeader(headers.join("\n"));
 		
 		Spinner.show("Syncing with Server");
-
-		Server.callWithGET(endpoint, p, function[suppressErrors](status, response)
+		
+		Server.callWithGET(endpoint, p, function(status, response)
 		{
 			if (status == 200 && typeof response == "object" && response.length > 0)
 			{
-				var f = cache.getChildFile("cache.json");
-				f.writeEncryptedObject(response, App.systemId);
-
-				updateCatalogue();
-
-				if (haveAnyImagesBeenDownloaded())
-				{
-					var imageUrls = getImageUrls(response);
-					downloadIndividualImages(imageUrls);
-				}
-				else
-				{
-					downloadZippedImages();
-				}
-
-				btnSync.set("enabled", false);
-				cooldownTimer.startTimer(15000);
-				UserSettings.setProperty(Engine.getName(), "lastSync", Date.getSystemTimeMs());
-			}
+				handleSyncResponse(response);
+			}				
 			else
 			{
 				if (isDefined(response.message) && response.message.contains("You are not currently logged in"))
 					Account.autoLogout();
-
-				if (suppressErrors)
-					return Spinner.hide();
 					
 				if (isDefined(response.message))
 					Engine.showMessageBox("Error", response.message, 3);
 				else
 					Engine.showMessageBox("Error", "The server reported an error, please try again later or contact support.", 3);
 			}
-			
+
 			Spinner.hide();
 		});
 	}
-			
-	inline function haveAnyImagesBeenDownloaded()
+	
+	inline function handleSyncResponse(response: Array)
 	{
-		local files = FileSystem.findFiles(cache, "*.jpg", false);
-		return files.length > 0;
+		CacheHandler.setCache(response);
+		updateCatalogue();
+
+		local cachedImages = CacheHandler.getCachedImageNames();
+		local imageUrls = getMissingImageUrls(response, cachedImages);
+
+		if (!cachedImages.length || imageUrls.length > 25)
+			downloadZippedImages();
+		else
+			downloadIndividualImages(imageUrls);
+
+		UserSettings.setProperty("rhapsody", "lastSync", Date.getSystemTimeMs());
+	}
+
+	inline function updateItem(projectName: string)
+	{
+		local data = getCatalogueItem(projectName, "");
+		local manifestData = ManifestHandler.getObject(projectName, "");
+		local cacheData = CacheHandler.getObject(projectName, "");
+		local expansionData = Expansions.getData(projectName);
+		local newData = deepMergeArrays([[manifestData], [cacheData], [expansionData]]);
+
+		if (removeCatalogueItem(projectName))
+			catalogue.push(newData);
+
+		Grid.rebuildTile(projectName);
+	}
+
+	inline function: number removeCatalogueItem(projectName: string)
+	{
+		for (x in catalogue)
+		{
+			if (x.projectName.toLowerCase().replace(" ", "_") == projectName.toLowerCase().replace(" ", "_"))
+				return catalogue.remove(x);
+		}
+		
+		return false;
 	}
 	
-	inline function getImageUrls(data)
+	inline function: object getCatalogueItem(projectName: string, variantName: string)
+	{
+		local project = {};
+		
+		for (x in catalogue)
+		{
+			if (x.projectName == projectName)
+				project = x;
+		}
+	
+		if (!isDefined(project))
+			return {};
+	
+		if (variantName == "")
+			return project;
+	
+		if (!isDefined(project.variants))
+			return {};
+	
+		for (x in project.variants)
+		{	
+			if (x.name == variantName)
+				return x;
+		}
+	
+		return {};
+	}
+
+	inline function updateCatalogue()
+	{
+		catalogue.clear();
+		
+		local manifest = ManifestHandler.getManifest().clone();
+		local cache = CacheHandler.getCache().clone();
+		local expansions = Expansions.getAllData();	
+
+		local data = deepMergeArrays([manifest, cache, expansions]);
+
+		for (x in data)
+		{
+			if (!isDefined(x.name))
+				x.name = x.projectName;
+
+			if (!isDefined(x.installedVersion) && !isDefined(x.url))
+				continue;
+
+			catalogue.push(x);
+
+			if (!isDefined(x.variants))
+			{
+				x.isInstalled = x.installedVersion != "";
+
+				if (isDefined(x.installedVersion) && isDefined(x.latestVersion))
+					x.hasUpdate = ManifestHandler.versionCompare(x.latestVersion, x.installedVersion);
+
+				continue;
+			}
+
+			for (v in x.variants)
+			{
+				if (!isDefined(v.name))
+					continue;
+
+				v.isInstalled = v.installedVersion != "" || x.installedVersion != "";	
+
+				if (isDefined(v.installedVersion) && isDefined(v.latestVersion))
+					v.hasUpdate = ManifestHandler.versionCompare(v.latestVersion, v.installedVersion);
+			
+				if (v.hasUpdate)
+					x.hasUpdate = true;
+
+				if (v.isInstalled)
+					x.isInstalled = true;
+			}
+			
+			if (!x.hasUpdate)
+			{
+				local manifestData = ManifestHandler.getProject(x.projectName);
+				x.hasUpdate = isDefined(manifestData.variants) ? (manifestData.variants.length < CacheHandler.getLicensedVariants(x.projectName).length) : false;
+			}
+		}
+
+		Grid.update(catalogue);
+	}
+
+	inline function mergeArrayObjects(array1, array2, key)
+	{
+	    local result = [];
+	    local indexMap = {};
+	
+		for (arr in [array1, array2])
+		{
+			for (obj in arr)
+	        {
+	            local id = obj[key];
+	
+	            if (!isDefined(indexMap[id]))
+	            {
+	                indexMap[id] = result.length;
+	                result.push(obj);
+	                continue;
+	            }
+	
+				local existingObj = result[indexMap[id]];
+	
+				for (prop in obj)
+					existingObj[prop] = obj[prop];
+			}
+		}
+	
+	    return result;
+	}	
+	
+	inline function deepMergeArrays(arrays)
 	{
 		local result = [];
-		local cachedImages = getCachedImageNames();
+		local data = [];
+	
+		for (x in arrays)
+			data.concat(x);
+
+		local projects = {};
 		
 		for (x in data)
 		{
 			if (!isDefined(x.projectName))
 				continue;
 
-			if (cachedImages.contains(x.projectName))
+			local projectName = x.projectName.toLowerCase().replace(" ", "_");
+			
+			if (!isDefined(projectName))
+				continue;
+	
+			if (!isDefined(projects[projectName]))
+				projects[projectName] = {};
+				
+			for (key in x)
+			{
+				if (Array.isArray(x[key]))
+				{
+					if (!isDefined(projects[projectName][key]))
+						projects[projectName][key] = [];
+						
+					if (key == "variants")
+						projects[projectName][key] = mergeArrayObjects(x[key], projects[projectName][key], "name");
+					
+					if (["files", "tags"].contains(key))
+						projects[projectName][key] = mergeArrays(x[key], projects[projectName][key]);
+				}
+				else
+				{
+					projects[projectName][key] = x[key];
+				}
+			}		    
+		}
+		
+		for (x in projects)
+		    result.push(projects[x]);
+	
+		return result;
+	}
+	
+	inline function: Array mergeArrays(arr1: Array, arr2: Array)
+	{
+		local newArr = arr1.clone();
+	
+		for (x in arr2)
+			newArr.pushIfNotAlreadyThere(x);
+		
+		return newArr;
+	}
+
+	inline function: Array getMissingImageUrls(data: Array, cachedImages: Array)
+	{
+		local result = [];
+
+		for (x in data)
+		{
+			if (!isDefined(x.projectName) || cachedImages.contains(x.projectName))
 				continue;
 
 			if (isDefined(x.image))
 				result.push({"projectName": x.projectName, "url": x.image.replace(".b-cdn.net", ".com")});
 		}
 
-		return result;		
-	}
-	
-	inline function getCachedImageNames()
-	{
-		local result = [];	
-		local files = FileSystem.findFiles(cache, "*.jpg", false);
-	
-		for (x in files)
-			result.push(x.toString(x.NoExtension));
-	
 		return result;
 	}
-		
-	inline function downloadIndividualImages(urls)
+	
+	inline function downloadIndividualImages(urls: Array)
 	{
-		if (!urls.length)
-			return;
-
 		Server.cleanFinishedDownloads();
-		Server.setBaseURL(App.baseUrl[App.mode]);
-
-		local completed = [];
-		local total = urls.length;
-		
-		App.broadcasters.isDownloading.state = true;
+		Server.setBaseURL(App.baseUrl[App.mode].replace(".com/", ".b-cdn.net/"));
 
 		for (x in urls)
 		{
-			local projectName = x.projectName;
 			local url = x.url.replace(App.baseUrl[App.mode], "");
-			local f = cache.getChildFile(projectName + ".jpg");
+			local f = CacheHandler.getCacheDirectory().getChildFile(x.projectName + ".jpg");
 
-			Server.downloadFile(url, {}, f, function[total, projectName, completed]()
+			Server.downloadFile(url, {}, f, function()
 			{
-				Spinner.show("Downloading Images");
+				if (!this.data.finished || !this.data.success)
+					return;
 
-				if (this.data.finished)
-				{
-					completed.pushIfNotAlreadyThere(projectName);
-
-					if (this.data.success)
-						Grid.updateImage(projectName);
-					else
-						Console.print("Failed to download image for " + projectName);
-				}
-				
-				if (completed.length >= total)
-				{
-					Spinner.hide();
-					App.broadcasters.isDownloading.state = false;
-				}					
+				var file = this.getDownloadedTarget();
+				Grid.updateImage(file.toString(file.NoExtension));
 			});
 		}
 	}
@@ -325,116 +350,58 @@ namespace Library
 	inline function downloadZippedImages()
 	{
 		Server.cleanFinishedDownloads();
-		Server.setBaseURL(App.baseUrl[App.mode]);
-				
-		App.broadcasters.isDownloading.state = true;
+		Server.setBaseURL(App.baseUrl[App.mode].replace(".com/", ".b-cdn.net/"));
 
 		local url = "wp-content/uploads/product_images.zip";
-		local f = cache.getChildFile("product_images.zip");
+		local f = CacheHandler.getCacheDirectory().getChildFile("product_images.zip");
 
 		Server.downloadFile(url, {}, f, function()
 		{
 			Spinner.show("Downloading Images");
-		
-			if (this.data.finished)
-			{
-				if (this.data.success)
-					extractImageArchive(this.getDownloadedTarget());
 
-				App.broadcasters.isDownloading.state = false;
-			}
+			if (!this.data.finished)
+				return;
+
+			if (this.data.success)
+				extractImageArchive(this.getDownloadedTarget());
 		});
 	}
 
-	inline function extractImageArchive(archive)
+	inline function extractImageArchive(archive: object)
 	{
-		archive.extractZipFile(cache, true, function[archive](obj)
+		archive.extractZipFile(CacheHandler.getCacheDirectory(), true, function[archive](obj)
 		{
-			if (obj.Status == 2)
-			{
-				archive.deleteFileOrDirectory();
-				updateCatalogue();
-				Spinner.hide();
-			}				
+			if (obj.Status != 2)
+				return;
+
+			archive.deleteFileOrDirectory();
+			updateCatalogue();
+			Spinner.hide();
 		});
 	}
 
-	inline function toggleFavourite(projectName)
+	inline function toggleFavourite(projectName: string)
 	{
-		local value = getManifestValue(projectName, "favourite");
+		local value = ManifestHandler.getData(projectName, "", "favourite");
 		
 		if (isDefined(value))
 			value = !value;
 		else
-			value = 1;	
+			value = 1;
 
-		setManifestValue(projectName, "favourite", value);
+		ManifestHandler.setData(projectName, "", "favourite", value);
 
 		return value;
 	}
-
-	inline function getManifestValue(projectName, key)
-	{
-		local obj = loadManifest();
-				
-		return obj[projectName][key];
-	}
-
-	inline function setManifestValue(projectName, key, value)
-	{
-		local obj = loadManifest();
-		local f = appData.getChildFile("manifest.json");
-
-		if (!isDefined(obj[projectName]))
-			obj[projectName] = {};
-			
-		obj[projectName][key] = value;
-
-		f.writeObject(obj);
-	}
-
-	inline function removeManifestEntry(projectName)
-	{
-		local obj = loadManifest();
-		local f = appData.getChildFile("manifest.json");
-		local newObj = {};
-		
-		for (x in obj)
-		{
-			if (x == projectName)
-				continue;
-				
-			newObj[x] = obj[x];
-		}
-
-		f.writeObject(newObj);
-	}
-
-	inline function loadManifest()
-	{
-		local f = appData.getChildFile("manifest.json");
-		local obj = {};
-		
-		if (isDefined(f) && f.isFile())
-			obj = f.loadAsObject();
-			
-		return obj;
-	}
-
-	// Listeners	
+	
+	//! Broadcasters	
 	App.broadcasters.isLoggedIn.addListener("Library login", "Respond to login changes", function(state)
 	{
-		/*clearCache();
-
 		if (state)
-			updateCache(true);
-		else
-			updateCatalogue();
-			
-		btnSync.set("enabled", state);*/
+			return autoSync();
+
+		CacheHandler.clearCache();
+		updateCatalogue();
+		Grid.update(catalogue);
 	});
-	
-	// Calls
-	//updateCatalogue();
-	//autoSync();
 }

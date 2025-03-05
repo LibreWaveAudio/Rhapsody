@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023 David Healey
+    Copyright 2021, 2022, 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ namespace LookAndFeel
 	// Scrollbar
 	laf.registerFunction("drawScrollbar", function(g, obj)
 	{
-		drawScrollbar(g, obj, 0xff302F34);
+		drawScrollbar(g, obj, 0xff111111);
 	});
 
     // textButton
@@ -64,7 +64,7 @@ namespace LookAndFeel
 	    g.drawHorizontalLine(a[3] - 5, a[0], stringWidth);
     });
 
-    // iconButton
+    //! iconButton
     const iconButton = Content.createLocalLookAndFeel();
     
     iconButton.registerFunction("drawToggleButton", function(g, obj)
@@ -72,7 +72,8 @@ namespace LookAndFeel
 		var icons = {
 			"show password": "\ue220",
 			"backspace": "\ue0ae",
-			"folder": "\ue256"
+			"folder": "\ue256",
+			"close": "\ue4f6"
 		};
 	
 		if (!isDefined(icons[obj.text]))
@@ -83,37 +84,9 @@ namespace LookAndFeel
 
 	    g.setFont("phosphor", obj.area[2]);
 	    g.drawAlignedText(icons[obj.text], obj.area, "centred");
-
-		/*var a = obj.area;
-		var icon = obj.text;
-
-		if (icon.indexOf("iconOff") != -1 && !obj.value)
-		{
-			icon = icon.substring(icon.indexOf("iconOff-") + 8, icon.indexOf(" "));
-		}
-		else if (icon.indexOf("iconOn") != -1 && obj.value)
-		{
-			icon = icon.substring(icon.indexOf("iconOn-") + 7, icon.length);
-		}
-		else
-		{
-			if (icon.indexOf("circle-") != -1)
-			{
-				icon = icon.replace("circle-");
-				
-				g.setColour(Colours.withAlpha(obj.bgColour, obj.over ? 1.0 : 0.8));
-				g.fillEllipse(a);
-				a = [a[2] / 2 - (a[2] / 2) / 2, a[3] / 2 - (a[3] / 2) / 2, a[2] / 2, a[3] / 2];
-			}
-		}
-
-		var colour = obj.value == 0 ? obj.itemColour1 : obj.itemColour2;
-		g.setColour(Colours.withAlpha(colour, obj.over && obj.enabled ? 1.0 - (0.2 * obj.down) : 0.8 - (0.2 * obj.down) - (0.3 * !obj.enabled)));
-
-		g.fillPath(Paths.icons[icon], a);  */
     });
     
-    // textIconButton
+    //! textIconButton
     const textIconButton = Content.createLocalLookAndFeel();
     
     textIconButton.registerFunction("drawToggleButton", function(g, obj)
@@ -146,7 +119,7 @@ namespace LookAndFeel
 		g.drawAlignedText(obj.text.capitalize(), a, "right");
     });
     
-    // filledIconButton
+    //! filledIconButton
     const filledIconButton = Content.createLocalLookAndFeel();
     
     filledIconButton.registerFunction("drawToggleButton", function(g, obj)
@@ -161,98 +134,83 @@ namespace LookAndFeel
 		g.setColour(Colours.withAlpha(Colours.black, obj.enabled ? 1.0 : 0.6));
 		g.drawRoundedRectangle([a[0] + 0.5, a[1] + 0.5, a[2] - 1, a[3] - 1], 2, 1);
 
-		if (icon == "x")
-		{
-			var wh = a[3] / 3;
-			g.setColour(obj.itemColour1);
-			g.fillPath(Paths.icons[icon], [a[0] + a[2] / 2 - wh / 2, a[1] + a[3] / 2 - wh / 2, wh, wh]);  
-		}
-		else
-		{
-			var wh = a[3] / 1.8;
-			g.setColour(Colours.withAlpha(obj.textColour, obj.over && obj.enabled ? 0.8 + 0.2 * down: 0.9 - (0.3 * !obj.enabled)));
-			g.fillPath(Paths.icons[icon], [a[0] + a[2] / 2 - wh / 2, a[1] + a[3] / 2 - wh / 2, wh, wh]);
-		}
+		var wh = a[3] / 1.8;
+		g.setColour(Colours.withAlpha(obj.textColour, obj.over && obj.enabled ? 0.8 + 0.2 * down: 0.9 - (0.3 * !obj.enabled)));
+		g.fillPath(Paths.icons[icon], [a[0] + a[2] / 2 - wh / 2, a[1] + a[3] / 2 - wh / 2, wh, wh]);
     });
 
-    // Combo box
-	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
-	{
-	   	drawPopupMenuBackground();
-	});
-	
-	laf.registerFunction("drawPopupMenuItem", function(g, obj)
-	{
-		drawPopupMenuItem();
-	});
-	
-	laf.registerFunction("getIdealPopupMenuItemSize", function(obj)
-	{
-		return [163, 30];
-	});
-
-    // Alert window    
+	//! Alert window
     laf.registerFunction("drawAlertWindow", function(g, obj)
-    {        
-        var a = obj.area;
-        var h = 40;
-
-		g.fillAll(0xff2F2F34);
-
-        g.setColour(0xff161619);
-        g.fillRect([a[0], a[1], a[2], h]);
-
-        g.setFont("semibold", 20);
-        g.setColour(Colours.white);
-        g.drawAlignedText(obj.title, [a[0] + 15, a[1], a[2], h], "left");        
-        
-        g.setColour(Colours.withAlpha(Colours.white, 0.3));
-		g.drawRect(a, 1);
-    });
-    
-    laf.registerFunction("getAlertWindowMarkdownStyleData", function(obj)
     {
-        obj.font = "medium";
-        obj.fontSize = 18;
-        obj.textColour = Colours.white;
-        return obj;
-    });
+		var a = obj.area;
     
-	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
-    {
-        var a = [obj.area[0], obj.area[1] + 10, obj.area[2], obj.area[3] - 10];
-        var path = Paths.icons[obj.type.toLowerCase()];
-		var multiplier = 1;
-		
-        switch (obj.type)
-        {
-	        case "Info": multiplier = 0.46; break;
-	        case "Warning": multiplier = 0.18; break;
-	        case "Question": multiplier = 0.58; break;
-	        case "Error":
-	        	multiplier = 0.18;
-	        	path = Paths.icons.warning;
-	        	break;
-		}
+   		g.fillAll(Colours.withMultipliedBrightness(0xff222222, 1.5));
+   
+   		g.setColour(Colours.withAlpha(Colours.black, 0.5));
+   		g.drawRoundedRectangle(a, 1, 1);
+   	
+   		g.setFont("bold", 20);
+   		g.setColour(0xffcccccc);
+   		g.drawAlignedText(obj.title, [a[0], a[1] + 10, a[2], 25], "centred");
+	});
 
-		g.setColour(Colours.white);
-		g.fillPath(path, [a[0], a[1] + a[3] / 2 - a[3] / 1.5 / 2, a[3] * multiplier / 1.5, a[3] / 1.5]);
-    });
-        
-    laf.registerFunction("drawDialogButton", function(g, obj)
-    {
-    	var a = obj.area;
+   	laf.registerFunction("getAlertWindowMarkdownStyleData", function(obj)
+   	{
+		obj.headlineFont = "bold";
+   		obj.font = "medium";
+   		obj.fontSize = 18;
+   		obj.textColour = 0xffcccccc;
+   		return obj;
+   	});
+    	
+   	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
+   	{
+		var a = obj.area;
+   		var icons = {"Info": "\ue2ce", "Warning": "\ue4e0", "Question": "\ue3e8", "Error": "\ue7fc"};
+   
+   		g.setFont("phosphor", 42);
+   		g.setColour(Colours.withAlpha(0xffcccccc, 0.8));
+   		g.drawAlignedText(icons[obj.type], a, "centred");	
+   	});
+   	    	
+   	laf.registerFunction("drawDialogButton", function(g, obj)
+   	{
+   		var a = obj.area;
+   		var fontSize = 18;
+   		var text = obj.text;
 
-    	obj.bgColour = 0xff161619;
-    	obj.textColour = Colours.white;
-    	var text = obj.text;
+   		if (["Exit"].contains(obj.parentName))
+   			text = obj.text == "OK" ? "Yes" : "No";
 
-		if (["Visit Website", "Confirmation", "Uninstall", "Uninstall Presets", "Batch Install"].contains(obj.parentName))
-			text = obj.text == "OK" ? "Yes" : "No";
+   		var colours = {
+   			bgColour: Colours.withMultipliedBrightness(0xff222222, 1.5),		
+   			textColour: 0xffcccccc
+   		};
 
-   		drawTextButton(obj, text, a);
-    });
-    
+		drawDialogButton();
+   	});
+
+   	//! Dialog button
+   	inline function drawDialogButton()
+   	{
+   		local a = obj.area;
+   		local radius = 2;
+   		local bgColour = isDefined(colours.bgColour) ? colours.bgColour : obj.bgColour;
+   		local textColour = isDefined(colours.textColour) ? colours.textColour : obj.textColour;
+
+   		local c = Colours.withMultipliedBrightness(bgColour, 2.5 + obj.over - 0.2 * obj.down);
+   		g.setColour(Colours.withAlpha(c, obj.enable ? 1.0 : 0.5));
+
+   		g.fillRoundedRectangle(a, radius);
+
+   		g.setColour(Colours.withAlpha(Colours.black, 0.7));
+   		g.drawRoundedRectangle([a[0] + 0.25, a[1] + 0.25, a[2] - 0.5, a[3] - 0.5], radius, 1);
+
+   		g.setColour(Colours.withMultipliedBrightness(textColour, 1.0 + obj.over - 0.2 * obj.down));
+   		g.setFont("medium", isDefined(fontSize) ? fontSize : 18);
+   		g.drawAlignedText(text, a, "centred");
+   	}
+
     inline function drawTextButton(obj, text, area)
     {
 		local alignment = "centred";
@@ -270,50 +228,133 @@ namespace LookAndFeel
         g.drawAlignedText(text, [area[0], area[1], area[2], area[3]], alignment);
     }
 
+	//! Close Button
+	const closeButton = Content.createLocalLookAndFeel()
+	
+	closeButton.registerFunction("drawToggleButton", function(g, obj)
+	{
+		var a = obj.area;
+	
+		g.setFont("phosphor", 20);
+		var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * obj.value : 0.7);
+		g.setColour(Colours.withMultipliedAlpha(c, obj.enabled ? 1.0 : 0.5));
+		
+		g.drawAlignedText("\ue4f6", a, "centred");
+	});
+	
+	//! viewportTable
+	const viewportTable = Content.createLocalLookAndFeel();
+				
+	viewportTable.registerFunction("drawTableHeaderBackground", function(g, obj)
+	{
+		 
+	});
+	
+	viewportTable.registerFunction("drawTableHeaderColumn", function(g, obj)
+	{
+		 var a = obj.area;
+		 
+		 g.setFont("medium", 16);
+		 g.setColour(0xffcccccc);
+		 g.drawAlignedText(obj.text, a, "left");
+	});	
+	
+	viewportTable.registerFunction("drawTableRowBackground", function(g, obj)
+	{
+		g.fillAll(obj.rowIndex % 2 == 0 ? 0xff171616 : 0xff1b1a1a);
+	});
+	
+	viewportTable.registerFunction("drawTableCell", function(g, obj)
+	{	
+		var a = obj.area;
+	
+		g.setFont("regular", 14);
+		g.setColour(0xffcccccc);
+		g.drawAlignedText(obj.text, obj.area, "left");
+	});
+	
+	viewportTable.registerFunction("drawToggleButton", function(g, obj)
+	{
+		var a = obj.area;
+		a[0] += 10;
+		var buttonSize = a[3] / 2.2;
+
+		g.setColour(0xffcccccc);
+		g.drawEllipse([a[0] + 1, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], 1.5);
+
+		var c = Colours.withMultipliedBrightness(0xffcccccc, (obj.value ? 0.9 : 0.3) + 0.2 * obj.over);
+		g.setColour(c);
+
+		g.fillEllipse(Rect.reduced([a[0] + 1, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], 2.8));
+	});
+	
+	viewportTable.registerFunction("drawScrollbar", function(g, obj)
+	{
+		 drawScrollbar(g, obj, 0xff111111);
+	});
+	
+	//! Combo box
+	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
+	{
+	   	drawPopupMenuBackground();
+	});
+	
+	laf.registerFunction("drawPopupMenuItem", function(g, obj)
+	{
+		drawPopupMenuItem();
+	});
+	
+	laf.registerFunction("getIdealPopupMenuItemSize", function(obj)
+	{
+		var width = Engine.getStringWidth(obj.text, "regular", 18, 0.0) + 60;		
+		return [width, 30];
+	});
+
     inline function drawPopupMenuBackground()
     {
-	    local a = [0, 0, obj.width, obj.height];
-
-	    g.fillAll(0xff1d1d21);
-
-	    g.setColour(Colours.grey);
-	    g.drawRect(a, 1);
+	    g.fillAll(0xff2a2a2a);
     }
     
     inline function drawPopupMenuItem()
     {
-    	local a = obj.area;
-    
+		local a = obj.area;
+		local radius = 1;
+		local highlightColour = Colours.darkgrey;
+		local textColour = 0xffcccccc;
+		
+		if (obj.isSeparator)
+		{
+			g.setColour(Colours.withAlpha(textColour, 0.3));
+			g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
+			return;
+		}
+		
 		if (obj.isHighlighted)
-			g.fillAll(Colours.withAlpha(0xffa8b2bd, 0.8));
-
+		{
+			g.setColour(highlightColour);
+			g.fillRoundedRectangle(a, radius);
+		}
+		
+		local x = a[0] + 40;
+		g.setFont("regular", 18);
+		g.setColour(Colours.withMultipliedAlpha(textColour, obj.isHighlighted ? 1.0 : 0.9));
+		g.drawFittedText(obj.text, [x, a[1], a[2] - x - 10, a[3]], "left", 1.0, 1.0);
+		
 		local icons = {
 			"Install from File": "\ue390",
 			"Add a License": "\ue2d6",
 			"Add to Favourites": "\ue2a8",
 			"Remove Favourite": "\uebe8",
-			"Locate Samples": "\ue238",
+			"Set Samples Folder": "\ue238",
 			"Uninstall": "\ue4a8",
 			"Visit Webpage": "\ue0f4"
-		};
+		};		
 
-		if (obj.isSeparator)
-		{
-			g.setColour(Colours.white);
-			g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
-			return;
-		}
-
-		obj.isHighlighted ? g.setColour(Colours.black): g.setColour(Colours.lightgrey);
-		g.setFont("regular", 16);
-	
 		if (!isDefined(icons[obj.text]))
-			return g.drawFittedText(obj.text, [a[0] + 10, a[1], a[2] - 20, a[3]], "left", 1, 1.0);
-	
-		g.drawFittedText(obj.text, [a[0] + 30, a[1], a[2] - 20, a[3]], "left", 1, 1.0);
-	
-		g.setFont("phosphor", 16);
-		g.drawAlignedText(icons[obj.text], [a[0] + 7, a[1], a[2], a[3]], "left");
+			return;
+
+		g.setFont("phosphor", 22);
+		g.drawAlignedText(icons[obj.text], [a[0] + 10, a[1], a[2], a[3]], "left");
     }
         
 	inline function fullPageBackground()
@@ -322,21 +363,26 @@ namespace LookAndFeel
 		
 		// Logo
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);    	
+		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);
+			
 		g.setFont("title", Engine.getOS() == "WIN" ? 42 : 28);
 		g.drawAlignedText(Engine.getName().toUpperCase(), [0, 135 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
+		
+		g.setFont("phosphor", 12);
+		g.drawAlignedText("\ue3f4", [85, 138 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
 	}
-        
+
     inline function drawScrollbar(g, obj, bgColour)
     {
-    	local a = obj.area;
-    	local ha = obj.handle;
-    	local w = a[2] > 10 ? 10 : a[2];
+		local a = obj.area;
+		local radius = 1;
+		local ha = obj.handle;
+		local w = 10;
+		
+		g.setColour(bgColour);
+		g.fillRoundedRectangle([a[2] - w + 2, a[1], w - 4, a[3]], radius + 1);
 
-    	g.setColour(Colours.withAlpha(bgColour, 0.8));
-    	g.fillRoundedRectangle([a[0] + a[2] - w + 2, a[1], w - 4, a[3]], 2);
-
-    	g.setColour(Colours.withAlpha(0xff696970, obj.over ? 0.8 + (0.2 * obj.down) : 0.5));
-    	g.fillRoundedRectangle([ha[0] + a[2] - w, ha[1], w, ha[3]], 3);
+		g.setColour(Colours.withAlpha(0xffaaaaaa, obj.over || obj.down ? 0.8 - 0.3 * obj.down : 0.3));
+		g.fillRoundedRectangle([a[2] - w + 3, ha[1] + 1, w - 6, ha[3] - 2], radius);
     }
 }

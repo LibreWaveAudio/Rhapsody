@@ -31,7 +31,7 @@ namespace UserSettings
 		local obj = {};
 		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("UserSettings.json");
 		
-		if (isDefined(f) && f.isFile())
+		if (f.isFile())
 			obj = f.loadAsObject();
 			
 		if (!isDefined(obj[scope]))
@@ -56,7 +56,7 @@ namespace UserSettings
 		local obj = {};
 	    local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("UserSettings.json");
 	    
-	    if (isDefined(f) && f.isFile())
+	    if (f.isFile())
 	    	obj = f.loadAsObject();
 
 	    return obj[scope][key];

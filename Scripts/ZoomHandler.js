@@ -40,7 +40,7 @@ namespace ZoomHandler
 		g.setColour(this.get("textColour"));
 		g.drawAlignedText("\ued3a", this.getLocalBounds(0), "centred");
 	});
-		
+
 	pnlZoom.setMouseCallback(function(event)
 	{
 		this.data.hover = event.hover;
@@ -96,5 +96,5 @@ namespace ZoomHandler
 	//! Calls
 	allowZoom(pnlZoom, true);
 	pnlZoom.setValue(Settings.getZoomLevel());
-	pnlZoom.changed();
+	pnlZoom.changed(); // This probably doesn't do anything
 }

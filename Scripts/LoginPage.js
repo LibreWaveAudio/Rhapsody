@@ -43,7 +43,15 @@ namespace LoginPage
 
 		g.setFont("regular", 14);
 		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.8));
-		g.drawAlignedText("v" + Engine.getVersion(), [a[0], a[3] - 40, a[2] - 34, 25], "right");
+		
+		var versionText = "v" + Engine.getVersion();
+		
+		if (App.mode != "release")
+			versionText += " Development Build";
+		
+		g.drawAlignedText(versionText, [a[0], a[3] - 40, a[2] - 34, 25], "right");
+		
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
 
 	//! pnlLoginForm

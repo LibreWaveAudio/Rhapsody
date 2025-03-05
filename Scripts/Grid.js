@@ -51,9 +51,6 @@ namespace Grid
 
 			var a = [cp.get("x"), cp.get("y"), cp.getWidth(), cp.getHeight()];
 			g.drawDropShadow([a[0], a[1] + 8, a[2], a[3] - 10], Colours.withAlpha(Colours.black, 0.8), 20);
-			
-			g.setColour(this.get("bgColour"));
-			g.fillRoundedRectangle(a, 2);
 		}
 	});
 
@@ -68,6 +65,9 @@ namespace Grid
 
 		g.setColour(this.get("bgColour"));
 		g.fillRoundedRectangle(a, radius);
+		
+		g.setColour(Colours.black);
+		g.drawRoundedRectangle(Rect.reduced(a, 0.5), radius, 1);
 
 		g.setFont("phosphor", 16);
 		g.setColour(this.get("textColour"));
@@ -125,18 +125,14 @@ namespace Grid
 	//! Functions
 	inline function update(data: Array)
 	{
-		local isOnline = false;
 		local width = pnlGrid.getWidth() / NUM_COLS - MARGIN;
 		local height = width + 40;
-
-		if (Account.isLoggedIn())
-			isOnline = Server.isOnline();
 
 		removeAllTiles();
 
 		for (x in data)
 		{
-			local cp = Tile.create(pnlGrid, [0, 0, width, height], x, isOnline);
+			Tile.create(pnlGrid, width, height, x);
 			updateImage(x.projectName);
 		}
 
@@ -148,9 +144,9 @@ namespace Grid
 		local childPanels = pnlGrid.getChildPanelList();	
 		local width = pnlGrid.getWidth() / NUM_COLS - MARGIN;
 		local height = width + 40;
-		
+
 		for (x in childPanels)
-			x.showControl(false);
+			x.showControl(false);			
 
 		local filteredChildren = getFilteredTiles(childPanels);
 		local numRows = Math.ceil(filteredChildren.length / NUM_COLS);		
@@ -171,10 +167,21 @@ namespace Grid
 
 			childPanel.setPosition(x, y, width, height);
 			childPanel.showControl(true);
-			childPanel.repaint();
 		}
-		
+
 		pnlGrid.repaint();
+	}
+		
+	inline function rebuildTile(projectName: string)
+	{
+		local cp = getChildPanel(projectName);
+
+		if (!isDefined(cp))
+			return Console.print("Grid: Child Panel - " + projectName + " was not found.");
+
+		Tile.removeButtons(cp);
+		Tile.addButtons(cp);
+		cp.repaint();
 	}
 	
 	inline function: Array getFilteredTiles(tiles: Array)
@@ -182,17 +189,17 @@ namespace Grid
 		local result = [];
 		local query = lblFilter.getValue() == "Search..." ? "" : lblFilter.getValue().toLowerCase();
 		local index = 0;
-		
+
 		for (tile in tiles)
 		{
 			local x = tile.data;
-			local tags = x.tags.length > 0 ? x.tags : [""];
-	
+			local tags = (Array.isArray(x.tags) && x.tags.length > 0) ? x.tags : [""];
+		
 			for (i = 0; i < tags.length; i++)
 			{
 				local t = tags[i].toLowerCase();
 				local value;
-	
+
 				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(x.name.toLowerCase(), query))
 					continue;
 	
@@ -225,7 +232,7 @@ namespace Grid
 	
 				break;				
 			}
-			
+
 			index++;
 		}
 	
@@ -234,10 +241,10 @@ namespace Grid
 
 	inline function sortChildPanels(a, b)
 	{
-		if (a.data.projectName < b.data.projectName)
+		if (a.data.name < b.data.name)
 			return -1;
 		else
-			return a.data.projectName > b.data.projectName;
+			return a.data.name > b.data.name;
 	}
 
 	inline function: object getChildPanel(projectName: string)
@@ -256,7 +263,7 @@ namespace Grid
 		local cp = getChildPanel(projectName);
 		cp.data = data;
 		Tile.removeButtons(cp);
-		Tile.addButtons(cp, Server.isOnline());
+		Tile.addButtons(cp);
 		cp.repaint();	
 	}
 
@@ -266,33 +273,21 @@ namespace Grid
 
 		if (!isDefined(cp))
 			return;
-			
-		if (cp.data.format != "expansion")
-			return;
 
-		cp.unloadAllImages();		
+		cp.unloadAllImages();
 
-		local img = Expansions.getImagePath(projectName, "Icon");
+		local img = getCachedImagePath(projectName);
 
-		if (!isDefined(img))
-			img = getCachedImagePath(projectName);
-		
+		if (img == "")
+			img = Expansions.getImagePath(projectName, "Icon");
+
 		if (isDefined(img) && img != "")
 			cp.loadImage(img, projectName);
 
 		cp.data.img = img;			
 		cp.repaint();
 	}
-	
-	inline function removeAllTiles()
-	{
-		for (x in pnlGrid.getChildPanelList())
-		{
-			x.unloadAllImages();
-			x.removeFromParent();
-		}
-	}
-	
+
 	inline function: string getCachedImagePath(projectName: string)
 	{
 		local cache = FileSystem.getFolder(FileSystem.AppData).getChildFile("cache");
@@ -304,6 +299,15 @@ namespace Grid
 		return "";
 	}
 	
+	inline function removeAllTiles()
+	{
+		for (x in pnlGrid.getChildPanelList())
+		{
+			x.unloadAllImages();
+			x.removeFromParent();
+		}
+	}
+	
 	inline function clearFilter()
 	{
 		lblFilter.set("text", "Search...");
@@ -311,12 +315,17 @@ namespace Grid
 	}
 	
 	//! Broadcasters
-	const var bcStatusBarVisibility = Engine.createBroadcaster({"id": "bcStatusBarVisibility", "args": ["component", "isVisible"]});
+	const var bcStatusBarVisibility = Engine.createBroadcaster({id: "bcStatusBarVisibility", args: ["component", "isVisible"]});
 	bcStatusBarVisibility.attachToComponentVisibility("pnlStatusBar", "");
-	
-	bcStatusBarVisibility.addListener(pnlGridContainer, "Resize grid based on status bar visibility", function(component, isVisible)
+
+	bcStatusBarVisibility.addListener(pnlGridContainer, "Resize grid container based on status bar visibility", function(component, isVisible)
 	{
-		this.set("height", 640 - 50 * isVisible);
+		this.set("height", 640 - 30 * isVisible);
+	});
+	
+	bcStatusBarVisibility.addListener(vptGrid, "Resize viewport based on status bar visibility", function(component, isVisible)
+	{
+		this.set("height", 640 - 30 * isVisible);
 		refresh();
-	});	
+	});
 }

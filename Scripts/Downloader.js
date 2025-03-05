@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023 David Healey
+    Copyright 2022, 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,103 +21,152 @@ namespace Downloader
 	const downloads = [];
 
 	reg tempDir = FileSystem.getFolder(FileSystem.Temp).createDirectory("Libre Wave");
-	reg abort;
-	
+	reg downloadCount;
+
 	Server.setNumAllowedDownloads(3);
 
-	// Functions
-	inline function downloadProduct(data)
+	const progressTimer = Engine.createTimerObject();
+
+	progressTimer.setTimerCallback(function()
 	{
-		abort = false;
-		downloads.clear();
+		updateProgress();
+	});
+
+	//! Functions
+	inline function preflight(productData: object)
+	{		
+		if (!productData.hasLicense && productData.regularPrice != "0")
+			return;
 		
-		data.tempDir = tempDir.createDirectory(data.id);
+		if (!isDefined(productData.variants))
+			return addToQueue(productData);
+
+		local licensedVariants = CacheHandler.getLicensedVariants(productData.projectName);
+
+		if (!licensedVariants.length)
+			return;
+
+		if (licensedVariants.length == 1)
+		{
+			productData.productIds = [];
+
+			for (x in licensedVariants)
+				productData.productIds.push(x.id);
+
+			return addToQueue(productData);
+		}
+
+		Variations.show(productData.projectName, true, {buttonText: "Select", message: "Select components to install.", productId: productData.id, data: {productData: productData}}, function(variants, data)
+		{
+			data.productData.productIds = [];
+
+			for (x in variants)
+				data.productData.productIds.push(x.id);				
+
+			Downloader.addToQueue(data.productData);
+		});
+	}
+	
+	inline function downloadProduct(data: object)
+	{
+		data.abort = false;
+		downloads.clear();
+		downloadCount = 0;
 
 		Server.setHttpHeader("");
 		Server.setBaseURL(App.baseUrl[App.mode]);
 		Server.cleanFinishedDownloads();
 
-		for (x in data.downloads)
+		data.tempDir = tempDir.createDirectory(data.projectName);
+
+		for (x in data.files)
 		{
 			local f = data.tempDir.getChildFile(x.filename);
 			local url = x.download_url.replace(App.baseUrl[App.mode]);
 
-			downloads.push(Server.downloadFile(url, {}, f, function[data]()
-			{
-				downloadCallback();
-				updateProgress(data);
-			}));
+			downloads.push(Server.downloadFile(url, {}, f, downloadCallback));
 		}
-		
-		App.broadcasters.isDownloading.state = true;
+
+		progressTimer.startTimer(100);
+		App.broadcasters.downloading.attachToOtherBroadcaster(data.bcDownloading, {}, true, {id: data.id});
 	}
-	
+
 	inline function downloadCallback()
 	{
-		if (abort || abort == -1)
-			this.abort();
-
 		if (!this.data.finished)
 			return;
 
-		downloads.remove(this);
+		downloadCount++;
 
 		if (this.data.success)
 		{
-			if (downloads.length != 0)
+			if (downloadCount != downloads.length)
 				return;
 
-			if (queue[0].format == "expansion")
-				return Expansions.automatedInstall(queue[0]);
-			else
-				return Plugins.automatedInstall(queue[0]);
+			progressTimer.stopTimer();
+
+			Installer.install(queue[0].tempDir, queue[0].bcDownloading, function()
+			{
+				cleanUp();
+			});
+			
+			return;
 		}
 
-		if (!downloads.length)
-			cleanUp();
+		if (!this.data.aborted && isDefined(queue[0]))
+			queue[0].downloadFailed = true;
 
-		local msg = abort ? "The download was cancelled" : "The download failed";
-		Engine.showMessageBox("Failed", msg, 1);
-		abort = -1;
+		if (downloadCount >= downloads.length)
+			cleanUp();
 	}
 
-	inline function updateProgress(data)
-	{
-		local result = {};
-		local progress = [0];
+	inline function updateProgress()
+	{	
+		local data = queue[0];
+		local bytesDownloaded = 0;
 		local speed = 0;
-
-		if (!this.isRunning())
-			return;
-
+		
 		for (x in downloads)
 		{
-			if (!x.isRunning()) continue;
-
-			progress.push(x.getNumBytesDownloaded() / x.getDownloadSize());
+			bytesDownloaded += x.getNumBytesDownloaded();			
 			speed += x.getDownloadSpeed();
 		}
-
-		progress.sort();
-		progress.reverse();
-
-		result.value = Math.round(Math.min(100, progress[0] * 100));
-
-		if (speed > 0)
-			result.speed = FileSystem.descriptionOfSizeInBytes(speed) + "/s";
-
-		result.message = "Downloading: " + (data.downloads.length - downloads.length + 1) + "/" + data.downloads.length;
-
-		data.bcProgress.progress = result;
+		
+		if (isDefined(data.bcDownloading.progress))
+		{
+			data.bcDownloading.progress = {
+				projectName: data.projectName,			
+				value: bytesDownloaded / data.fileSize,
+				status: "Downloading",
+				speed: FileSystem.descriptionOfSizeInBytes(speed) + "/s"
+			};
+		}
+		
+		if (bytesDownloaded >= data.fileSize)
+			progressTimer.stopTimer();
 	}
-
-	inline function addToQueue(data)
+	
+	inline function addToQueue(data: object)
 	{
 		local headers = ["Authorization: Bearer " + Account.readToken()];
 		local endpoint =  App.apiPrefix + "get_downloads/";
 		local version = isDefined(data.installedVersion) ? data.installedVersion : 0;
-		local id = data.id;
-		local p = {product_id: id, user_os: Engine.getOS(), user_version: version};
+		local p = {};
+
+		if (!isDefined(data.productIds))
+		{
+			p.product_id = data.id;
+			p.user_version = version;
+		}
+		else
+		{
+			for (i = 0; i < data.productIds.length; i++)
+			{
+				p["product_id[" + i + "]"] = data.productIds[i];
+			}
+			
+			p.user_version = 0;
+		}
 
 		Server.setHttpHeader(headers.join("\n"));
 		Server.setBaseURL(App.baseUrl[App.mode]);
@@ -131,22 +180,20 @@ namespace Downloader
 			if (status == 0)
 				return Engine.showMessageBox("Server Error: " + status, "The server is currently offline. Please try again later.", 1);
 
+			if (status != 200 && isDefined(response.message))
+				return Engine.showMessageBox("Server Error: " + status, response.message, 1);
+				
 			if (status != 200)
-			{
-				if (isDefined(response.message))
-					return Engine.showMessageBox("Server Error: " + status, response.message, 1);
-				else
-					return Engine.showMessageBox("Server Error: " + status, "A server error occurred. Please try again later.", 1);
-			}
+				return Engine.showMessageBox("Server Error: " + status, "A server error occurred. Please try again later.", 1);
 				
 			if (!isDefined(response[0]) || !response[0])
 				return Engine.showMessageBox("Verification Required", response.message, 1);
 
-			data.downloads = response;
-			data.bcIsDownloading.state = true;
-			data.bcProgress.progress = {value: 0, message: "Waiting to Start"};
+			data.bcDownloading.sendAsyncMessage([true, {projectName: data.projectName, value: 0, status: "Waiting to Start", speed: ""}]);
+			data.files = response;
+			data.fileSize = getTotalFileSize(data.files);
 			queue.push(data);
- 
+
 			if (queue.length == 1)
 				downloadProduct(data);
 		});
@@ -154,41 +201,60 @@ namespace Downloader
 
 	inline function removeFromQueue(data)
 	{
-		if (queue.contains(data))
-		{
-			data.bcIsDownloading.state = false;
-			data.bcProgress.progress = -1;
-			data.downloads = undefined;
+		if (!queue.contains(data))
+			return;
 
-			if (!isDefined(data.installedVersion))
-				data.sampleDir = undefined;
+		data.bcDownloading.sendAsyncMessage([false, -1]);
+		data.files = undefined;
 
-			queue.remove(data);
-		}
+		if (!isDefined(data.installedVersion))
+			data.sampleDir = undefined;
+
+		App.broadcasters.downloading.removeListener({id: data.id});
+		data.bcDownloading.removeSource(App.broadcasters.downloading);
+
+		queue.remove(data);
+	}
+
+	inline function: number getTotalFileSize(files: Array)
+	{
+		local result = -1;
+
+		for (x in files)
+			result += x.file_size;
+			
+		return result;
 	}
 
 	inline function cleanUp()
 	{
 		local data = queue[0];
 
-		Server.cleanFinishedDownloads();
+		progressTimer.stopTimer();
 
 		if (isDefined(data.tempDir) && data.tempDir.isDirectory())
 			data.tempDir.deleteFileOrDirectory();
 
-		if (data.format == "expansion")
-			data.installedVersion = Expansions.getInstalledVersion(data.projectName);
-		else
-			data.installedVersion = data.latestVersion;
+		if (!data.abort)
+		{
+			data.installedVersion = Expansions.getVersion(data.projectName);
+			data.hasUpdate = false;		
+		}
 
-		data.hasUpdate = false;
+		if (isDefined(data.downloadFailed) && data.downloadFailed == true)
+		{
+			Engine.showMessageBox("Download Failed", data.name + " failed to download. If the problem persists, please contact support.", 1);
+			data.downloadFailed = false;
+		}
 
 		removeFromQueue(data);
+
+		Grid.rebuildTile(data.projectName);
 
 		if (queue.length > 0)
 			return downloadProduct(queue[0]);
 
-		App.broadcasters.isDownloading.state = false;
+		Server.cleanFinishedDownloads();
 		clearTempFolder();
 	}
 
@@ -204,7 +270,10 @@ namespace Downloader
 	{
 		if (data.id != queue[0].id)
 			return removeFromQueue(data);
-		else
-			abort = true;
+
+		for (x in downloads)
+			x.abort();
+			
+		queue[0].abort = true;
 	}
 }

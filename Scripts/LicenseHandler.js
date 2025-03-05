@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023 David Healey
+    Copyright 2021, 2022, 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,12 +32,13 @@ namespace LicenseHandler
 		g.fillRoundedRectangle(lblArea, 5);
 
 		g.setFont("semibold", 26);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 1.0));
+		g.setColour(this.get("textColour"));
 		g.drawAlignedText("Add a License Key", [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
 
-		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.9));
+		g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), 0.8));
 		
-		g.fillPath(Paths.icons.infoCircle, [lblArea[0] + 2, lblArea[1] - 37, 13, 13]);
+		g.setFont("phosphor", 18);
+		g.drawAlignedText("\ue2ce", [lblArea[0] + 2, lblArea[1] - 40, 20, 20], "left");
 		
 		g.setFont("regular", 16);
 		g.drawAlignedText("Enter your license key and click submit.", [lblArea[0] + 22, lblArea[1] - 40, lblArea[2], 20], "left");
@@ -85,7 +86,7 @@ namespace LicenseHandler
 		if (!Account.isLoggedIn())
 			return Engine.showMessageBox("Login Required", "You need to be logged in to do this.", 0);
 			
-		if (!Server.isOnline())
+		if (!App.isOnline)
 			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
 
 		pnlAddLicense.fadeComponent(true, 100);
@@ -117,7 +118,7 @@ namespace LicenseHandler
     			if (isDefined(response.status))
 					return Engine.showMessageBox("Server Error: " + status, response, 1);
 
-   				Library.updateCache(false);
+   				Library.updateCache();
    				return Engine.showMessageBox("Success", "The license was successfully activated.", 0);
     		}
     		else

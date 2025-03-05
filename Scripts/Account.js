@@ -41,13 +41,9 @@ namespace Account
 			
 		Server.setHttpHeader("");
 		Server.setBaseURL(App.baseUrl[App.mode]);
-		
-		Spinner.show("Logging In");
 
-		Server.callWithPOST("wp-json/jwt-auth/v1/token", p, function[p](status, response)
+		Server.callWithPOST("wp-json/jwt-auth/v1/token", p, function(status, response)
 		{
-			Spinner.hide();
-
 			if (status == 200 && isDefined(response.data.token))
 		        onLoginSuccess(response.data.token);
 		    else

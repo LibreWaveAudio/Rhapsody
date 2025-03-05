@@ -100,9 +100,9 @@ namespace FilePicker
 	        callback(file, data);
         }
     }
-
+    
     //! Functions
-	inline function show(properties, cb)
+	inline function show(properties, callbackFunction)
 	{
 		pnlFilePicker.data.title = properties.title;
 		pnlFilePicker.data.message = properties.message;
@@ -111,7 +111,7 @@ namespace FilePicker
 		mode = properties.mode;
 		hideOnSubmit = !isDefined(properties.hideOnSubmit) || properties.hideOnSubmit;
 		storePath = !isDefined(properties.startFolder);
-		callback = cb;
+		callback = callbackFunction;
 		data = isDefined(properties.data) ? properties.data : {};
 		btnFilePickerSubmit.set("text", properties.buttonText);
 		btnFilePickerSubmit.set("enabled", false);		

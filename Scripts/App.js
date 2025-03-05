@@ -37,25 +37,35 @@ namespace App
 	};
 	
 	const broadcasters = {
-		isDownloading: Engine.createBroadcaster({"id": "Global download State", "args": ["state"]}),
-		isLoggedIn: Engine.createBroadcaster({"id": "Triggered when user logs in or out", "args": ["state"]})
+		downloading: Engine.createBroadcaster({id: "Global download State", args: ["state", "progress"]}),
+		isLoggedIn: Engine.createBroadcaster({id: "Triggered when user logs in or out", args: ["state"]})
 	};
-	
-	broadcasters.isDownloading.state = false;
-	
-	/*broadcasters.isDownloading.addListener(["btnSync", "cmbAdd"], "Disable buttons while downloads are in progress", function(state)
+		
+	broadcasters.downloading.addComponentPropertyListener(["btnSync", "cmbAdd", "btnLogin", "btnLogout"], "enabled", "meta", function(index, state, progress)
 	{
-		this.set("enabled", !state);
+		return !state;
 	});
 	
-	App.broadcasters.isDownloading.addListener(btnAccount, "Disable logout button while downloads are in progress", function(state)
-	{
-		this.set("enabled", !state);
-	});
+	broadcasters.downloading.sendAsyncMessage([false, -1]);
 	
-	App.broadcasters.isDownloading.addListener(cmbAdd, "Disable the add combo box while downloads are in progress", function(state)
+	//! Functions
+	inline function createDefaultLinkFile()
 	{
-		this.set("enabled", !state);
-	});
-	*/
+		local filename = "";
+		local appData = FileSystem.getFolder(FileSystem.AppData);
+
+		switch (Engine.getOS())
+		{
+			case "OSX": filename = "LinkOSX"; break;
+			case "LINUX": filename = "LinkLinux"; break;
+			case "WIN": filename = "LinkWindows"; break;
+		}
+
+		local f = appData.getChildFile(filename);
+	
+		if (!isDefined(f) || !f.isFile())
+			f.writeString(appData.toString(appData.FullPath));		
+	}
+	
+	createDefaultLinkFile();	
 }

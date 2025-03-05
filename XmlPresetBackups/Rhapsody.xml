@@ -31,9 +31,9 @@
                  Send7="-1" Channel8="0" Send8="-1" Channel9="1" Send9="-1" Channel10="0"
                  Send10="-1" Channel11="1" Send11="-1"/>
   <macro_controls>
-    <macro name="Macro1" value="0.0" midi_cc="-1"/>
-    <macro name="Macro2" value="0.0" midi_cc="-1"/>
-    <macro name="" value="0.0" midi_cc="-1"/>
+    <macro name="Volume" value="0.0" midi_cc="-1"/>
+    <macro name="Fc" value="0.0" midi_cc="-1"/>
+    <macro name="FilterQ" value="0.0" midi_cc="-1"/>
     <macro name="" value="0.0" midi_cc="-1"/>
     <macro name="" value="0.0" midi_cc="-1"/>
     <macro name="" value="0.0" midi_cc="-1"/>

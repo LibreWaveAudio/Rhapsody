@@ -17,33 +17,37 @@
 
 namespace Tile
 {
-	inline function: ScriptObject create(panel: ScriptObject, area: Array, data: object, isOnline: number)
+	inline function create(parent: ScriptObject, width: number, height: number, data: object)
 	{
-		local cp = panel.addChildPanel();
-		
-		cp.setPosition(area[0], area[1], area[2], area[3]);
+		local cp = parent.addChildPanel();
+		cp.setPosition(0, 0, width, height);
 		cp.set("text", data.projectName);
-		cp.set("tooltip", data.shortDescription || "");			
+		cp.set("tooltip", isDefined(data.shortDescription) ? data.shortDescription : "");
 		cp.set("allowCallbacks", "All Callbacks");
 
 		for (x in data)
 			cp.data[x] = data[x];
-				
+
 		cp.setPaintRoutine(function(g)
 		{
 			var a = this.getLocalBounds(0);
 			var image = this.get("text");
 			var imageSize = this.getImageSize(image);
-			
-			g.setColour(Colours.withAlpha(0xff1d1d21, this.data.hover ? 0.8 : 1.0));
-			g.fillRoundedRectangle([a[0], a[1], a[2], a[3]], 5);
+
+			g.setColour(Colours.withMultipliedBrightness(0xff232323, this.data.hover ? 1.0 : 0.9));
+			g.fillRoundedRectangle(a, 2);
 
 			if (!isDefined(this.data.progress))
 			{
-				if (isDefined(this.data.hasLicense) && !isDefined(this.data.installedVersion))
-					g.setColour(Colours.withAlpha(Colours.white, 0.3));
-				else
-					g.setColour(Colours.withAlpha(Colours.white, this.data.hover ? 0.9 + 0.1 * this.getValue() : 1.0));
+				var alpha = 0.3;
+
+				if (this.data.hasLicense || !this.data.regularPrice)
+					alpha += 0.2;
+
+				if (isDefined(this.data.installedVersion))
+					alpha = this.data.hover ? 1.0 - 0.1 * this.getValue() : 0.9;
+
+				g.setColour(Colours.withAlpha(Colours.white, alpha));					
 			}
 
 			if (this.isImageLoaded(image) && imageSize[0] == imageSize[1])
@@ -52,15 +56,16 @@ namespace Tile
 				drawPlaceholderImage();
 
 			g.setFont("regular", 18);
+			g.setColour(Colours.withAlpha(0xffcccccc, this.data.hover ? 1.0 : 0.9));
 
-			g.setColour(Colours.withAlpha(0xffa8b2bd, this.data.hover ? 0.9 : 1.0));
-			
-			var textWidth = a[2] - 30 - (30 * (isDefined(this.data.hasUpdate) && this.data.hasUpdate)) - (12 * (this.data.hasLicense && !isDefined(this.data.installedVersion)));
+			var textWidth = a[2] - 35 - (30 * (isDefined(this.data.hasUpdate) && this.data.hasUpdate)) - (12 * (this.data.hasLicense && !isDefined(this.data.installedVersion)));
 
 			g.drawFittedText(this.data.name, [a[0] + 10, a[3] - 40, textWidth, 41], "left", 1, 1);
 
 			if (isDefined(this.data.progress))
-				drawProgressIndicator(a, this.data.progress);	
+				drawProgressIndicator(a, this.data.progress);
+
+			g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 		});
 
 		cp.setMouseCallback(function(event)
@@ -79,52 +84,41 @@ namespace Tile
 			this.repaint();
 
 			if (event.clicked && !event.rightClick)
-			{
-				if (Engine.isHISE())
-					return Console.print(this.data.name);
-				
-				if (this.data.format == "expansion")
-					Expansions.setCurrent(this.data.projectName);
-				else
-					Plugins.load(this.data.projectName);
-			}
+				Expansions.setCurrent(this.data.company, this.data.projectName);
 		});
 
-		App.broadcasters.isDownloading.addListener(cp, "Disable the panel while downloads are in progress", function(state)
+		App.broadcasters.downloading.addListener(cp, "Disable the panel while downloads are in progress", function(state, progress)
 		{
 			this.set("enabled", !state);
 			this.repaint();
 		});
 
 		addListeners(cp);
-		addButtons(cp, isOnline);
-
-		return cp;
+		addButtons(cp);
 	}
-		
-	inline function addButtons(cp, isOnline)
+
+	inline function addButtons(cp)
 	{
 		local data = cp.data;
-		local isInstalled = isDefined(data.installedVersion) && data.installedVersion > 0;
 
-		if (isInstalled)
+		if (data.isInstalled)
 			data.btnEdit = createEditMenu(cp);
 
-		if (!isOnline)
+		if (!App.isOnline)
 			return;
 
-		if ((!isDefined(data.hasLicense) || !data.hasLicense ) && !isInstalled && isDefined(data.url) && data.regularPrice != "0")
+		if ((!isDefined(data.hasLicense) || !data.hasLicense ) && !data.isInstalled && isDefined(data.url) && data.regularPrice != "0")
 			return createBuyButton(cp);
 
 		if ((!isDefined(data.hasLicense) || !data.hasLicense) && data.regularPrice != "0")
 			return;
 
-		if (!isInstalled)
+		if (!data.isInstalled)
 			data.btnInstall = createInstallButton(cp, "Install");
-		else if (isInstalled && isDefined(data.hasUpdate) && data.hasUpdate)
+		else if (data.isInstalled && isDefined(data.hasUpdate) && data.hasUpdate)
 			data.btnInstall = createInstallButton(cp, "Update");
-			
-		if (!isInstalled || (isDefined(data.hasUpdate) && data.hasUpdate))
+
+		if (!data.isInstalled || (isDefined(data.hasUpdate) && data.hasUpdate))
 			data.btnAbort = createAbortButton(cp);
 	}
 
@@ -136,8 +130,7 @@ namespace Tile
 
 		local menuItems = [];
 
-		if (data.format == "expansion")
-			menuItems = ["Add to Favourites", "Locate Samples"];
+		menuItems = ["Add to Favourites", "Set Samples Folder"];
 
 		if (isDefined(data.favourite) && data.favourite)
 			menuItems[0] = "Remove Favourite";
@@ -175,7 +168,7 @@ namespace Tile
 			this.repaint();
 		});
 
-		App.broadcasters.isDownloading.addListener(b, "Disable the edit menu while downloads are in progress", function(state)
+		App.broadcasters.downloading.addListener(b, "Disable the edit menu while downloads are in progress", function(state, progress)
 		{
 			this.set("enabled", !state);
 			this.repaint();
@@ -237,11 +230,14 @@ namespace Tile
 			buttonMouseCallback();
 		});
 		
-		parent.data.bcIsDownloading.addListener(b, "Hide the install/update button while downloading", function(state)
+		if (isDefined(parent.data.bcDownloading))
 		{
-			this.showControl(!state);
-			this.repaint();
-		});
+			parent.data.bcDownloading.addListener(b, "Hide the install/update button while downloading", function(state, progress)
+			{
+				this.showControl(!state);
+				this.repaint();
+			});
+		}
 
 		return b;		
 	}
@@ -251,22 +247,17 @@ namespace Tile
 		local area = parent.getLocalBounds(0);	
 		local b = parent.addChildPanel();
 
-		b.setPosition(area[2] - 25, area[1] + 10, 14, 14);
+		b.setPosition(area[2] - 28, area[1] + 10, 20, 20);
 		b.set("allowCallbacks", "Clicks & Hover");
 		b.set("itemColour", Colours.white);
-		b.data.icon = "x";
+		b.data.icon = "\ue4f8";
 		b.showControl(false);
 		b.setControlCallback(onbtnAbortControl);
-			
+
 		b.setPaintRoutine(function(g)
 		{
 			var a = this.getLocalBounds(0);
-	
-			g.setColour(Colours.black);
-			g.drawPath(Paths.icons[this.data.icon], a, 2);
-	
-			g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 0.8 + 0.2 * this.getValue() : 0.9));
-			g.fillPath(Paths.icons[this.data.icon], a);
+			drawButton(a, this.data.icon);
 		});
 			
 		b.setMouseCallback(function(event)
@@ -274,11 +265,14 @@ namespace Tile
 			buttonMouseCallback();
 		});
 
-		parent.data.bcIsDownloading.addListener(b, "Show abort button during download", function(state)
+		if (isDefined(parent.data.bcDownloading))
 		{
-			this.showControl(state);
-			this.repaint();
-		});
+			parent.data.bcDownloading.addListener(b, "Show abort button during download", function(state, progress)
+			{
+				this.showControl(state);
+				this.repaint();
+			});
+		}
 	
 		return b;
 	}
@@ -289,7 +283,7 @@ namespace Tile
 		this.setValue(event.clicked);
 		this.data.hover = event.hover;
 		this.repaint();
-			
+
 		if (event.mouseUp)
 			this.changed();
 	}
@@ -299,7 +293,7 @@ namespace Tile
 		local c = Colours.withMultipliedBrightness(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8);
 		g.setColour(Colours.withAlpha(c, this.get("enabled") ? 1.0 : 0.5));
 	
-		g.setFont("phosphor", isDefined(fontSize) ? fontSize : 18);
+		g.setFont("phosphor", isDefined(fontSize) ? fontSize : area[2]);
 		g.drawAlignedText(icon, area, "centred");
 	}
 
@@ -307,16 +301,16 @@ namespace Tile
 	{
 		local h = (a[3] - 40);
 
-		g.setColour(0x882F2F34);
+		g.setColour(0xff1F1F1F);
 		g.fillRoundedRectangle([a[0], a[1], a[2], h], {CornerSize: 5, Rounded:[1, 1, 0, 0]});
 
 		g.setColour(0xffe2e2e2);
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[0] + a[2] / 2 - a[2] / 5 / 2, a[1] + h / 2 - a[2] / 5 / 2, a[2] / 5, a[2] / 5]);
+		g.fillPath(Paths.rhapsodyLogoWithBg, [a[0] + a[2] / 2 - a[2] / 3 / 2, a[1] + h / 2 - a[2] / 3 / 2, a[2] / 3, a[2] / 3]);
 	}
 	
 	inline function drawProgressIndicator(a, progress)
 	{
-		local v = progress.value / 100;
+		local v = Math.min(1, progress.value);
 		local diameter = a[3] / 1.4;
 		local arcArea = [a[2] / 2 - diameter / 2, a[3] / 2 - diameter / 2 - 10, diameter, diameter];
 		local path = Content.createPath(a[2]);
@@ -336,19 +330,28 @@ namespace Tile
 	    path.addArc(arcArea, -startOffset, endOffset);
 
 	    g.drawPath(path, 0, a[2] * arcThickness);
-
+		
 		g.setColour(Colours.white);
-		g.setFont("bold", 30);
-	    g.drawAlignedText(progress.value + "%", [a[0], a[1] + 60, a[2], 25], "centred");
 
-		g.setFont("semibold", 18);
-		g.drawAlignedText(progress.message, [a[0], a[1] - 5, a[2], a[3] - 10], "centred");
-
-		if (isDefined(progress.speed))
-		{
-			g.setFont("medium", 18);
-			g.drawAlignedText(progress.speed, [a[0], a[3] - 110, a[2], 25], "centred");
+		if (isDefined(progress.status))
+		{			
+			if (v > 0 && progress.value <= 1)
+			{
+				g.setFont("semibold", 18);
+				g.drawAlignedText(progress.status, [a[0], a[1] + 10, a[2], a[3] + 20], "centred");
+			}
+			else
+			{
+				g.setFont("semibold", 22);
+				g.drawAlignedText(progress.status, [a[0], a[1] - 20, a[2], a[3] + 20], "centred");
+			}
 		}
+
+		if (v > 0 && progress.value <= 1)
+		{
+			g.setFont("bold", 38);
+			g.drawAlignedText(parseInt(v * 100) + "%", [a[0], a[1] - 40, a[2], a[3] + 20], "centred");
+		}	    	
 	}
 	
 	inline function oncmbEditControl(component, value)
@@ -363,18 +366,18 @@ namespace Tile
 			case "Remove Favourite":
 				data.favourite = Library.toggleFavourite(data.projectName);
 				removeButtons(parent);
-				addButtons(parent, true);
+				addButtons(parent);
 
 				if (!data.favourite)
 					Grid.refresh();
 				break;
 
-			case "Locate Samples":
+			case "Set Samples Folder":
 				Expansions.edit(data.projectName);
 				break;
 
 			case "Uninstall":
-				uninstall(data);
+				uninstall(data.projectName);
 				break;
 
 			case "Visit Webpage":
@@ -389,14 +392,15 @@ namespace Tile
 			return;
 
 		local data = component.getParentPanel().data;
+		
+		if (isDefined(data.sampleDir) && data.sampleDir.isDirectory())
+			return Downloader.preflight(data);
 
-		if (Engine.isPlugin() && Engine.getOS() == "WIN" && data.format == "plugin")
-			return Engine.showMessageBox("Permission Required", "Please use the standalone version of Rhapsody to install " + data.name, "0");
-			
-		if ((isDefined(data.sampleDir) && data.sampleDir.isDirectory()) || data.format == "plugin")
-			Downloader.addToQueue(data);
-		else
-			promptForSampleDirectory(data);
+		Installer.askForSampleDirectory(data, function(dir, obj)
+		{
+			obj.sampleDir = dir;
+			Downloader.preflight(obj);
+		});		
 	}
 
 	inline function onbtnAbortControl(component, value)
@@ -409,36 +413,26 @@ namespace Tile
 				return;
 			
 			Downloader.abortDownloads(data);
-			Expansions.abortInstallation();
+			Installer.abortInstallation();
 		});
 	}
 	
-	inline function uninstall(data)
+	inline function uninstall(projectName: string)
 	{
-		Engine.showYesNoWindow("Uninstall", "Are you sure you want to remove " + data.name + "?", function[data](response1)
+		local numVariants = ManifestHandler.getVariants(projectName).length;
+
+		if (numVariants <= 1)
+			return Expansions.uninstall(projectName);
+
+		Variations.show(projectName, false, {buttonText: "Uninstall", message: "Select components to remove.", fromCache: false, data: {numVariants: numVariants}}, function(variants, data)
 		{
-			if (response1)
-			{
-				Engine.showYesNoWindow("Uninstall Presets", "Do you want to remove your custom presets?", function[data](response2)
-				{
-					if (data.format == "expansion")
-						Expansions.uninstall(data.projectName, response2);
-					else
-						Plugins.uninstall(data.projectName, response2);
-				});
-			}
-		});
+			if (data.numVariants == variants.length)
+				Expansions.uninstall(data.projectName);
+			else
+				Variations.uninstall(data.projectName, variants);
+		});	
 	}
-	
-	inline function promptForSampleDirectory(tileData)
-	{	
-		Expansions.askForSampleDirectory(tileData, function(data, dir)
-		{
-			data.sampleDir = dir;
-			Downloader.addToQueue(data);
-		});
-	}
-	
+
 	inline function removeButtons(cp)
 	{
 		for (x in cp.getChildPanelList())
@@ -451,30 +445,15 @@ namespace Tile
 		local isInstalled = isDefined(data.installedVersion) && data.installedVersion > 0;
 
 		if (data.regularPrice != "0")
+		{
 			if (!data.hasLicense || (isInstalled && (!isDefined(data.hasUpdate) || !data.hasUpdate)))
-				return;
+				return;			
+		}
 
-		data.bcIsDownloading = Engine.createBroadcaster({"id": data.name + "Download State", "args": ["state"]});
-		data.bcProgress = Engine.createBroadcaster({"id": data.name + "Download Progress", "args": ["progress"]});
-	
-		data.bcIsDownloading.addListener(cp, "Update panel when download state changes", function(state)
-		{
-			this.set("enabled", !state);
-	
-			if (!state)
-			{
-				removeButtons(this);
-				addButtons(this, Server.isOnline());
-			}
-
-			this.repaint();
-		});
-
-		data.bcProgress.addListener(cp, "Update download progress", function(progress)
-		{
-			if (isDefined(progress.message) && progress.message.contains("Installing"))
-				this.data.btnAbort.showControl(false);
-	
+		data.bcDownloading = Engine.createBroadcaster({id: data.id + "Downloading", args: ["state", "progress"]});
+		
+		data.bcDownloading.addListener(cp, "Update panel when download state changes", function(state, progress)
+		{	
 			this.data.progress = progress == -1 ? undefined : progress;
 			this.repaint();
 		});

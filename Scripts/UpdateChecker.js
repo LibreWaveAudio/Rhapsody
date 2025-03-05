@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 
 namespace UpdateChecker
 {
-	reg sessionCheck = false; // Only allow one check per session
+	reg sessionCheck = App.mode == "development" ; // Only allow one check per session
 
-	// pnlUpdateCheckerContainer
+	//! pnlUpdateCheckerContainer
 	const pnlUpdateCheckerContainer = Content.getComponent("pnlUpdateCheckerContainer");
 	pnlUpdateCheckerContainer.showControl(false);
 	
@@ -32,7 +32,7 @@ namespace UpdateChecker
 		g.drawDropShadow(a, Colours.withAlpha(Colours.black, 0.8), 20);
 	});
 
-	// pnlUpdateChecker
+	//! pnlUpdateChecker
 	const pnlUpdateChecker = Content.getComponent("pnlUpdateChecker");
 
 	pnlUpdateChecker.setPaintRoutine(function(g)
@@ -46,10 +46,10 @@ namespace UpdateChecker
 		g.fillRoundedRectangle([vptChangeLog.get("x"), vptChangeLog.get("y") - 5, vptChangeLog.getWidth() + 5, vptChangeLog.getHeight() + 10], this.get("borderRadius"));
 	});
 	
-	// vptChangeLog
+	//! vptChangeLog
 	const vptChangeLog = Content.getComponent("vptChangeLog");
 	
-	// pnlChangeLog
+	//! pnlChangeLog
 	const pnlChangeLog = Content.getComponent("pnlChangeLog");	
 	pnlChangeLog.set("text", "");
 	
@@ -66,23 +66,23 @@ namespace UpdateChecker
 		g.drawMarkdownText(md);
 	});
 	
-	// btnUpdateCheckerSubmit
+	//! btnUpdateCheckerSubmit
 	const btnUpdateCheckerSubmit = Content.getComponent("btnUpdateCheckerSubmit");
 	btnUpdateCheckerSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
-	btnUpdateCheckerSubmit.setControlCallback(onbtnUpdateCheckerCloseCoSubmit);
+	btnUpdateCheckerSubmit.setControlCallback(onbtnUpdateCheckerSubmit);
 	
-	inline function onbtnUpdateCheckerCloseCoSubmit(component, value)
+	inline function onbtnUpdateCheckerSubmit(component, value)
 	{
-		if (!value)
-		{
-			hide();
-			Engine.openWebsite("https://librewave.com/rhapsody/");
-		}			
+		if (value)
+			return;
+
+		hide();
+		Engine.openWebsite("https://librewave.com/rhapsody/");
 	}
 	
-	// btnUpdateCheckerClose
+	//! btnUpdateCheckerClose
 	const btnUpdateCheckerClose = Content.getComponent("btnUpdateCheckerClose");
-	btnUpdateCheckerClose.setLocalLookAndFeel(LookAndFeel.filledIconButton);
+	btnUpdateCheckerClose.setLocalLookAndFeel(LookAndFeel.iconButton);
 	btnUpdateCheckerClose.setControlCallback(onbtnUpdateCheckerCloseControl);
 	
 	inline function onbtnUpdateCheckerCloseControl(component, value)
@@ -91,53 +91,54 @@ namespace UpdateChecker
 			hide();
 	}	
 
-	// Functions
-	inline function autocheck()
+	//! Functions
+	inline function autoCheck()
 	{
 		local now = Date.getSystemTimeMs();
 		local lastMs = 0;
-		local lastChecked = UserSettings.getProperty(Engine.getName(), "lastUpdateChecked");
+		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
 		local updateFrequency = 7;
 
-		if (!Account.isLoggedIn() || !Server.isOnline())
+		if (!Account.isLoggedIn() || !App.isOnline)
 			return;
 
 		if (isDefined(lastChecked))
 			lastMs = Date.ISO8601ToMilliseconds(lastChecked);
  
-		if (lastMs == 0 || ((now - lastMs) / 86400000) > updateFrequency)
+		if (!lastMs || ((now - lastMs) / 86400000) > updateFrequency)
 			checkForAppUpdate();
 	}
 
 	inline function checkForAppUpdate()
 	{
-		if (sessionCheck)
+		local token = Account.readToken();
+
+		if (sessionCheck || !isDefined(token) || !App.isOnline)
 			return;
+			
+		local endpoint = App.apiPrefix + "check_for_app_update/";
+		local headers = ["Authorization: Bearer " + token];
+		local p = {"user_version": Engine.getVersion()};
 
-		local endpoint = "/api/v1/repos/LibreWave/Rhapsody/releases?draft=false&pre-release=false&limit=1";
-		Server.setBaseURL("https://codeberg.org");
-		Server.setHttpHeader("");
+		Server.setBaseURL(App.baseUrl[App.mode]);
+		Server.setHttpHeader(headers.join("\n"));
 
-		Server.callWithGET(endpoint, {}, function(status, response)
+		Server.callWithGET(endpoint, p, function(status, response)
 		{
-			if (status == 200)
-			{
-				UserSettings.setProperty(Engine.getName(), "lastUpdateChecked", Date.getSystemTimeISO8601(true));
+			if (!status == 200 || !response[0])
+				return;
 
-				if (isDefined(response[0].tag_name) && response[0].tag_name > Engine.getVersion())
-				{
-					parseBody(response[0].body, response[0].tag_name);
-					show();
-				}
-				
-				sessionCheck = true;
-			}
+			UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeISO8601(true));
+			parseBody(response[0].body, response[0].version);
+			show();
+
+			sessionCheck = true;
 		});
 	}
 
-	inline function parseBody(body, tag)
+	inline function parseBody(body, version)
 	{
-		local heading = Engine.getName() + " " + tag + " is available with the following changes:";	
+		local heading = Engine.getName() + " " + version + " is available with the following changes:";	
 		local lines = body.replace("\n").trim().split("\r\n");
 		local numLines = lines.length + 3;
 		local changelog = "\r\n";
@@ -181,13 +182,10 @@ namespace UpdateChecker
 		pnlUpdateCheckerContainer.fadeComponent(false, 250);
 	}
 	
-	// Listeners
-	App.broadcasters.isLoggedIn.addListener("Update Checker Login", "Respond to login changes", function(state)
+	//! Calls
+	App.broadcasters.isLoggedIn.addListener("Library login", "Respond to login changes", function(state)
 	{
 		if (state)
-			checkForAppUpdate();
-	});
-
-	// Calls
-	autocheck();
+			return autoCheck();
+	});	
 }
