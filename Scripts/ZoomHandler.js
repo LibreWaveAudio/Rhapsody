@@ -19,7 +19,7 @@ namespace ZoomHandler
 {
 	const MIN_ZOOM = 0.75;
 	const MAX_ZOOM = 4.0;
-	const ZOOM_STEP = 0.10;
+	const ZOOM_STEP = 0.05;
 	const interfaceSize = Content.getInterfaceSize();
 
 	//! pnlZoom
@@ -28,12 +28,12 @@ namespace ZoomHandler
 	pnlZoom.setPosition(interfaceSize[0] - 12, interfaceSize[1] - 12, 12, 12);
 	pnlZoom.set("allowCallbacks", "All Callbacks");
 	pnlZoom.setControlCallback(onpnlZoomControl);	
-	
+
 	inline function onpnlZoomControl(component, value)
 	{
 		Settings.setZoomLevel(value);
 	}
-	
+
 	pnlZoom.setPaintRoutine(function(g)
 	{
 		g.setFont("phosphor", 12);

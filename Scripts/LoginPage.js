@@ -34,24 +34,13 @@ namespace LoginPage
 	pnlLoginContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-
-		LookAndFeel.fullPageBackground();
-
-		g.setFont("medium", 20);
-		g.setColour(this.get("itemColour2"));
-		g.drawAlignedText("Login", [pnlLoginForm.get("x") + 1, pnlLoginForm.get("y") - 30, 100, 20], "left");
-
-		g.setFont("regular", 14);
-		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.8));
 		
-		var versionText = "v" + Engine.getVersion();
-		
-		if (App.mode != "release")
-			versionText += " Development Build";
-		
-		g.drawAlignedText(versionText, [a[0], a[3] - 40, a[2] - 34, 25], "right");
-		
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+		g.setColour(this.get("textColour"));
+		g.setFont("semibold", 20);
+		g.drawAlignedText(this.get("text"), a, "topLeft");
+			
+		g.setFont("regular", 16);
+		g.drawAlignedText(this.get("tooltip"), Rect.removeFromTop(a, 50), "bottomLeft");
 	});
 
 	//! pnlLoginForm
@@ -60,18 +49,18 @@ namespace LoginPage
 	pnlLoginForm.setPaintRoutine(function(g)
 	{
 		// Label backgrounds
-		g.setColour(this.get("itemColour"));    	
-		
-		var usernameArea = [lblUsername.get("x") - 36, lblUsername.get("y") - 8, lblUsername.getWidth() + 50, lblUsername.getHeight() + 16];
-		var passwordArea = [lblPassword.get("x") - 36, lblPassword.get("y") - 8, lblPassword.getWidth() + 71, lblPassword.getHeight() + 16];
-		
+		g.setColour(this.get("itemColour"));
+
+		var usernameArea = [lblUsername.get("x") - 36, lblUsername.get("y"), lblUsername.getWidth() + 50, lblUsername.getHeight()];
+		var passwordArea = [lblPassword.get("x") - 36, lblPassword.get("y"), lblPassword.getWidth() + 71, lblPassword.getHeight()];
+
 		g.fillRoundedRectangle(usernameArea, 2);
 		g.fillRoundedRectangle(passwordArea, 2);
-		
+
 		// Label icons
 		g.setFont("phosphor", 20);
 		g.setColour(this.get("itemColour2"));
-	
+
 		g.drawAlignedText("\ue218", [usernameArea[0] + 8, usernameArea[1], usernameArea[3], usernameArea[3]], "left");
 		g.drawAlignedText("\uea78", [passwordArea[0] + 8, passwordArea[1], passwordArea[3], passwordArea[3]], "left");
 	});
@@ -98,7 +87,7 @@ namespace LoginPage
 	
 	//! btnShowPassword
 	const btnShowPassword = Content.getComponent("btnShowPassword");
-	btnShowPassword.setLocalLookAndFeel(LookAndFeel.iconButton);
+	btnShowPassword.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 	btnShowPassword.setControlCallback(onbtnShowPasswordControl);
 	
 	inline function onbtnShowPasswordControl(component, value)
@@ -146,15 +135,19 @@ namespace LoginPage
 	
 	inline function onbtnOfflineModeControl(component, value)
 	{
-		if (!value)
-			hide();
-	}	
-	
+		if (value)
+			return;
+
+		Account.logout();
+		UserSettings.setProperty("rhapsody", "workOffline", true);
+		hide();
+	}
+
 	//! btnGettingStarted
 	const btnGettingStarted = Content.getComponent("btnGettingStarted");
 	btnGettingStarted.setLocalLookAndFeel(LookAndFeel.linkButton);
 	btnGettingStarted.setControlCallback(onbtnGettingStartedControl);
-	
+
 	inline function onbtnGettingStartedControl(component, value)
 	{
 		if (!value)
@@ -172,22 +165,20 @@ namespace LoginPage
 			Engine.openWebsite(Engine.getProjectInfo().CompanyURL + "/knowledge-base/");
 	}
 
-	//! Functions
-	inline function show()
+	//! Functions	
+	inline function clear()
 	{
 		lblUsername.set("text", "");
-		lblPassword.set("text", "");
-		pnlLoginContainer.showControl(true);
+		lblPassword.set("text", "");		
 	}
 
-	inline function hide()
+	//! Broadcasters
+	const bcClearOnVisiblity = Engine.createBroadcaster({id: "bcClearOnVisiblity", args: ["component", "property", "value"]});
+	bcClearOnVisiblity.attachToComponentProperties("pnlPage5", "visible", "");
+	
+	bcClearOnVisiblity.addListener(0, "Clear the login form on visiblity change", function(component, property, value)
 	{
-		pnlLoginContainer.showControl(false);
-	}
-
-	//! Listeners
-	App.broadcasters.isLoggedIn.addListener("Login button visibility", "Respond to login changes", function(state)
-	{
-		state == 1 ? hide() : show();
+		clear();
 	});
+	
 }

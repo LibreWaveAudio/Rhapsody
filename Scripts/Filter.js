@@ -17,131 +17,36 @@
 
 namespace Filter
 {
-	reg filterValue = 1;
-
 	//! pnlFilter
 	const pnlFilter = Content.getComponent("pnlFilter");
-	pnlFilter.set("text", "Search...");
 
 	pnlFilter.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
 
 		g.setColour(this.get("bgColour"));
-		g.fillRoundedRectangle(a, 5);
+		g.fillRoundedRectangle(a, 2);
 
 		g.setColour(this.get("textColour"));
-		g.fillPath(Paths.icons.search, [a[0] + 14.5, a[3] / 2 - 13 / 2, 13, 13]);
-
-		g.drawVerticalLine(a[0] + 41, a[1] + 11, a[3] - 11);
+		g.setFont("phosphor", 14);
+		g.drawAlignedText("\ue30c", [a[0] + 10, a[1], a[3], a[3]], "left");
 	});
-	
+
 	//! lblFilter
 	const lblFilter = Content.getComponent("lblFilter");
-	lblFilter.set("text", "Search...");
+	lblFilter.set("text", "");
 	lblFilter.setControlCallback(onlblFilterControl);
-
+	
 	inline function onlblFilterControl(component, value)
 	{
-		btnFilterClear.showControl(value != "Search...");
-		//Grid.filterTiles();
+		bcFilterValue.value = value;
 	}
 	
-	lblFilter.setConsumedKeyPresses({description: "escape", keyCode: 27});
-
-	lblFilter.setKeyPressCallback(function(event)
+	inline function getValueBroadcaster()
 	{
-		if (event.isFocusChange)
-			return;
-
-		clear();
-	});
-	
-	//! btnFilterClear
-	const btnFilterClear = Content.getComponent("btnFilterClear");
-	btnFilterClear.showControl(false);
-	btnFilterClear.setLocalLookAndFeel(LookAndFeel.iconButton);
-	btnFilterClear.setControlCallback(onbtnFilterClearControl);
-	
-	inline function onbtnFilterClearControl(component, value)
-	{
-		if (value)
-			return;
-		
-		clear();
-	}
-
-	//! btnFavourites
-	const btnFavourites = Content.getComponent("btnFavourites");
-	btnFavourites.setValue(0);
-	btnFavourites.setLocalLookAndFeel(LookAndFeel.textIconButton);
-	btnFavourites.setControlCallback(onbtnFavouritesControl);
-	
-	inline function onbtnFavouritesControl(component, value)
-	{
-		filterValue = value == 1 ? 5 : 1;
-		//Grid.filterTiles();
+		return bcFilterValue;
 	}
 	
-	//! Functions
-	inline function: Array getTileIndexes(tiles: Array)
-	{
-		local result = [];
-		local query = lblFilter.getValue() == "Search..." ? "" : lblFilter.getValue().toLowerCase();
-		local index = 0;
-		
-		for (tile in tiles)
-		{
-			local x = tile.data;
-			local tags = x.tags.length > 0 ? x.tags : [""];
-
-			for (i = 0; i < tags.length; i++)
-			{
-				local t = tags[i].toLowerCase();
-				local value;
-
-				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(x.name.toLowerCase(), query))
-					continue;
-
-				switch (filterValue)
-				{
-					case 1:
-						value = index;
-						break;
-						
-					case 2:
-						value = isDefined(x.installedVersion) ? index : undefined;
-						break;
-						
-					case 3:
-						if ((x.hasLicense && !isDefined(x.installedVersion)) || (x.regularPrice == "0"))
-							value = index;
-						break;
-
-					case 4:
-						value = (isDefined(x.hasUpdate) && x.hasUpdate) ? index : undefined;
-						break;
-						
-					case 5:
-						value = (isDefined(x.favourite) && x.favourite) ? index : undefined;
-						break;
-				}
-				
-				if (isDefined(value))
-					result.push(value);
-
-				break;				
-			}
-			
-			index++;
-		}
-
-		return result;
-	}
-	
-	inline function clear()
-	{
-		lblFilter.set("text", "Search...");
-		lblFilter.changed();
-	}
+	// Broadcaster definition
+	const bcFilterValue = Engine.createBroadcaster({id: "lblFilterValue", args: ["value"]});
 }

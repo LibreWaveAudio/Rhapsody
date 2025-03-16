@@ -20,25 +20,34 @@ namespace Account
 	const appData = FileSystem.getFolder(FileSystem.AppData);
 	
 	//! Functions
+	inline function logoutWithPrompt()
+	{
+		Engine.showYesNoWindow("Logout", "Do you want to log out?", function(response)
+		{
+			if (response)
+				logout();
+		});
+	}
+	
 	inline function logout()
 	{
 		deleteToken();
-		App.broadcasters.isLoggedIn.state = false;
+		broadcasters.loggedIn.state = false;
 	}
-	
+
 	inline function login(username: string, password: string)
 	{
 		local p = {"username": username.trim(), "password": password};
 
 		if (!App.isOnline)
 			return Engine.showMessageBox("Offline", "You need to be connected to the internet to do this.", 3);
-				
+
 		if (!isDefined(username) || username == "")
 			return Engine.showMessageBox("Invalid Email", "Please enter a valid email address or username.", 3);
-		
+
 		if (!isDefined(password) || password == "")
 			return Engine.showMessageBox("Invalid Password", "Please enter a valid password.", 3);
-			
+
 		Server.setHttpHeader("");
 		Server.setBaseURL(App.baseUrl[App.mode]);
 
@@ -54,7 +63,8 @@ namespace Account
 	inline function onLoginSuccess(token: string)
 	{
 		writeToken(token);
-		App.broadcasters.isLoggedIn.state = true;
+		UserSettings.setProperty("rhapsody", "workOffline", false);
+		broadcasters.loggedIn.state = true;
 	}
 	
 	inline function onLoginFailed(response: object)
@@ -80,7 +90,7 @@ namespace Account
 		
    	inline function deleteToken()
 	{
-		local f = appData.getChildFile("credentials.json");
+		local f = appData.getChildFile("Credentials.json");
 
 		if (f.isFile())
 			f.deleteFileOrDirectory();
@@ -89,14 +99,14 @@ namespace Account
 	inline function writeToken(token: string)
 	{
 		local data = {"token": token};
-		local f = appData.getChildFile("credentials.json");
+		local f = appData.getChildFile("Credentials.json");
 
 		f.writeEncryptedObject(data, FileSystem.getSystemId());
 	}
     
 	inline function: string readToken()
 	{
-		local f = appData.getChildFile("credentials.json");
+		local f = appData.getChildFile("Credentials.json");
 
 		if (!isDefined(f) || !f.isFile())
 			return "";
@@ -114,6 +124,22 @@ namespace Account
 		return readToken() != "";
 	}
 
+	//! Broadcasters
+	const broadcasters = {};
+	
+	//! loggedIn
+	broadcasters.loggedIn = Engine.createBroadcaster({id: "loggedIn", args: ["state"]});
+	
+	//! btnLogoutValue
+	broadcasters.btnLogoutValue = Engine.createBroadcaster({id: "btnLogoutValue", args: ["component", "value"]});
+	broadcasters.btnLogoutValue.attachToComponentValue("btnLogout", "");
+
+	broadcasters.btnLogoutValue.addListener({}, "Log the user out when the logout button is clicked", function(component, value)
+	{
+		if (value)
+			logoutWithPrompt();
+	});	
+
 	//! Calls
-	App.broadcasters.isLoggedIn.state = isLoggedIn();
+	broadcasters.loggedIn.state = isLoggedIn();
 }

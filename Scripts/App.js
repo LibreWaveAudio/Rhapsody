@@ -35,20 +35,27 @@ namespace App
 		"staging": "https://librewave.com/",
 		"release": "https://librewave.com/"
 	};
-	
-	const broadcasters = {
-		downloading: Engine.createBroadcaster({id: "Global download State", args: ["state", "progress"]}),
-		isLoggedIn: Engine.createBroadcaster({id: "Triggered when user logs in or out", args: ["state"]})
-	};
-		
-	broadcasters.downloading.addComponentPropertyListener(["btnSync", "cmbAdd", "btnLogin", "btnLogout"], "enabled", "meta", function(index, state, progress)
+
+	//! pnlMain
+	const pnlMain = Content.getComponent("pnlMain");
+
+	pnlMain.setPaintRoutine(function(g)
 	{
-		return !state;
+		var a = this.getLocalBounds(0);
+
+		g.fillAll(this.get("bgColour"));	
+
+		g.setColour(this.get("textColour"));
+		g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
+		g.drawAlignedText("RHAPSODY", [a[0] + 10, a[1], a[2], 55 - (10 * (Engine.getOS() == "WIN"))], "left");
+
+		g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), 0.3));
+		g.drawHorizontalLine(54, a[0], a[2]);
+
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
-	
-	broadcasters.downloading.sendAsyncMessage([false, -1]);
-	
-	//! Functions
+			
+	//! Functions	
 	inline function createDefaultLinkFile()
 	{
 		local filename = "";
@@ -66,6 +73,7 @@ namespace App
 		if (!isDefined(f) || !f.isFile())
 			f.writeString(appData.toString(appData.FullPath));		
 	}
-	
+		
+	//! Calls
 	createDefaultLinkFile();	
 }

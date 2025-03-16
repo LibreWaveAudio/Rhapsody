@@ -18,7 +18,6 @@
 namespace FilePicker
 {
 	reg startFolder = FileSystem.Downloads;
-	reg storePath = false;
 	reg mode = 0;
 	reg hideOnSubmit = true;
 	reg filter = "";
@@ -35,21 +34,19 @@ namespace FilePicker
 		var a = this.getLocalBounds(0);
 
 		LookAndFeel.fullPageBackground();
-
-		var lblArea = [lblFilePicker.get("x") - 5, lblFilePicker.get("y") - 8, lblFilePicker.getWidth() + 40, lblFilePicker.getHeight() + 16];
+		
 		g.setColour(this.get("itemColour"));
-		g.fillRoundedRectangle(lblArea, 5);
+		var lblArea = [lblFilePicker.get("x") - 10, lblFilePicker.get("y"), lblFilePicker.getWidth() + 20, lblFilePicker.getHeight()];
+		g.fillRoundedRectangle(lblArea, 2);	  
 
-		g.setFont("semibold", 26);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 1.0));
+		g.setFont("semibold", 20);
+		g.setColour(this.get("textColour"));
 
 		if (isDefined(this.data.title))
 			g.drawAlignedText(this.data.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
 
 		if (!isDefined(this.data.message))
 			return;
-
-		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.9));
 
 		g.setFont("phosphor", 18);
 		g.drawAlignedText("\ue2ce", [lblArea[0] + 2, lblArea[1] - 40, 20, 20], "left");
@@ -61,11 +58,25 @@ namespace FilePicker
 	//! lblFilePicker
 	const lblFilePicker = Content.getComponent("lblFilePicker");
 	lblFilePicker.setLocalLookAndFeel(LookAndFeel.empty);
-	lblFilePicker.set("text", "");
+	lblFilePicker.setControlCallback(onlblFilePickerControl);
+	
+	inline function onlblFilePickerControl(component, value)
+	{
+		file = FileSystem.fromAbsolutePath(value);
+
+		if ((mode == 0 && !file.isFile()) || (mode == 1 && !file.isDirectory()))
+		{
+			file = undefined;
+			return component.set("text", "");
+		}			
+
+		btnFilePickerSubmit.set("enabled", true);
+		lblFilePicker.set("text", getTruncatedPath(file, 55));
+	}
 
 	//! btnFilePicker
 	const btnFilePicker = Content.getComponent("btnFilePicker");
-	btnFilePicker.setLocalLookAndFeel(LookAndFeel.iconButton);
+	btnFilePicker.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 	btnFilePicker.setControlCallback(onbtnFilePickerControl);
 	
 	inline function onbtnFilePickerControl(component, value)
@@ -92,13 +103,13 @@ namespace FilePicker
 
     inline function onbtnFilePickerSubmitControl(component, value)
     {
-        if (!value)
-        {
-			if (hideOnSubmit)
-	        	hide();
+        if (value)
+        	return;
 
-	        callback(file, data);
-        }
+		if (hideOnSubmit)
+        	hide();
+
+        callback(file, data);
     }
     
     //! Functions
@@ -106,20 +117,16 @@ namespace FilePicker
 	{
 		pnlFilePicker.data.title = properties.title;
 		pnlFilePicker.data.message = properties.message;
-		pnlFilePicker.data.icon = properties.icon;
 		filter = isDefined(properties.filter) ? properties.filter : "";
 		mode = properties.mode;
 		hideOnSubmit = !isDefined(properties.hideOnSubmit) || properties.hideOnSubmit;
-		storePath = !isDefined(properties.startFolder);
 		callback = callbackFunction;
 		data = isDefined(properties.data) ? properties.data : {};
 		btnFilePickerSubmit.set("text", properties.buttonText);
-		btnFilePickerSubmit.set("enabled", false);		
+		btnFilePickerSubmit.set("enabled", false);
 
 		if (isDefined(properties.startFolder) && properties.startFolder != "" && properties.startFolder.isDirectory())
 			startFolder = properties.startFolder;
-		else
-			startFolder = readDirFromDisk();
 
 		if (isDefined(startFolder))
 		{
@@ -149,7 +156,7 @@ namespace FilePicker
     {
 	    FileSystem.browse(startFolder, false, filter, function(f)
 	    {
-			if (!isDefined(f) || !f.isFile())
+			if (!f.isFile())
 				return;
 
 			file = f;
@@ -162,12 +169,10 @@ namespace FilePicker
     {
 	    FileSystem.browseForDirectory(startFolder, function(dir)
 	    {
-		    if (!isDefined(dir) || !dir.isDirectory())
+		    if (!dir.isDirectory())
 		    	return;
 
 	    	file = dir;
-	    	if (storePath)
-	    		writePathToDisk(dir.toString(dir.FullPath));
 
 	    	btnFilePickerSubmit.set("enabled", true);
 	    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
@@ -185,39 +190,5 @@ namespace FilePicker
 		local result = ".." + subpath.substring(subpath.indexOf("/"), subpath.length);
 		
 		return result;		
-    }
-    
-    inline function getLastFile()
-    {
-	    return file;
-    }
-    
-    inline function writePathToDisk(path)
-    {
-		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("lastDir.txt");
-		
-		if (isDefined(f))
-			return f.writeString(path);
-			
-		return false;
-    }
-
-    inline function readDirFromDisk()
-    {
-	    local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("lastDir.txt");
-
-	    if (isDefined(f) && f.isFile());
-	    {
-			local path = f.loadAsString();
-
-			if (isDefined(path) && path != "")
-			{
-				local dir = FileSystem.fromAbsolutePath(path);
-				file = dir;
-				return dir;
-			}
-	    }
-	
-	    return FileSystem.getFolder(FileSystem.Desktop);
     }
 }

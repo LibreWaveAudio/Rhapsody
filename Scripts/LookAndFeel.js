@@ -27,21 +27,43 @@ namespace LookAndFeel
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor.ttf", "phosphor");
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Fill.ttf", "phosphorFill");
 	
+	const icons = {
+		"show password": "\ue220",
+		"backspace": "\ue0ae",
+		"folder": "\ue256",
+		"close": "\ue4f6",
+		"cancel": "\ue4f8",
+		"sync": "\ue094",
+		"login": "\ue4c2",
+		"logout": "\ue42a",
+		"download": "\ue20a",
+		"install": "\ue390",
+		"settings": "\ue270",
+		"key": "\ue2d6",
+		"library": "\ue464",
+		"favourites": "\ue2a8",
+		"work offline": "\ue4f2",
+		"info": "\ue2ce",
+		"warning": "\ue4e0",
+		"question": "\ue3e8",
+		"error": "\ue7fc"		
+	};
+	
     const laf = Engine.createGlobalScriptLookAndFeel();
     
-	// empty
+	//! empty
 	const empty = Content.createLocalLookAndFeel();
 	
 	empty.registerFunction("drawToggleButton", function(g, obj) {});
 	empty.registerFunction("drawRotarySlider", function(g, obj) {});
 	
-	// Scrollbar
+	//! Scrollbar
 	laf.registerFunction("drawScrollbar", function(g, obj)
 	{
 		drawScrollbar(g, obj, 0xff111111);
 	});
 
-    // textButton
+    //! textButton
     const textButton = Content.createLocalLookAndFeel();
     
     textButton.registerFunction("drawToggleButton", function(g, obj)
@@ -49,7 +71,7 @@ namespace LookAndFeel
 		drawTextButton(obj, obj.text, obj.area);
     });
         
-    // linkButton
+    //! linkButton
     const linkButton = Content.createLocalLookAndFeel();
     
     linkButton.registerFunction("drawToggleButton", function(g, obj)
@@ -64,26 +86,38 @@ namespace LookAndFeel
 	    g.drawHorizontalLine(a[3] - 5, a[0], stringWidth);
     });
 
-    //! iconButton
-    const iconButton = Content.createLocalLookAndFeel();
+    //! iconButtonMomentary
+    const iconButtonMomentary = Content.createLocalLookAndFeel();
     
-    iconButton.registerFunction("drawToggleButton", function(g, obj)
+    iconButtonMomentary.registerFunction("drawToggleButton", function(g, obj)
     {
-		var icons = {
-			"show password": "\ue220",
-			"backspace": "\ue0ae",
-			"folder": "\ue256",
-			"close": "\ue4f6"
-		};
-	
-		if (!isDefined(icons[obj.text]))
+		var text = obj.text.toLowerCase();
+
+		if (!isDefined(icons[text]))
 			return;
 
-	    var c = Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.0 - 0.3 * obj.down : 0.8);
+	    var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.3 * obj.down : 0.8);
 	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
 	    g.setFont("phosphor", obj.area[2]);
-	    g.drawAlignedText(icons[obj.text], obj.area, "centred");
+	    g.drawAlignedText(icons[text], obj.area, "centred");
+    });
+    
+    //! iconToggleButton
+    const iconButtonToggle = Content.createLocalLookAndFeel();
+    
+    iconButtonToggle.registerFunction("drawToggleButton", function(g, obj)
+    {
+   		var text = obj.text.toLowerCase();
+   	
+   		if (!isDefined(icons[text]))
+   			return;
+      	    
+   	    var c = Colours.withMultipliedBrightness(obj.textColour, (obj.value ? 0.9 : 0.6) + 0.1 * obj.over - 0.2 * obj.down);	    
+   	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
+   
+   	    g.setFont("phosphor", obj.area[2]);
+   	    g.drawAlignedText(icons[text], obj.area, "centred");
     });
     
     //! textIconButton
@@ -94,14 +128,6 @@ namespace LookAndFeel
 		var a = obj.area;
 		var down = obj.text == "favourites" ? obj.down : (obj.value && obj.over);
 		
-		var icons = {
-			"sync": "\ue094",
-			"favourites": "\ue2a8",
-			"log out": "\ue42a",
-			"login": "\ue428",
-			"work offline": "\ue4f2"
-		};
-
 		if (!isDefined(icons[obj.text]))
 			return;
 
@@ -162,15 +188,14 @@ namespace LookAndFeel
    		obj.textColour = 0xffcccccc;
    		return obj;
    	});
-    	
+
    	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
    	{
 		var a = obj.area;
-   		var icons = {"Info": "\ue2ce", "Warning": "\ue4e0", "Question": "\ue3e8", "Error": "\ue7fc"};
    
    		g.setFont("phosphor", 42);
    		g.setColour(Colours.withAlpha(0xffcccccc, 0.8));
-   		g.drawAlignedText(icons[obj.type], a, "centred");	
+   		g.drawAlignedText(icons[obj.type.toLowerCase()], a, "centred");	
    	});
    	    	
    	laf.registerFunction("drawDialogButton", function(g, obj)
@@ -179,7 +204,7 @@ namespace LookAndFeel
    		var fontSize = 18;
    		var text = obj.text;
 
-   		if (["Exit"].contains(obj.parentName))
+   		if (["Update Available", "Logout", "Uninstall", "Remove Presets", "Images Cleared"].contains(obj.parentName))
    			text = obj.text == "OK" ? "Yes" : "No";
 
    		var colours = {
@@ -215,11 +240,12 @@ namespace LookAndFeel
     {
 		local alignment = "centred";
 		local down = obj.down || obj.value;
-		
+
 		local c = Colours.withMultipliedBrightness(obj.bgColour, obj.over ? 1.0 - 0.2 * obj.down : 0.9);
 		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-        g.fillRoundedRectangle(area, 2);
+		if (obj.bgColour != 0)
+        	g.fillRoundedRectangle(area, 2);
 
 		c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * obj.down : 0.9);
 		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
@@ -234,64 +260,13 @@ namespace LookAndFeel
 	closeButton.registerFunction("drawToggleButton", function(g, obj)
 	{
 		var a = obj.area;
-	
+
 		g.setFont("phosphor", 20);
 		var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * obj.value : 0.7);
 		g.setColour(Colours.withMultipliedAlpha(c, obj.enabled ? 1.0 : 0.5));
 		
 		g.drawAlignedText("\ue4f6", a, "centred");
-	});
-	
-	//! viewportTable
-	const viewportTable = Content.createLocalLookAndFeel();
-				
-	viewportTable.registerFunction("drawTableHeaderBackground", function(g, obj)
-	{
-		 
-	});
-	
-	viewportTable.registerFunction("drawTableHeaderColumn", function(g, obj)
-	{
-		 var a = obj.area;
-		 
-		 g.setFont("medium", 16);
-		 g.setColour(0xffcccccc);
-		 g.drawAlignedText(obj.text, a, "left");
 	});	
-	
-	viewportTable.registerFunction("drawTableRowBackground", function(g, obj)
-	{
-		g.fillAll(obj.rowIndex % 2 == 0 ? 0xff171616 : 0xff1b1a1a);
-	});
-	
-	viewportTable.registerFunction("drawTableCell", function(g, obj)
-	{	
-		var a = obj.area;
-	
-		g.setFont("regular", 14);
-		g.setColour(0xffcccccc);
-		g.drawAlignedText(obj.text, obj.area, "left");
-	});
-	
-	viewportTable.registerFunction("drawToggleButton", function(g, obj)
-	{
-		var a = obj.area;
-		a[0] += 10;
-		var buttonSize = a[3] / 2.2;
-
-		g.setColour(0xffcccccc);
-		g.drawEllipse([a[0] + 1, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], 1.5);
-
-		var c = Colours.withMultipliedBrightness(0xffcccccc, (obj.value ? 0.9 : 0.3) + 0.2 * obj.over);
-		g.setColour(c);
-
-		g.fillEllipse(Rect.reduced([a[0] + 1, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], 2.8));
-	});
-	
-	viewportTable.registerFunction("drawScrollbar", function(g, obj)
-	{
-		 drawScrollbar(g, obj, 0xff111111);
-	});
 	
 	//! Combo box
 	laf.registerFunction("drawPopupMenuBackground", function(g, obj)

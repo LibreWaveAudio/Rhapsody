@@ -17,413 +17,375 @@
 
 namespace Installer
 {
-	reg extractionCount;
-	reg numArchives;
 	reg abort;
-	reg postInstallCallback;
-	reg progressBroadcaster;
-
-	inline function manualInstall()
-	{
-		local lastLwzPath = UserSettings.getProperty("rhapsody", "lastLwzPath");
-		local lastFolder;
-		local startFolder = FileSystem.getFolder(FileSystem.Downloads);
-
-		if (isDefined(lastLwzPath) && lastLwzPath != "")
-			lastFolder = FileSystem.fromAbsolutePath(lastLwzPath);
-			
-		if (isDefined(lastFolder) && lastFolder.isDirectory())
-			startFolder = lastFolder;
-
-		FilePicker.show({
-			startFolder: startFolder,
-			mode: 0,
-			filter: "*.lwz",
-			title: "Install from File",
-			message: "Please select one of the .lwz files you downloaded.",
-			buttonText: "Next",
-			hideOnSubmit: false,
-			}, selectArchiveCallback);
-	}
-
-	inline function selectArchiveCallback(file: object, data: object)
-	{
-		local filename = file.toString(file.Filename);
-		local projectName = getProjectNameFromFilename(filename);
-
-		if (projectName == "")
-			return;
-
-		UserSettings.setProperty("rhapsody", "lastLwzPath", file.getParentDirectory().toString(file.FullPath));
-
-		ProgressBar.set("title", "Installing " + projectName);
-		ProgressBar.showCancelButton(true);
-	
-		local archives = getArchivesForProduct(file.getParentDirectory(), projectName);
-		local tempDir = FileSystem.getFolder(FileSystem.Temp).createDirectory("Libre Wave").createDirectory(projectName);
-		local e = Expansions.getExpansion(projectName);
-
-		if (isDefined(e) && isDefined(getSamplesDirectory(projectName)))
-			return extractArchives(archives, tempDir);
-
-		local customData = {"archives": archives, "projectName": projectName, "tempDir": tempDir};
-
-		askForSampleDirectory(customData, function(dir, obj)
-		{
-			extractArchives(obj.archives, obj.tempDir);
-		});
-	}
-
-	inline function askForSampleDirectory(obj: object, callback: Function)
-	{
-		local defaultSamplePath = UserSettings.getProperty("rhapsody", "defaultSamplePath");
-		local defaultFolder;
-		local startFolder = FileSystem.getFolder(FileSystem.Desktop);
-
-		if (isDefined(defaultSamplePath) && defaultSamplePath != "")
-			defaultFolder = FileSystem.fromAbsolutePath(defaultSamplePath);
-
-		if (isDefined(defaultFolder) && defaultFolder.isDirectory())
-			startFolder = defaultFolder;
-
-		FilePicker.show({
-			startFolder: startFolder,
-			mode: 1,
-			filter: "",
-			title: "Install Samples",
-			message: "Choose a location to install the samples.",
-			buttonText: "Install",
-			data: obj,
-		}, function[callback](dir, data) {
-
-			var sampleDir = dir;
-
-			if (!sampleDir.hasWriteAccess())
-				return Engine.showMessageBox("Unwritable Directory", "You do not have permission to write to the selected location. Please choose a different one.", 1);
-				
-			if (!sampleDir.isOnHardDisk())
-				return Engine.showMessageBox("Invalid Directory", "Please use a local folder.", 1);
-			
-			if (sampleDir.toString(sampleDir.NoExtension) != data.projectName)
-				sampleDir = sampleDir.createDirectory(data.projectName);
-
-			if (isDefined(sampleDir) && sampleDir.isDirectory())	
-				UserSettings.setProperty("rhapsody", "defaultSamplePath", sampleDir.getParentDirectory().toString(sampleDir.FullPath));
-			
-			updateLinkFile(data.projectName, sampleDir);
-			
-			if (isDefined(callback))
-				callback(sampleDir, data);
-		});
-	}
-
-	inline function install(archivesDirectory: object, broadcaster: Function, callback: Function)
-	{
-		local archives = FileSystem.findFiles(archivesDirectory, "*.lwz", false);
+	reg fileCount;
+	reg numFiles;
+	reg success;
+	reg tempDir;
 		
-		if (!archives.length)
-			return;
+	//! Background worker
+	const worker = Engine.createBackgroundTask("fileMover");
+	worker.setTimeOut(2000);
 
-		progressBroadcaster = broadcaster;
-		postInstallCallback = callback;		
-		extractArchives(archives, archivesDirectory);
-	}
-
-	inline function extractArchives(archives: Array, directory: object)
+	worker.setFinishCallback(function(isFinished, threadShouldExit)
 	{
-		abort = false;
-		numArchives = archives.length;
-		extractionCount = 0;
+		if (isFinished != 1)
+			return;
+		
+		if (success)
+			updateManifest();
 
-		FilePicker.hide();
+		cleanup();
+	});
+
+	//! Functions		
+	inline function install(lwzFile: ScriptObject)
+	{
+		local archives = getSiblingLwzFiles(lwzFile);
+		tempDir = lwzFile.getParentDirectory();
+		extractArchives(archives);
+	}
+	
+	inline function bulkInstall(lwzDirectory: ScriptObject)
+	{
+		local archives = FileSystem.findFiles(lwzDirectory, "*.lwz", false);
+		tempDir = lwzDirectory;
+		extractArchives(archives);
+	}
+		
+	inline function: Array getSiblingLwzFiles(lwzFile: ScriptObject)
+	{
+		local productName = getProductNameFromFilename(lwzFile.toString(lwzFile.NoExtension));
+		local parentDirectory = lwzFile.getParentDirectory();
+		return FileSystem.findFiles(parentDirectory, productName + "*.lwz", false);		
+	}
+	
+	inline function extractArchives(archives: Array)
+	{
+		fileCount = 0;
+		abort = false;
+		numFiles = archives.length;
+
+		addAbortButtonListener();
 
 		Engine.sortWithFunction(archives, sortFiles);
 
 		for (x in archives)
 		{
-			if (abort)
-				return cleanUp();
+			local filename = x.toString(x.Filename);
+			local target = getTempDirectoryForArchive(x);
 
-			updateManifest(x);
-			extractArchive(x, directory);
+			if (filename.contains("_data_"))
+			{
+				local variantName = getVariantNameFromFilename(filename);
+	
+				if (variantName != "")
+					createVariantHxi(filename, target);
+			}			
+
+			x.extractZipFile(target, true, function(obj)
+			{
+				obj.Cancel = (obj.Error != "" || abort);
+
+				updateProgress("Extracting Archive: ", obj.Progress);
+
+				if (obj.Status != 2)
+					return;
+
+				fileCount++;
+
+				if (fileCount < numFiles)
+					return;
+
+				if (!obj.Cancel && !abort)
+					return worker.callOnBackgroundThread(moveFiles);
+
+				return cleanup();
+			});
 		}
 	}
 
-	inline function extractArchive(file: object, directory: object)
+	function moveFiles(thread)
 	{
-		if (!file.isFile())
-			return;
+		var files = getTempFiles();
+		var targets = getTargetDirectories(files);
 
-		file.extractZipFile(directory, true, function(obj)
-		{
-			obj.Cancel = (obj.Error != "" || abort);
-
-			updateProgress();
-
-			if (obj.Status != 2)
-				return;			
-
-			extractionCount++;
-
-			if (extractionCount < numArchives)
-				return;
-
-			ProgressBar.hide();
-
-			var tempDir = FileSystem.fromAbsolutePath(obj.Target);
-
-			if (obj.Cancel)
-			{
-				tempDir.deleteFileOrDirectory();
-				cleanUp();
-			}				
-			else
-			{
-				moveFiles(tempDir);
-			}				
-		});
-	}
-
-	inline function: ScriptObject getHoldingDirectory()
-	{
-		local expansionsFolder = Expansions.getRhapsodyExpansionsDirectory();
-
-		if (!expansionsFolder.keys().length)
-			return {};
-
-		local dir = expansionsFolder.createFolder("holding");
-
-		if (dir.isDirectory())
-			return dir;
-
-		return {};
-	}
-
-	inline function moveFiles(directory: ScriptObject)
-	{
-		if (!directory.isDirectory())
-			return;
-
-		local reportError = false;
-		local projectName = directory.toString(directory.NoExtension);
-		local files = FileSystem.findFiles(directory, "*", false);
-		local dataDir = getHoldingDirectory();
-		local samplesDir = getSamplesDirectory(projectName);
-
-		if (isDefined(dataDir) && !dataDir.hasWriteAccess())
-			return Engine.showMessageBox("Installation Failed", "The target folder " + dataDir.toString(dataDir.FullPath) + " cannot be written to.", 1);
-
-		if (isDefined(samplesDir) && !samplesDir.hasWriteAccess())
-			return Engine.showMessageBox("Installation Failed", "The target folder " + samplesDir.toString(samplesDir.FullPath) + " cannot be written to.", 1);
+		success = true;
+		fileCount = 0;
+		numFiles = files.length;
 
 		for (x in files)
 		{
-			local filename = x.toString(x.Filename);
-			local ext = x.toString(x.Extension);
-			local success = false;
-			local targetDir;
+			var parentName = x.getParentDirectory().toString(x.Filename);
+			var filename = x.toString(x.Filename);
+			var ext = x.toString(x.Extension);
 
-			if ([".lwz"].contains(ext))
+			if (abort)
 				continue;
 
-			if (ext.contains(".ch") || ["audio", "wav", "midi", "loop", "video"].contains(filename.toLowerCase()))
-				targetDir = samplesDir;
-			else
-				targetDir = dataDir;
+			updateProgress("Installing File: ", fileCount / numFiles);
 
-			if (!isDefined(targetDir))
+			var target = targets[parentName + "_" + filename];
+
+			if (!isDefined(target))
 				continue;
-
-			if (isDefined(progressBroadcaster))
-				progressBroadcaster.progress = {value: 1.1, status: "Installing"};
 
 			if (x.isDirectory())
-				success = x.copyDirectory(targetDir.createDirectory(filename));
+				success = x.copyDirectory(target.createDirectory(filename));
 			else
-				success = x.copy(targetDir.getChildFile(filename));
+				success = x.copy(target.getChildFile(filename));
 
-			if (success)
-				x.deleteFileOrDirectory();
-			else
-				reportError = true;
-		}
+			if (worker.shouldAbort())
+				return;
 
-		directory.deleteFileOrDirectory();
-				
-		cleanUp();
-
-		if (reportError)
-			return Engine.showMessageBox("Installation Complete", "The installation finished but not all files could be copied. Please try again or contact support.", 1);
-	}
-		
-	inline function updateProgress()
-	{
-		local statusMessage;
-	
-		if (!isDefined(progressBroadcaster))
-		{
-			ProgressBar.show();
-
-			if (obj.Cancel)
-				statusMessage = "Cancelled: Finishing Current File";
-			else
-				statusMessage = "Extracting Archive " + (extractionCount + 1) + " of " + numArchives;
-				
-			Engine.setPreloadMessage(statusMessage);
-		}
-		else
-		{
-			if (obj.Cancel)
-				statusMessage = "Cancelled";
-			else
-				statusMessage = "Extracting " + (extractionCount + 1) + " of " + numArchives;
-
-			progressBroadcaster.progress = {projectName: "", value: Engine.getPreloadProgress(), status: statusMessage, speed: ""};
+			fileCount++;
 		}
 	}
 
-	inline function cleanUp()
+	inline function: Array getTempFiles()
 	{
+		local result = [];
+
+		for (x in FileSystem.findFiles(tempDir, "librewave_temp_*", false))
+		{
+			if (x.isDirectory())
+				result.concat(FileSystem.findFiles(x, "*", false));
+		}
+
+		return result;
+	}
+
+	inline function: object getTargetDirectories(files: Array)
+	{
+		local result = {};
+		local dataDirs = {};
+		local sampleDirs = {};
+
+		for (x in files)
+		{
+			local parentName = x.getParentDirectory().toString(x.Filename);
+			local filename = x.toString(x.Filename);
+			local key = parentName + "_" + filename;
+
+			if (isDefined(result[key]))
+				continue;
+
+			if (!isDefined(dataDirs[key]))
+			{
+				local hxiFile = x.getParentDirectory().getChildFile("info.hxi");
+				local data = Expansions.getPropertiesFromHxi(hxiFile);
+				dataDirs[key] = Expansions.getDataDirectory(data.Company, data.Name);
+				sampleDirs[key] = Expansions.getSamplesDirectory(data.Company, data.Name, true);
+			}
+
+			local dataDir = dataDirs[key];
+			local samplesDir = sampleDirs[key];
+			local filename = x.toString(x.Filename);
+			local ext = x.toString(x.Extension);
+
+			if (ext == ".lwz")
+				continue;
+
+			if ([".hxi", ".dat", ".json", ".pdf", ".txt"].contains(ext) || filename == "UserPresets")
+				result[key] = dataDir;
+			else
+				result[key] = samplesDir;			
+		}
+
+		return result;
+	}
+
+	inline function updateProgress(action: string, progress: number)
+	{		
+		local data = {
+			message: action + (fileCount + 1) + "/" + numFiles,
+			value: progress,
+			text: abort == 1 ? "Cancelling..." : ""
+		};
+
+		ProgressBar.setProgress(data);
+	}
+
+	inline function updateManifest()
+	{
+		local directories = FileSystem.findFiles(tempDir, "librewave_temp_*", false);
+
+		for (x in directories)
+		{
+			local hxiFile = x.getChildFile("info.hxi");
+
+			if (!hxiFile.isFile())
+				continue;
+
+			local props = Expansions.getPropertiesFromHxi(hxiFile);
+			local company = props.Company;
+			local name = props.Name;
+
+			if (!isDefined(company) || !isDefined(name))
+				continue;
+
+			local filenames = [];
+
+			for (f in FileSystem.findFiles(x, "*", false))
+				filenames.push(f.toString(f.Filename));
+
+			Manifest.updateFiles(company, name, filenames);
+		}
+	}
+
+	inline function: ScriptObject getTempDirectoryForArchive(file: ScriptObject)
+	{
+		local filename = file.toString(file.Filename);
+		local productName = getProductNameFromFilename(filename);
+		return file.getParentDirectory().createDirectory("librewave_temp_" + productName);
+	}
+
+	inline function cleanup()
+	{
+		deleteTemporaryFiles();
+		removeAbortButtonListener();
 		Expansions.refresh();
-		Expansions.prefixRootFolders();
-		Library.updateCatalogue();
-
-		if (!isDefined(postInstallCallback))
-			return;
-
-		postInstallCallback();
-		postInstallCallback = undefined;
-		progressBroadcaster = undefined;
-	}
+		ProductGrid.refresh();
+		DownloadList.refresh();
+		ProgressBar.hide();
 	
-	inline function: Array getArchivesForProduct(directory: object, projectName: string)
-	{
-		local formattedName = projectName.toLowerCase().replace(" ", "_");
-		return FileSystem.findFiles(directory, formattedName + "*.lwz", false);
+		if (!success && !abort)
+			Engine.showMessageBox("Installation Complete", "The installation finished but not all files could be copied. Please try again or contact support.", 1);
 	}
 
-	inline function getSamplesDirectory(projectName: string)
+	inline function deleteTemporaryFiles()
 	{
-		local linkFile = getLinkFile(projectName);
-		local path = linkFile.loadAsString();
-		local result;
-		
-		if (isDefined(path) && path != "")
-			result = FileSystem.fromAbsolutePath(path);
+		for (x in FileSystem.findFiles(tempDir, "librewave_temp_*", false))
+			x.deleteFileOrDirectory();
 
-		if (isDefined(result) && result.isDirectory())
-			return result;
+		local downloadsDir = UserSettings.getDirectory("downloadPath");
 
-		return;
-	}
-
-	inline function getExpansionDirectory(projectName: string)
-	{
-		local appData = FileSystem.getFolder(FileSystem.AppData);
-		return appData.createDirectory("Expansions").createDirectory(projectName);
-	}
-
-	inline function updateManifest(zipFile: ScriptObject)
-	{
-		local filename = zipFile.toString(zipFile.NoExtension);
-		local projectName = getProjectNameFromFilename(filename);
-
-		if (projectName == "")
+		if (!isDefined(downloadsDir.Filename))
 			return;
 
-		local zippedItems = zipFile.getZippedItemList();
-		
-		if (!zippedItems.length)
-			return;
+		for (x in FileSystem.findFiles(downloadsDir, "*.lwz", false))
+			x.deleteFileOrDirectory();
+	}
 
+	inline function createVariantHxi(filename: string, target: ScriptObject)
+	{
 		local variantName = getVariantNameFromFilename(filename);
-		local versionNumber = getVersionFromFilename(filename);
+		local productName = getProductNameFromFilename(filename);
+		local version = getVersionFromFilename(filename);
 
-		ManifestHandler.updateFiles(projectName, variantName, zippedItems);
-		ManifestHandler.setVersion(projectName, variantName, versionNumber, true);
+		local obj = {
+			Name: variantName,
+			ExpansionName: productName.replace("_", " ").capitalize(),
+			Version: version
+		};
+
+		local f = target.getChildFile(variantName + ".hxi");
+		f.writeObject(obj);	
 	}
-	
-	inline function: string getVersionFromFilename(filename: string)
+
+	inline function: number sortFiles(a: object, b: object)
 	{
-		local version = Engine.getRegexMatches(filename, "\\d_\\d_\\d")[0];
-			
-		if (isDefined(version))
-			return version.replace("_", ".");
+		local filenameA = a.toString(a.Filename);
+		local filenameB = b.toString(b.Filename);
 
-		return "";		
+		local productNameA = getProductNameFromFilename(filenameA);
+		local productNameB = getProductNameFromFilename(filenameB);
+
+		if (productNameA != productNameB)
+			return productNameA < productNameB ? -1 : 1;
+
+		local versionA = getVersionFromFilename(filenameA);
+		local versionB = getVersionFromFilename(filenameB);		
+
+		return versionCompare(versionA, versionB);
 	}
-				
+
 	inline function: string getVariantNameFromFilename(filename: string)
 	{
-		local matches = Engine.getRegexMatches(filename, "\\d+_\\d+_\\d+_(.*)");
+		local matches = Engine.getRegexMatches(filename, "\\d+_\\d+_\\d+_([^()._]+)");
 				
 		if (matches.length < 2)
 			return "";
-
+	
 		return matches[1];
 	}
 
-	inline function: string getProjectNameFromFilename(filename: string)
+	inline function: string getProductNameFromFilename(filename: string)
 	{
-		local matches = Engine.getRegexMatches(filename, ".+data|.+samples");
-
-		if (isDefined(matches))
-			return matches[0].replace("_data").replace("_samples").replace("_", " ").trim().capitalize();
-
+		if (filename.contains("_data"))
+			return filename.substring(0, filename.indexOf("_data"));
+		
+		if (filename.contains("_samples"))
+			return filename.substring(0, filename.indexOf("_samples"));
+		
 		return "";
 	}
 
-	inline function getLinkFile(projectName: string)
+	inline function: string getVersionFromFilename(filename: string)
 	{
-		local linkFile;
-		local expDir = getExpansionDirectory(projectName);
+		local version = Engine.getRegexMatches(filename, "\\d+_\\d+_\\d+")[0];
+			
+		if (isDefined(version))
+			return version.replace("_", ".");
+	
+		return "";		
+	}
 
-		switch (Engine.getOS())
+	inline function: number versionCompare(version1: string, version2: string)
+	{
+		if (version1 == version2)
+		     return 0;
+
+		 if (version1 != "" && version2 == "")
+		     return 1;
+
+		 if (version1 == "" && version2 != "")
+		     return -1;
+
+		local separator = version1.contains("_") ? "_" : ".";
+		local v1 = version1.split(separator).map(function(x) { return parseInt(x); });
+		local v2 = version2.split(separator).map(function(x) { return parseInt(x); });
+
+		for (i = 0; i < 3; i++)
 		{
-			case "OSX": linkFile = "LinkOSX"; break;
-			case "LINUX": linkFile = "LinkLinux"; break;
-			case "WIN": linkFile = "LinkWindows"; break;
+			if (v1[i] != v2[i])
+				return v1[i] > v2[i] ? 1 : -1;
 		}
 
-		return expDir.createDirectory("Samples").getChildFile(linkFile);
+		return 0;
 	}
-	
-	inline function updateLinkFile(projectName: string, target: object)
-	{
-		local f = getLinkFile(projectName);
-		
-		if (isDefined(f) && isDefined(target) && target.isDirectory())
-			f.writeString(target.toString(f.FullPath));
-	}
-	
-	inline function: number sortFiles(a: object, b: object)
-	{
-		if (a.toString(a.Filename) < b.toString(b.Filename))
-			return -1;
-		else
-			return a.toString(a.Filename) > b.toString(b.Filename);
-	}
-	
-	inline function abortInstallation()
+
+	inline function abortInstall()
 	{
 		abort = true;
+		worker.sendAbortSignal(false);
+		removeAbortButtonListener();
 	}
-		
-	//! Broadcasters
-	const bcAbortButtonValue = Engine.createBroadcaster({"id": "bcAbortButtonValue", "args": ["component", "value"]});
-	bcAbortButtonValue.attachToComponentValue("btnProgressCancel", "");
 
-	bcAbortButtonValue.addListener(0, "Cancel installation when abort button pressed.", function(component, value)
+	inline function addAbortButtonListener()
 	{
-		if (!value)
-			return;
+		broadcasters.abort.attachToComponentValue(["btnProgressCancel"], "");
 
-		Engine.showYesNoWindow("Confirm", "Are you sure you want to cancel the installation?", function(response)
+		broadcasters.abort.addListener(0, "Abort Installation", function(component, value)
 		{
-			if (!response)
+			if (!value)
 				return;
 
-			abortInstallation();
+			Engine.showYesNoWindow("Cancel", "Do you want to cancel the installation?", function(response)
+			{
+				if (response)
+					abortInstall();
+			});
 		});
-	});	
+	}
+
+	inline function removeAbortButtonListener()
+	{
+		broadcasters.abort.removeAllSources();
+		broadcasters.abort.removeListener("Abort Installation");
+	}
+
+	//! Broadcasters
+	const broadcasters = {};
+	broadcasters.abort = Engine.createBroadcaster({id: "abortInstall", args: ["component", "value"]});
 }

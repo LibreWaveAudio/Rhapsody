@@ -9,7 +9,7 @@
         <Processor Type="ScriptProcessor" ID="Interface" Bypassed="0">
           <ChildProcessors/>
           <Content>
-            <Control type="ScriptedViewport" id="vptGrid" value="0.0"/>
+            <Control type="ScriptLabel" id="lblFilter" value=""/>
           </Content>
           <UIData Source="RhapsodyUIData"/>
         </Processor>

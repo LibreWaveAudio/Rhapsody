@@ -19,10 +19,11 @@ namespace Spinner
 {
 	//! pnlSpinnerContainer
 	const pnlSpinnerContainer = Content.getComponent("pnlSpinnerContainer");
+	pnlSpinnerContainer.showControl(false);
 	
 	pnlSpinnerContainer.setPaintRoutine(function(g)
 	{
-		g.fillAll(Colours.withAlpha(this.get("bgColour"), 0.8));			
+		g.fillAll(Colours.withAlpha(this.get("bgColour"), 0.9));			
 	});
 
 	//! pnlSpinner
@@ -30,17 +31,15 @@ namespace Spinner
 
 	pnlSpinner.setPaintRoutine(function(g)
 	{
-		var a = [this.getWidth() / 2 - 50, this.getHeight() / 2 - 50, 100, 100];
-
-		g.fillAll(Colours.withAlpha(Colours.black, 0.5));
+		var a = [this.getWidth() / 2 - 40, this.getHeight() / 2 - 60, 80, 80];
 
 		for (i = 0; i < 10; i++)
 		{
 			this.getValue() == i ? g.setColour(Colours.white) : g.setColour(Colours.grey);
 			
-			var x = this.getWidth() / 2 - 0;
-			var y1 = a[1] + 20;
-			var y2 = this.getHeight() / 2 - 70;        
+			var x = this.getWidth() / 2;
+			var y1 = a[1] - 40;
+			var y2 = this.getHeight() / 2 - 80;
 			
 			g.drawLine(x, x, y1, y2, 4);
 			
@@ -49,8 +48,8 @@ namespace Spinner
 
 		g.setColour(Colours.withAlpha(Colours.white, 1 / 10 * this.getValue()));
 
-		g.setFont("medium", 26);
-		g.drawAlignedText(this.get("text"), [0, a[1] + a[3] + 50, this.getWidth(), 30], "centred");
+		g.setFont("medium", 28);
+		g.drawAlignedText(this.get("text"), [0, a[1] + a[3] + 125, this.getWidth(), 26], "centred");
 	});
 
 	pnlSpinner.setTimerCallback(function()
@@ -60,26 +59,21 @@ namespace Spinner
     	this.setValue(v);
     	this.repaint();
 	});
-	
+
 	//! Functions
-	inline function set(key: string, value: NotUndefined)
+	inline function setOption(key: string, value: NotUndefined)
 	{
 		pnlSpinner.data[key] = value;
 	}
 	
-	inline function setMessage(msg: string)
-	{
-		pnlSpinner.data.msg = msg;
-		pnlSpinner.set("text", msg);
-	}
-	
 	inline function show(text: string)
 	{
-		pnlSpinner.startTimer(150);
 		pnlSpinner.set("text", text);
+		pnlSpinner.startTimer(150);
 		pnlSpinnerContainer.showControl(true);
+		Synth.startTimer(150 / 1000);
 	}
-	
+
 	inline function hide()
 	{
 		pnlSpinnerContainer.showControl(false);
@@ -88,7 +82,4 @@ namespace Spinner
 		pnlSpinner.set("text", "");
 		pnlSpinner.data.title = "";
 	}
-
-	//! Calls
-	hide();
 }

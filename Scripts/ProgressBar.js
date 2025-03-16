@@ -17,100 +17,76 @@
 
 namespace ProgressBar
 {
-	//! pnlProgressBarContainer
-	const pnlProgressBarContainer = Content.getComponent("pnlProgressBarContainer");
-	
-	pnlProgressBarContainer.setPaintRoutine(function(g)
+	//! pnlProgress
+	const pnlProgress = Content.getComponent("pnlProgress");
+	pnlProgress.showControl(false);
+
+	pnlProgress.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-
-		LookAndFeel.fullPageBackground();
+	
+		g.fillAll(this.get("bgColour"));
+		
+		g.setColour(this.get("textColour"));
+		g.setFont("bold", 30);
+		g.drawAlignedText(this.get("text"), [a[0] + 25, a[1] + 25, a[2], a[3]], "topLeft");
+	
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
-
+		
 	//! pnlProgressBar
 	const pnlProgressBar = Content.getComponent("pnlProgressBar");
-
+	
 	pnlProgressBar.setPaintRoutine(function(g)
 	{
-		var a = [this.getWidth() / 2 - 300 / 2, this.getHeight() / 2 - 4 / 2, 300, 4];
+		var a = this.getLocalBounds(0);
+		var v = this.getValue();
+		var radius = this.get("borderRadius");
+
+		g.setColour(this.get("bgColour"));
+		g.fillRoundedRectangle(Rect.withSizeKeepingCentre(a, a[2], 8), radius);
+
+		var fillArea = Rect.withSizeKeepingCentre(a, a[2] - 2, 6);		
 
 		g.setColour(this.get("itemColour"));
-		g.fillRoundedRectangle(a, 2);
+		g.fillRoundedRectangle([fillArea[0], fillArea[1], fillArea[2] * v, fillArea[3]], radius);
 
-		g.setColour(this.get("itemColour2"));
-		g.fillRoundedRectangle([a[0], a[1], a[2] * this.getValue(), a[3]], 2);
-
-		g.setFont("regular", 16);
 		g.setColour(this.get("textColour"));
-		
-		if (isDefined(this.data.title))
-			g.drawAlignedText(this.data.title, [a[0], a[1] - 26, a[2], 26], "left");
+		g.setFont("medium", 22);
+		g.drawAlignedText(this.data.message + ": " + parseInt(v * 100) + "%", Rect.removeFromTop(a, 90), "left");
 
-		g.setFont("regular", 14);
-		g.drawAlignedText(this.get("text"), [a[0], a[1] + a[3] + 2, a[2], 26], "centred");
-	});
-	
-	pnlProgressBar.setTimerCallback(function()
-	{	
-		this.setValue(Engine.getPreloadProgress());
-   		this.set("text", Engine.getPreloadMessage());
-   		this.repaint();    	
+		g.setFont("regular", 20);
+		g.drawAlignedText(this.get("text"), Rect.removeFromBottom(a, 90), "left");
 	});
 
 	//! btnProgressCancel
 	const btnProgressCancel = Content.getComponent("btnProgressCancel");
-	const lafbtnProgressCancel = Content.createLocalLookAndFeel();
-	btnProgressCancel.setLocalLookAndFeel(lafbtnProgressCancel);
-	btnProgressCancel.setControlCallback(onbtnProgressCancelControl);
-	
-	inline function onbtnProgressCancelControl(component, value)
-	{
-		if (!value)
-			return;
-	}
-	
-	lafbtnProgressCancel.registerFunction("drawToggleButton", function(g, obj)
-	{
-		var a = obj.area;
+	btnProgressCancel.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 
-		g.setColour(Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - obj.value * 0.2 : 0.8)); 
-		g.setFont("bold", 18);
-		g.drawAlignedText(obj.text, a, "centred");
-	});
-	
 	//! Functions
-	inline function set(key: string, value: NotUndefined)
+	inline function setProgress(progress: object)
 	{
-		pnlProgressBar.data[key] = value;
-	}
-	
-	inline function setMessage(msg: string)
-	{
-		pnlProgressBar.data.msg = msg;
-		pnlProgressBar.set("text", msg);
-	}
-	
-	inline function show()
-	{
-		pnlProgressBar.startTimer(50);
-		pnlProgressBarContainer.showControl(true);
+		pnlProgress.showControl(true);
+		pnlProgressBar.setValue(progress.value);
+		pnlProgressBar.data.message = progress.message;
+		pnlProgressBar.set("text", progress.text);
+		pnlProgressBar.repaint();
 	}
 	
 	inline function hide()
 	{
-		pnlProgressBarContainer.showControl(false);
-		btnProgressCancel.showControl(false);
-		pnlProgressBar.stopTimer();
-		pnlProgressBar.setValue(0);
-		pnlProgressBar.set("text", "");
-		pnlProgressBar.data.title = "";
+		pnlProgress.showControl(false);
 	}
 
-	inline function showCancelButton(shouldShow)
+	//! Broadcasters
+	Downloader.broadcasters.isDownloading.addListener({}, "Show the progress bar during downloads", function(state, progress)
 	{
-		btnProgressCancel.showControl(shouldShow);
-	}
+		if (typeof(progress) != "object")
+			return;
 
-	//! Calls
-	hide();
+		if (state)
+			setProgress(progress);
+		else
+			hide();
+	});
 }

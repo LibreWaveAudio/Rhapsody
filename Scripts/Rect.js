@@ -27,7 +27,7 @@ namespace Rect
 		return [area[0] + (area[2] - width) / 2, area[1] + (area[3] - height) / 2, width, height];
 	}
 	
-	// Removes a strip from the left-hand edge of this rectangle.
+	// Removes a strip from the left-hand edge of this rectangle and returns it.
 	inline function removeFromLeft(area: Array, amount: number)
 	{
 		area[0] += amount;
@@ -35,14 +35,14 @@ namespace Rect
 		return [area[0] - amount, area[1], amount, area[3]];
 	}
 	
-	// Removes a strip from the right-hand edge of this rectangle.
+	// Removes a strip from the right-hand edge of this rectangle and returns it.
 	inline function removeFromRight(area: Array, amount: number)
 	{
 		area[2] -= amount;
 		return [area[0] + area[2], area[1], amount, area[3]];
 	}
 	
-	// Removes a strip from the top edge of this rectangle.
+	// Removes a strip from the top edge of this rectangle and returns it.
 	inline function removeFromTop(area: Array, amount: number)
 	{
 		area[1] += amount;
@@ -50,7 +50,7 @@ namespace Rect
 		return [area[0], area[1] - amount, area[2], amount];
 	}
 	
-	// Removes a strip from the bottom edge of this rectangle.
+	// Removes a strip from the bottom edge of this rectangle and returns it.
 	inline function removeFromBottom(area: Array, amount: number)
 	{
 		area[3] -= amount;
