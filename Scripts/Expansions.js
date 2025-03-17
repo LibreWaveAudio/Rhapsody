@@ -227,19 +227,17 @@ namespace Expansions
 
 	inline function uninstallData(expansion: ScriptObject, removePresets: number)
 	{
-		local company = expansion.getProperties().Company;
-		local name = expansion.getProperties().Name;		
-		local dir = getDataDirectory(company, name);
+		local dir = expansion.getRootFolder();
 
 		if (removePresets)
 			return dir.deleteFileOrDirectory();
 
 		local files = FileSystem.findFiles(dir, "*", false);
-		
+
 		for (x in files)
 		{
 			local filename = x.toString(x.Filename);
-			
+
 			if (x.isDirectory() && filename.contains("Presets"))
 				continue;
 
@@ -251,11 +249,11 @@ namespace Expansions
 	{
 		local company = expansion.getProperties().Company;
 		local name = expansion.getProperties().Name;		
-		local dir = getSamplesDirectory(company, name, false);
+		local dir = expansion.getSampleFolder();
 
 		if (!isDefined(dir.Filename))
 			return;
-			
+
 		if (dir.toString(dir.FullPath).toLowerCase().contains("hise/samples"))
 			return;
 
