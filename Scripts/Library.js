@@ -142,7 +142,7 @@ namespace Library
 		local result = [];
 
 		if (isDefined(f) && f.isFile())
-			result = f.loadEncryptedObject(App.systemId);
+			result = f.loadAsObject();
 
 		if (!isDefined(manifest))
 			return result;
@@ -270,7 +270,7 @@ namespace Library
 			if (status == 200 && typeof response == "object" && response.length > 0)
 			{
 				var f = cache.getChildFile("cache.json");
-				f.writeEncryptedObject(response, App.systemId);
+				f.writeObject(response);
 
 				updateCatalogue();
 
