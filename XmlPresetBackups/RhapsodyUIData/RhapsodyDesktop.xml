@@ -105,7 +105,7 @@
       <Component type="ScriptLabel" id="lblFilePicker" x="235.0" y="355.0" width="500.0"
                  height="20.0" itemColour2="4280953393" parentComponent="pnlFilePicker"
                  fontName="regular" fontSize="18.0" alignment="left" editable="0"
-                 text="" textColour="4289245885"/>
+                 text="/home/dave/Desktop" textColour="4289245885"/>
       <Component type="ScriptButton" id="btnFilePicker" x="739.0" y="357.0" text="folder"
                  width="20.0" height="15.0" bgColour="0" itemColour="4290496210"
                  itemColour2="4289049281" textColour="0" saveInPreset="0" parentComponent="pnlFilePicker"
@@ -203,11 +203,4 @@
                bgColour="4279374356" itemColour="4293059298" itemColour2="4293059298"
                textColour="4291282887" visible="0"/>
   </Component>
-  <Component type="ScriptSlider" id="Knob1" x="112" y="176" style="Knob" middlePosition="-1.0"
-             stepSize="0.01" min="0.0" max="1.0" suffix="" filmstripImage="Use default skin"
-             linkedTo="" pluginParameterName="MyMacro1" isPluginParameter="1"/>
-  <Component type="ScriptSlider" id="Knob2" x="270.0" y="180.0" style="Knob"
-             middlePosition="-1.0" stepSize="0.01" min="0.0" max="1.0" suffix=""
-             filmstripImage="Use default skin" linkedTo="" pluginParameterName="MyMacro2"
-             isPluginParameter="1"/>
 </ContentProperties>
