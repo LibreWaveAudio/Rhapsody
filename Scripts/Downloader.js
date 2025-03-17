@@ -169,7 +169,7 @@ namespace Downloader
 		progress = bytesDownloaded / totalSize;
 
 		local data = {
-			message: productNames.length == 1 ? "Downloading " + productNames[0] : "Downloading Products",
+			message: productNames.length == 1 ? "Downloading " + productNames[0] : "Downloading Instruments",
 			value: progress,
 			text: FileSystem.descriptionOfSizeInBytes(speed) + "/s"
 		};

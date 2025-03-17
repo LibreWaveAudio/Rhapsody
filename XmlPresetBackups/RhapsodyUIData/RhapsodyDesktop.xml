@@ -58,7 +58,7 @@
                      height="610.0" parentComponent="pnlProductGridContainer" saveInPreset="0"
                      bgColour="0" itemColour="0" itemColour2="0" textColour="0" scrollBarThickness="10.0">
             <Component type="ScriptPanel" id="pnlProductGrid" x="0.0" y="0.0" width="980.0"
-                       height="285.0" parentComponent="vptProductGrid" borderSize="0.0"
+                       height="570.0" parentComponent="vptProductGrid" borderSize="0.0"
                        borderRadius="0.0" bgColour="0" itemColour="0" itemColour2="0"
                        textColour="4291611852"/>
           </Component>
@@ -77,11 +77,11 @@
                      itemColour="0" itemColour2="0" borderSize="1.0">
             <Component type="ScriptButton" id="btnSelectLwzFile" x="60.0" y="167.0"
                        width="125.0" height="30.0" parentComponent="pnlDropZone" enableMidiLearn="0"
-                       isMomentary="1" saveInPreset="0" bgColour="4291611852" itemColour="0"
+                       isMomentary="1" saveInPreset="0" bgColour="4289309097" itemColour="0"
                        itemColour2="0" textColour="4278190080" text="Select File"/>
             <Component type="ScriptButton" id="btnSelectLwzDir" x="215.0" y="167.0"
                        width="125.0" height="30.0" parentComponent="pnlDropZone" enableMidiLearn="0"
-                       isMomentary="1" saveInPreset="0" bgColour="4291611852" itemColour="0"
+                       isMomentary="1" saveInPreset="0" bgColour="4289309097" itemColour="0"
                        itemColour2="0" textColour="4278190080" text="Select Folder"/>
           </Component>
         </Component>
@@ -90,19 +90,20 @@
                  height="645.0" parentComponent="pnlPages" bgColour="4280295456"
                  itemColour="0" itemColour2="0" textColour="4291611852" borderSize="0.0"
                  borderRadius="0.0" visible="0">
-        <Component type="ScriptPanel" id="pnlDownloads" x="0.0" y="25.0" width="1000.0"
-                   height="620.0" parentComponent="pnlPage2" bgColour="4280295456"
+        <Component type="ScriptPanel" id="pnlDownloads" x="0.0" y="0.0" width="1000.0"
+                   height="630.0" parentComponent="pnlPage2" bgColour="4280295456"
                    itemColour="0" itemColour2="0" textColour="4291611852" borderSize="0.0"
                    borderRadius="0.0" text="">
-          <Component type="ScriptedViewport" id="vptDownloads" x="20.0" y="0.0" width="960.0"
-                     height="545.0" parentComponent="pnlDownloads" scrollBarThickness="10.0"
+          <Component type="ScriptedViewport" id="vptDownloads" x="20.0" y="25.0" width="960.0"
+                     height="560.0" parentComponent="pnlDownloads" scrollBarThickness="10.0"
                      saveInPreset="0" bgColour="0" itemColour="0" itemColour2="0"
                      textColour="0"/>
-          <Component type="ScriptButton" id="btnSync" x="363.0" y="577.0" width="26.0"
-                     height="26.0" parentComponent="pnlDownloads" isMomentary="1"
-                     enableMidiLearn="0" saveInPreset="0" text="Sync" tooltip="Check for updates"
-                     textColour="4291611852" bgColour="0" itemColour="0" itemColour2="0"/>
-          <Component type="ScriptButton" id="btnDownloadsSubmit" x="400.0" y="575.0"
+          <Component type="ScriptButton" id="btnSync" x="20.0" y="595.0" width="140.0"
+                     height="35.0" parentComponent="pnlDownloads" isMomentary="1"
+                     enableMidiLearn="0" saveInPreset="0" text="Check for Updates"
+                     textColour="4291611852" bgColour="0" itemColour="0" itemColour2="0"
+                     mouseCursor="PointingHandCursor"/>
+          <Component type="ScriptButton" id="btnDownloadsSubmit" x="780.0" y="600.0"
                      width="200.0" height="30.0" parentComponent="pnlDownloads" saveInPreset="0"
                      isMomentary="1" enableMidiLearn="0" text="Download &amp; Install"
                      tooltip="Download and Install the Selected Products" textColour="4278190080"

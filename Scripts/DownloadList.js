@@ -82,7 +82,7 @@ namespace DownloadList
 
 	lafDownloadList.registerFunction("drawScrollbar", function(g, obj)
 	{
-		 drawScrollbar(g, obj, 0xff111111);
+		 LookAndFeel.drawScrollbar(g, obj, 0xff111111);
 	});
 
 	//! pnlDownloads
@@ -99,7 +99,7 @@ namespace DownloadList
 
 	//! btnSync
 	const btnSync = Content.getComponent("btnSync");
-	btnSync.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	btnSync.setLocalLookAndFeel(LookAndFeel.textIconButton);
 	btnSync.setControlCallback(onbtnSyncControl);
 
 	inline function onbtnSyncControl(component, value)
@@ -128,7 +128,7 @@ namespace DownloadList
 		{ID: "Image", Label: "", Type: "Text", MinWidth: 150},
 		{ID: "Instrument", Type: "Text", MinWidth: 400},
 		{ID: "Version", Type: "Text", MinWidth: 100},
-		{ID: "Size", Type: "Text", MinWidth: 100},
+		{ID: "Size", Type: "Text", MinWidth: 125},
 		{ID: "Type", Type: "Text", MinWidth: 100},
 	]);
 
@@ -186,6 +186,7 @@ namespace DownloadList
 		pnlDownloads.repaint();
 
 		btnDownloadsSubmit.set("enabled", false);
+		btnDownloadsSubmit.showControl(filteredItems.length > 0);
 		vptDownloads.setTableRowData(listData);
 	}
 

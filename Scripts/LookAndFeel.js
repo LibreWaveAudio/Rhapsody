@@ -29,11 +29,11 @@ namespace LookAndFeel
 	
 	const icons = {
 		"show password": "\ue220",
+		"check for updates": "\ue094",
 		"backspace": "\ue0ae",
 		"folder": "\ue256",
 		"close": "\ue4f6",
 		"cancel": "\ue4f8",
-		"sync": "\ue094",
 		"login": "\ue4c2",
 		"logout": "\ue42a",
 		"download": "\ue20a",
@@ -126,23 +126,20 @@ namespace LookAndFeel
     textIconButton.registerFunction("drawToggleButton", function(g, obj)
     {
 		var a = obj.area;
-		var down = obj.text == "favourites" ? obj.down : (obj.value && obj.over);
-		
-		if (!isDefined(icons[obj.text]))
+		var down = obj.value && obj.over;
+		var icon = icons[obj.text.toLowerCase()];
+
+		if (!isDefined(icon))
 			return;
 
-		var c = Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.0 - 0.1 * down : 0.9);
+		var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * down : 0.8);
 		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-		g.setFont("phosphor", 18);
-		
-		if (obj.text == "favourites" && obj.value)
-			g.setFont("phosphorFill", 18);
-				
-		g.drawAlignedText(icons[obj.text], a, "left");
-		
-		g.setFont("regular", 18);
-		g.drawAlignedText(obj.text.capitalize(), a, "right");
+		g.setFont("phosphor", 16);				
+		g.drawAlignedText(icon, a, "left");
+
+		g.setFont("semibold", 16);
+		g.drawAlignedText(obj.text, a, "right");
     });
     
     //! filledIconButton

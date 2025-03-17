@@ -59,7 +59,7 @@ namespace ProductTile
 
 			if (event.y > (a[3] - 40))
 				return this.repaint();
-			
+
 			if (event.clicked && !event.rightClick)
 				Expansions.setCurrent(this.data.Company, this.data.Name);
 
