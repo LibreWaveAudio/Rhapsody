@@ -49,7 +49,7 @@ namespace App
 		g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
 		g.drawAlignedText("RHAPSODY", [a[0] + 10, a[1], a[2], 55 - (10 * (Engine.getOS() == "WIN"))], "left");
 
-		g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), 0.3));
+		g.setColour(Colours.withMultipliedBrightness(this.get("itemColour"), 0.3));
 		g.drawHorizontalLine(54, a[0], a[2]);
 
 		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});

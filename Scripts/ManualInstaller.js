@@ -41,7 +41,7 @@ namespace ManualInstaller
 	{
 		this.data.hover = obj.hover && !obj.drop;
 		this.repaint();
-		
+
 		if (!obj.drop)
 			return;
 

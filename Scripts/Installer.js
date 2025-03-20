@@ -127,7 +127,7 @@ namespace Installer
 
 			var target = targets[parentName + "_" + filename];
 
-			if (!isDefined(target))
+			if (!isDefined(target) || !target.isDirectory())
 				continue;
 
 			if (x.isDirectory())
@@ -174,7 +174,7 @@ namespace Installer
 			{
 				local hxiFile = x.getParentDirectory().getChildFile("info.hxi");
 				local data = Expansions.getPropertiesFromHxi(hxiFile);
-				dataDirs[key] = Expansions.getDataDirectory(data.Company, data.Name);
+				dataDirs[key] = Expansions.createDataDirectory(data.Company, data.Name);
 				sampleDirs[key] = Expansions.getSamplesDirectory(data.Company, data.Name, true);
 			}
 

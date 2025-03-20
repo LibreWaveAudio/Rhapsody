@@ -328,7 +328,7 @@ namespace LookAndFeel
 		g.setFont("phosphor", 22);
 		g.drawAlignedText(icons[obj.text], [a[0] + 10, a[1], a[2], a[3]], "left");
     }
-        
+
 	inline function fullPageBackground()
 	{
 		g.fillAll(this.get("bgColour"));

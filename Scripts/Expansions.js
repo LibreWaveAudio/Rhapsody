@@ -23,47 +23,67 @@ namespace Expansions
 	inline function: ScriptObject getRhapsodyExpansionsDirectory()
 	{
 		local appData = FileSystem.getFolder(FileSystem.AppData);
-		return appData.getParentDirectory().createDirectory("Rhapsody").createDirectory("Expansions");
+		return appData.createDirectory("Expansions");
 	}
 
-	inline function: object getDataDirectory(company: string, name: string)
+	inline function: ScriptObject createDataDirectory(company: string, name: string)
 	{
+		local expansion = getExpansion(company, name);
+
+		if (!isDefined(expansion.notFound))
+			return expansion.getRootFolder();
+
 		local expansionsDirectory = getRhapsodyExpansionsDirectory();
 		local directoryName = (company.replace("_") + "_" + name.replace("_")).replace(" ").toLowerCase();
 		return expansionsDirectory.createDirectory(directoryName);
 	}
 
+	inline function: ScriptObject getSamplesDirectory(company: string, name: string, createIfMissing: number)
+	{
+		local expansion = getExpansion(company, name);
+		local dir;
+
+		if (!isDefined(expansion.notFound))
+			dir = expansion.getRootFolder().getChildFile("Samples").getRedirectedFolder();
+
+		if (isDefined(dir) && dir.isDirectory() && !dir.isChildOf(expansion.getRootFolder(), false))
+			return dir;
+
+		if (createIfMissing)
+			return createSamplesDirectory(company, name);
+
+		return FileSystem.getFolder(FileSystem.Downloads).getNonExistentSibling();
+	}
+
+	inline function: ScriptObject createSamplesDirectory(company: string, name: string)
+	{	
+		local dir = UserSettings.getDirectory("contentPath").createDirectory(company).createDirectory(name);		
+		updateLinkFile(company, name, dir);
+		return dir;
+	}
+
 	inline function getPresetsDirectory(company: string, name: string)
 	{
-		local dataDir = getDataDirectory(company, name);
+		local dataDir = createDataDirectory(company, name);
 		return dataDir.createDirectory("UserPresets");
 	}
 
-	inline function: object getSamplesDirectory(company: string, name: string, createIfMissing: number)
+	inline function: object getExpansion(company: string, name: string)
 	{
-		local result;
-		local dir = getDataDirectory(company, name).createDirectory("Samples");
-		local linkFile = dir.getChildFile(getLinkFileName());
+		for (x in eh.getExpansionList())
+		{
+			local properties = x.getProperties();
 
-		if (linkFile.isFile())
-			result = FileSystem.fromAbsolutePath(linkFile.loadAsString());
+			if (properties.Company == company && properties.Name == name)
+				return x;
+		}
 
-		if (isDefined(result) && result.isDirectory())
-			return result;
-
-		if (!createIfMissing)
-			return {};
-
-		local defaultDirectory = UserSettings.getDirectory("contentPath").createDirectory(company).createDirectory(name);
-
-		updateLinkFile(company, name, defaultDirectory);
-
-		return defaultDirectory;
+		return {notFound: true};
 	}
 	
 	inline function: number updateLinkFile(company: string, name: string, target: ScriptObject)
 	{
-		local dir = getDataDirectory(company, name).createDirectory("Samples");
+		local dir = createDataDirectory(company, name).createDirectory("Samples");
 		local linkFile = dir.getChildFile(getLinkFileName());
 		return linkFile.writeString(target.toString(target.FullPath));
 	}
@@ -248,10 +268,10 @@ namespace Expansions
 	inline function uninstallContent(expansion: ScriptObject)
 	{
 		local company = expansion.getProperties().Company;
-		local name = expansion.getProperties().Name;		
-		local dir = expansion.getSampleFolder();
+		local name = expansion.getProperties().Name;
+		local dir = getSamplesDirectory(company, name, false);
 
-		if (!isDefined(dir.Filename))
+		if (!dir.isDirectory())
 			return;
 
 		if (dir.toString(dir.FullPath).toLowerCase().contains("hise/samples"))
@@ -317,17 +337,8 @@ namespace Expansions
 
 		local company = expansion.getProperties().Company;
 		local name = expansion.getProperties().Name;
-		local dirToUse = dir;
 
-		if (!dir.toString(dir.Filename).toLowerCase().replace(" ").contains(name.toLowerCase().replace(" ")))
-		{
-			dirToUse = dir.createDirectory(name);
-
-			for (x in files)
-				x.move(dirToUse.getChildFile(x.toString(x.Filename)));
-		}
-
-		if (updateLinkFile(company, name, dirToUse))
+		if (updateLinkFile(company, name, dir))
 			Engine.showMessageBox("Success", "Sample folder relocated successfully. Please restart Rhapsody.", 0);
 		else
 			Engine.showMessageBox("Failed", "Failed to relocate the sample folder. Please try a different folder.", 0);
@@ -338,19 +349,6 @@ namespace Expansions
 	inline function: string getIcon(expansion: ScriptObject)
 	{
 		return expansion.getWildcardReference("Icon.png");
-	}
-
-	inline function: object getExpansion(company: string, name: string)
-	{		
-		for (x in eh.getExpansionList())
-		{
-			local properties = x.getProperties();
-		
-			if (properties.Company == company && properties.Name == name)
-				return x;
-		}
-		
-		return {};
 	}
 
 	inline function setCurrent(company: string, name: string)
@@ -384,12 +382,12 @@ namespace Expansions
 
 		local company = expansion.getProperties().Company;
 		local name = expansion.getProperties().Name;
-		local sampleDir = getSamplesDirectory(company, name, false);
+		local dir = getSamplesDirectory(company, name, false);
 
-		if (!isDefined(sampleDir.Filename))
+		if (!dir.isDirectory())
 			return false;
 
-		local monoliths = FileSystem.findFiles(sampleDir, "*.ch*", false);
+		local monoliths = FileSystem.findFiles(dir, "*.ch*", false);
 
 		if (!monoliths.length)
 			return false;

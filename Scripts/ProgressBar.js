@@ -24,9 +24,9 @@ namespace ProgressBar
 	pnlProgress.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-	
-		g.fillAll(this.get("bgColour"));
 		
+		LookAndFeel.fullPageBackground();		
+
 		g.setColour(this.get("textColour"));
 		g.setFont("bold", 30);
 		g.drawAlignedText(this.get("text"), [a[0] + 25, a[1] + 25, a[2], a[3]], "topLeft");

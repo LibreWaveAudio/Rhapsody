@@ -2,7 +2,7 @@
 
 <ContentProperties DeviceType="Desktop">
   <Component type="ScriptPanel" id="pnlMain" x="0.0" y="0.0" width="1000.0"
-             height="710.0" itemColour="0" itemColour2="0" textColour="4290559164"
+             height="710.0" itemColour="4290559164" itemColour2="0" textColour="4290559164"
              bgColour="4280295456" borderSize="0.0" borderRadius="0.0">
     <Component type="ScriptPanel" id="pnlMenu" x="280.0" y="0.0" width="350.0"
                height="50.0" parentComponent="pnlMain" bgColour="0" itemColour="0"
@@ -90,20 +90,20 @@
                  height="645.0" parentComponent="pnlPages" bgColour="4280295456"
                  itemColour="0" itemColour2="0" textColour="4291611852" borderSize="0.0"
                  borderRadius="0.0" visible="0">
-        <Component type="ScriptPanel" id="pnlDownloads" x="0.0" y="0.0" width="1000.0"
-                   height="630.0" parentComponent="pnlPage2" bgColour="4280295456"
+        <Component type="ScriptPanel" id="pnlDownloads" x="0.0" y="25.0" width="1000.0"
+                   height="620.0" parentComponent="pnlPage2" bgColour="4280295456"
                    itemColour="0" itemColour2="0" textColour="4291611852" borderSize="0.0"
                    borderRadius="0.0" text="">
-          <Component type="ScriptedViewport" id="vptDownloads" x="20.0" y="25.0" width="960.0"
+          <Component type="ScriptedViewport" id="vptDownloads" x="20.0" y="0.0" width="960.0"
                      height="560.0" parentComponent="pnlDownloads" scrollBarThickness="10.0"
                      saveInPreset="0" bgColour="0" itemColour="0" itemColour2="0"
                      textColour="0"/>
-          <Component type="ScriptButton" id="btnSync" x="20.0" y="595.0" width="140.0"
-                     height="35.0" parentComponent="pnlDownloads" isMomentary="1"
+          <Component type="ScriptButton" id="btnSync" x="20.0" y="580.0" width="140.0"
+                     height="30.0" parentComponent="pnlDownloads" isMomentary="1"
                      enableMidiLearn="0" saveInPreset="0" text="Check for Updates"
                      textColour="4291611852" bgColour="0" itemColour="0" itemColour2="0"
                      mouseCursor="PointingHandCursor"/>
-          <Component type="ScriptButton" id="btnDownloadsSubmit" x="780.0" y="600.0"
+          <Component type="ScriptButton" id="btnDownloadsSubmit" x="780.0" y="580.0"
                      width="200.0" height="30.0" parentComponent="pnlDownloads" saveInPreset="0"
                      isMomentary="1" enableMidiLearn="0" text="Download &amp; Install"
                      tooltip="Download and Install the Selected Products" textColour="4278190080"
@@ -241,11 +241,11 @@
                height="710.0" parentComponent="pnlMain" borderSize="0.0" borderRadius="0.0"
                bgColour="4280295456" itemColour="0" itemColour2="0" textColour="4291611852"
                text="" visible="0">
-      <Component type="ScriptPanel" id="pnlProgressBar" x="200.0" y="250.0" width="600.0"
+      <Component type="ScriptPanel" id="pnlProgressBar" x="200.0" y="285.0" width="600.0"
                  height="150.0" parentComponent="pnlProgress" bgColour="4279374354"
                  itemColour="4291611852" itemColour2="0" textColour="4291611852"
                  borderSize="0.0" borderRadius="0.0" text=""/>
-      <Component type="ScriptButton" id="btnProgressCancel" x="825.0" y="310.0"
+      <Component type="ScriptButton" id="btnProgressCancel" x="825.0" y="345.0"
                  width="30.0" height="30.0" parentComponent="pnlProgress" saveInPreset="0"
                  isMomentary="1" enableMidiLearn="0" text="Cancel" bgColour="0"
                  itemColour="0" itemColour2="0" textColour="4291611852"/>
@@ -256,7 +256,7 @@
                visible="0">
       <Component type="ScriptLabel" id="lblFilePicker" x="250.0" y="348.0" width="500.0"
                  height="30.0" itemColour2="4280953393" parentComponent="pnlFilePicker"
-                 fontName="regular" fontSize="18.0" alignment="left" text="/home/dave/Documents"
+                 fontName="regular" fontSize="18.0" alignment="left" text="/home/dave/Desktop/sdf"
                  textColour="4291611852"/>
       <Component type="ScriptButton" id="btnFilePicker" x="735.0" y="353.0" text="folder"
                  width="20.0" height="20.0" bgColour="0" itemColour="0" itemColour2="0"
