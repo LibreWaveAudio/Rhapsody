@@ -29,7 +29,7 @@ namespace UpdateChecker
 		if (!Account.isLoggedIn() || !App.isOnline)
 			return;
 
-		 if ((now - lastSync) < MS_PER_WEEK)
+		 if ((now - lastChecked) < MS_PER_WEEK)
 		 	return;
 	
 		 checkForAppUpdate();
@@ -51,6 +51,9 @@ namespace UpdateChecker
 
 		Server.callWithGET(endpoint, p, function(status, response)
 		{
+			UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
+			sessionCheck = true;
+
 			if (!status == 200 || !response[0])
 				return;
 
@@ -61,9 +64,6 @@ namespace UpdateChecker
 				if (response)					
 					Engine.openWebsite(Engine.getProjectInfo().CompanyURL);
 			});
-			
-			UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
-			sessionCheck = true;
 		});
 	}
 

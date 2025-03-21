@@ -154,7 +154,7 @@
             <Component type="ScriptLabel" id="lblDownloadPath" x="10.0" y="70.0" width="500.0"
                        height="30.0" parentComponent="pnlSettingsBlock1" textColour="4291611852"
                        itemColour2="0" fontName="regular" fontSize="16.0" alignment="left"
-                       text="/tmp/Libre Wave/Rhapsody"/>
+                       text="/home/dave/Downloads"/>
             <Component type="ScriptButton" id="btnDownloadPath" x="490.0" y="75.0" width="20.0"
                        height="20.0" parentComponent="pnlSettingsBlock1" saveInPreset="0"
                        isMomentary="1" enableMidiLearn="0" text="folder" bgColour="0"
@@ -244,7 +244,7 @@
       <Component type="ScriptPanel" id="pnlProgressBar" x="200.0" y="285.0" width="600.0"
                  height="150.0" parentComponent="pnlProgress" bgColour="4279374354"
                  itemColour="4291611852" itemColour2="0" textColour="4291611852"
-                 borderSize="0.0" borderRadius="0.0" text=""/>
+                 borderSize="0.0" borderRadius="0.0" text="39.9 MB/s - About 4.52684118216301e8 minutes remaining"/>
       <Component type="ScriptButton" id="btnProgressCancel" x="825.0" y="345.0"
                  width="30.0" height="30.0" parentComponent="pnlProgress" saveInPreset="0"
                  isMomentary="1" enableMidiLearn="0" text="Cancel" bgColour="0"

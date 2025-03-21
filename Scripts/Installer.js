@@ -242,7 +242,6 @@ namespace Installer
 
 	inline function cleanup()
 	{
-		deleteTemporaryFiles();
 		removeAbortButtonListener();
 		Expansions.refresh();
 		ProductGrid.refresh();
@@ -251,6 +250,8 @@ namespace Installer
 	
 		if (!success && !abort)
 			Engine.showMessageBox("Installation Complete", "The installation finished but not all files could be copied. Please try again or contact support.", 1);
+		else
+			deleteTemporaryFiles();
 	}
 
 	inline function deleteTemporaryFiles()

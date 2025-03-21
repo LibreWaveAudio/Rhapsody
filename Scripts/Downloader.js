@@ -56,7 +56,7 @@ namespace Downloader
 			Spinner.hide();
 
 			if (status == 0)
-				return Engine.showMessageBox("Server Error: " + status, "The server is currently offline. Please try again later.", 1);
+				return Engine.showMessageBox("Server Error: " + status, "Unable to connect to the server. Please check your internet connection and try again. If the problem persists, try again later.", 1);
 
 			if (status != 200 && isDefined(response.message))
 				return Engine.showMessageBox("Server Error: " + status, response.message, 1);
@@ -127,8 +127,11 @@ namespace Downloader
 		removeAbortButtonListener();
 		broadcasters.isDownloading.state = false;
 
-		if (this.data.success && !abort)			
+		if (this.data.success && !abort)
 			return Installer.bulkInstall(downloadsDirectory);
+
+		if (!abort)
+			Engine.showMessageBox("Download Failed", "One or more downloads failed. If you’re using a VPN, try disabling it. Also, ensure Rhapsody is allowed through your system firewall.", 0);
 	}
 
 	inline function: object getDownloadsDirectory(bytesRequired: number)
@@ -166,12 +169,14 @@ namespace Downloader
 			speed += x.getDownloadSpeed();
 		}
 
-		progress = bytesDownloaded / totalSize;
+		local timeRemaining = totalSize - bytesDownloaded / speed;
 
+		progress = bytesDownloaded / totalSize;
+		
 		local data = {
-			message: productNames.length == 1 ? "Downloading " + productNames[0] : "Downloading Instruments",
+			message: productNames.length == 1 ? "Downloading " + productNames[0] : "Downloading Instruments" + ": " + FileSystem.descriptionOfSizeInBytes(bytesDownloaded) + "/" + FileSystem.descriptionOfSizeInBytes(totalSize),
 			value: progress,
-			text: FileSystem.descriptionOfSizeInBytes(speed) + "/s"
+			text: FileSystem.descriptionOfSizeInBytes(speed) + "/s - " + "About " + timeRemaining + " minutes remaining"
 		};
 
 		broadcasters.isDownloading.sendAsyncMessage([true, data]);
