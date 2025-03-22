@@ -17,10 +17,7 @@
 
 namespace DownloadList
 {
-	const catalogue = [];
-	const selected = [];
-	
-	reg filter = "";
+	const items = [];
 
 	//! Look and Feel
 	const lafDownloadList = Content.createLocalLookAndFeel();
@@ -29,11 +26,11 @@ namespace DownloadList
 	{		 
 		g.fillAll(0xff1b1a1a);
 	});
-
+	
 	lafDownloadList.registerFunction("drawTableHeaderColumn", function(g, obj)
 	{
 		 var a = obj.area;
-
+	
 		 g.setFont("medium", 22);
 		 g.setColour(0xffcccccc);
 		 g.drawAlignedText(obj.text, a, "left");
@@ -45,41 +42,43 @@ namespace DownloadList
 	});
 	
 	lafDownloadList.registerFunction("drawTableCell", function(g, obj)
-	{	
+	{
 		var a = obj.area;
-
-		if (obj.columnIndex == 0)
+		var col = obj.columnIndex;
+	
+		if (col == -1)
 		{
 			if (!this.isImageLoaded(obj.text))
 				return;
-
+	
 			g.setColour(Colours.withAlpha(Colours.white, 0.8));
-			g.drawImage(obj.text, [a[0], a[3] / 2 - a[3] * 0.8 / 2, a[2] * 0.9, a[3] * 0.8], 0, 75);
+			g.drawImage(obj.text, Rect.reduced(a, 10), 0, 75);
 		}
 		else
 		{
-			g.setFont("regular", 20);
+			var data = items[obj.RowIndex];
+
+			g.setFont("semibold", 18);
+			g.setColour(0xffcccccc);			
+			g.drawAlignedText(data.name, [a[0] + 10, a[1] + 10, a[2], 25], "left");
+			
+			g.setColour(0xff151515);
+			g.fillRoundedRectangle([a[0] + 10, a[1] + a[3] / 2 - 6 / 2, a[2] - 30, 6], 2);
+			
 			g.setColour(0xffcccccc);
-			g.drawAlignedText(obj.text, obj.area, "left");
+			g.fillRoundedRectangle([a[0] + 10, a[1] + a[3] / 2 - 6 / 2, (a[2] - 30) * 0.5, 6], 2);
 		}
 	});
 	
 	lafDownloadList.registerFunction("drawToggleButton", function(g, obj)
 	{
 		var a = obj.area;
-		a[0] += 5;
-
-		var buttonSize = a[2] / 3.2;
-
-		g.setFont("phosphor", buttonSize);
-		g.setColour(Colours.withMultipliedBrightness(0xffcccccc, (obj.value ? 0.9 : 0.6) + 0.2 * obj.over));
-
-		if (obj.value)
-			g.drawAlignedText("\ue186", [a[2] / 2 - buttonSize / 2, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], "centred");
-		else
-			g.drawAlignedText("\ue45e", [a[2] / 2 - buttonSize / 2, a[3] / 2 - buttonSize / 2, buttonSize, buttonSize], "centred");
+	
+		g.setFont("phosphor", a[2] / 1.5);
+		g.setColour(Colours.withMultipliedBrightness(0xffcccccc, obj.over ? 1.0 - 0.1 * obj.down : 0.8));
+		g.drawAlignedText("\ue4f8", [a[0], a[3] / 2 - a[2] / 2, a[2], a[2]], "centred");
 	});
-
+	
 	lafDownloadList.registerFunction("drawScrollbar", function(g, obj)
 	{
 		 LookAndFeel.drawScrollbar(g, obj, 0xff111111);
@@ -87,194 +86,146 @@ namespace DownloadList
 
 	//! pnlDownloads
 	const pnlDownloads = Content.getComponent("pnlDownloads");
+	pnlDownloads.data.hover = -1;
+	pnlDownloads.setControlCallback(onpnlDownloadsControl);
 	
+	inline function onpnlDownloadsControl(component, value)
+	{
+		for (i = 0; i < pnlDownloadLists.length; i++)
+		{
+			pnlDownloadLists[i].showControl(i == value);
+		}
+	}
+
 	pnlDownloads.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
+		var pages = ["Available", "Downloading"];
+
+		g.setFont("semibold", 18);
+
+		for (i = 0; i < pages.length; i++)
+		{
+			var w = this.getWidth() / pages.length;
+			var x = w * i;
+			g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), (this.getValue() == i ? 1.0 : 0.7 + (this.data.hover == i) * 0.1)));
+			g.drawAlignedText(pages[i], [x, a[1] + 10, w, 25], "centred");
+		}
+	});
+	
+	pnlDownloads.setMouseCallback(function(event)
+	{
+		var index = Math.floor(event.x / this.getWidth() * pnlDownloadLists.length);
 		
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.setFont("bold", 28);
-		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 40], "centred");
+		this.data.hover = event.hover ? index : -1;
+
+		if (event.clicked)
+		{
+			this.setValue(index);
+			this.changed();
+		}			
+
+		this.repaint();
 	});
 
-	//! btnSync
-	const btnSync = Content.getComponent("btnSync");
-	btnSync.setLocalLookAndFeel(LookAndFeel.textIconButton);
-	btnSync.setControlCallback(onbtnSyncControl);
+	//! pnlDownloading
+	const pnlDownloading = Content.getComponent("pnlDownloading");
 
-	inline function onbtnSyncControl(component, value)
+	pnlDownloading.setPaintRoutine(function(g)
 	{
-		if (value)
-			return;
-
-		Cache.sync();
-	}
-
-	//! vptDownloads
-	const vptDownloads = Content.getComponent("vptDownloads");
-
-	vptDownloads.setLocalLookAndFeel(lafDownloadList);
-
-	vptDownloads.setTableMode({
+		var a = this.getLocalBounds(0);
+	
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
+		g.setFont("bold", 28);
+		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 10], "centred");
+	});
+	
+	//! pnlDownloadLists - both downloadable and downloading lists
+	const pnlDownloadLists = [Content.getComponent("pnlAvailable"), Content.getComponent("pnlDownloading")];
+	
+	//! vptDownloading
+	const vptDownloading = Content.getComponent("vptDownloading");
+	vptDownloading.setLocalLookAndFeel(lafDownloadList);
+	
+	vptDownloading.setTableMode({
 		MultiColumnMode: false,
 		HeaderHeight: 0,
-		RowHeight: 80,
+		RowHeight: 100,
 		ScrollOnDrag: false
 	});
 
-	vptDownloads.setTableColumns(
+	vptDownloading.setTableColumns(
 	[
-		{ID: "Check", Label: "", Type: "Button", Toggle: true, MinWidth: 75, MaxWidth: 75},
-		{ID: "Image", Label: "", Type: "Text", MinWidth: 150},
-		{ID: "Instrument", Type: "Text", MinWidth: 400},
-		{ID: "Version", Type: "Text", MinWidth: 100},
-		{ID: "Size", Type: "Text", MinWidth: 125},
-		{ID: "Type", Type: "Text", MinWidth: 100},
+		{ID: "Image", Type: "Text", MinWidth: 175},
+		{ID: "Data", Type: "Text", MinWidth: 500},
+		{ID: "Cancel", Type: "Button", MinWidth: 50}
 	]);
 
-	vptDownloads.setTableCallback(onvptDownloadsTableCallback);
+	vptDownloading.setTableCallback(onvptDownloadingTableCallback);
 
-	inline function onvptDownloadsTableCallback(obj)
+	inline function onvptDownloadingTableCallback(obj)
 	{
-		if (obj.Type != "Button")
+		if (obj.Type != "Button" || obj.value)
 			return;
 
-		local item = catalogue[obj.rowIndex];
-
-		obj.value == 1 ? selected.push(item.id) : selected.remove(item.id);
-		btnDownloadsSubmit.set("enabled", selected.length > 0);
+		Console.print(trace(obj));
 	};
-
-	//! btnDownloadsSubmit
-	const btnDownloadsSubmit = Content.getComponent("btnDownloadsSubmit");
-	btnDownloadsSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
-	btnDownloadsSubmit.setControlCallback(onbtnDownloadsSubmitControl);
-
-	inline function onbtnDownloadsSubmitControl(component, value)
-	{
-		if (value)
-			return;
-
-		Downloader.addDownloads(selected);
-	}
-
+	
 	//! Functions
-	inline function applyFilter()
+	inline function addItem(data)
+	{
+		for (x in items)
+		{
+			if (x.id == data.id)
+				return;
+		}	
+
+		//data.progress = 0.5;
+		items.push(data);
+		
+		//Downloader.addToQueue(data);
+		
+		loadImages();
+		refresh();
+	}
+	
+	inline function refresh()
 	{
 		local listData = [];
 
-		selected.clear();
-
-		local filteredItems = filterItems(filter);
-		Engine.sortWithFunction(filteredItems, sortByName);
-
-		for (x in filteredItems)
+		for (x in items)
 		{
+			if (isDefined(x.progress))
+				continue;
+		
 			local obj = {
-				Check: 0,
 				Image: x.id,
-				Instrument: x.name.capitalize(),
-				Version: x.latestVersion == "" ? "N/A" : "v" + x.latestVersion,
-				Size: x.fileSize == "" ? "N/A" : FileSystem.descriptionOfSizeInBytes(x.fileSize),
-				Type: x.action.capitalize()
+				Data: "Coming Soon",
+				Cancel: ""
 			};
 
 			listData.push(obj);
 		}
-
-		pnlDownloads.set("text", filteredItems.length > 0 ? "" : "No Downloads Available");
-		pnlDownloads.repaint();
-
-		btnDownloadsSubmit.set("enabled", false);
-		btnDownloadsSubmit.showControl(filteredItems.length > 0);
-		vptDownloads.setTableRowData(listData);
-	}
-
-	inline function sortByName(a, b)
-	{
-		if (a.name < b.name)
-			return -1;
-
-		return a.name > b.name;
-	}
-
-	inline function: Array filterItems(query: string)
-	{
-		local result = [];
-
-		if (query == "")
-			return catalogue;
-
-		for (x in catalogue)
-		{
-			local tags = (isDefined(x.tags) && Array.isArray(x.tags) && x.tags.length > 0) ? x.tags : [""];
-
-			for (i = 0; i < tags.length; i++)
-			{
-				local t = tags[i].toLowerCase();
-
-				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(x.name.toLowerCase(), query) && !Engine.matchesRegex(x.company.toLowerCase(), query))
-					continue;
-
-				result.push(x);
-
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	inline function refresh()
-	{
-		catalogue.clear();
-
-		for (x in Cache.getData())
-		{
-			local name = x.name;
-
-			if (isDefined(x.projectName))
-				name = x.projectName;
-
-			if (isDefined(x.expansionName))
-				name = x.expansionName;
-
-			if (isDefined(x.variationName))
-				name += " - " + x.variationName;
-
-			local action = Expansions.isInstallable(x.company, name, x.latestVersion);
-
-			if (action == "")
-				continue;
-
-			x.action = action;
-			catalogue.push(x);				
-		}
-
-		loadImages();
-		applyFilter();
+				
+		vptDownloading.setTableRowData(listData);
+		
+		pnlDownloading.set("text", items.length > 0 ? "" : "No Active Downloads");
+		pnlDownloading.repaint();
 	}
 
 	inline function loadImages()
 	{
 		lafDownloadList.unloadAllImages();
 
-		for (x in catalogue)
+		for (x in items)
 		{
 			local img = Cache.getImage(x.id + ".jpg");
-
+	
 			if (img.isFile())
 				lafDownloadList.loadImage(img.toString(img.FullPath), x.id);
 		}
 	}
-
-	//! Broadcasters
-	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)
-	{
-		filter = isDefined(value) ? value.toLowerCase().trim() : "";
-		applyFilter();
-	});	
-
-	//! Calls 
- 	refresh();		
+	
+	//! Calls
+	refresh();
 }

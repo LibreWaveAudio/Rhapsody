@@ -71,7 +71,7 @@ namespace Menu
 	Account.broadcasters.loggedIn.addListener({}, "Respond to changes in logged in status", function(state)
 	{
 		setButtonPositions(state && App.isOnline);		
-		btnPage[0].setValue(1);
-		btnPage[0].changed();
+		//btnPage[0].setValue(1);
+		//btnPage[0].changed();
 	});
 }

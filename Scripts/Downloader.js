@@ -22,6 +22,7 @@ namespace Downloader
 	reg abort = false;
 	reg downloadsDirectory;
 
+	const queue = [];
 	const downloads = [];
 	const productNames = [];
 	const progressTimer = Engine.createTimerObject();
@@ -34,40 +35,42 @@ namespace Downloader
 	Server.setNumAllowedDownloads(3);
 
 	//! Functions
-	inline function addDownloads(productIds: Array)
+	inline function addToQueue(data: object)
 	{
 		local headers = ["Authorization: Bearer " + Account.readToken()];
 		local endpoint =  App.apiPrefix + "get_downloads/";
 		local version = 0;
-		local p = {user_version: 0};
-
-		for (i = 0; i < productIds.length; i++)
-			p["product_id[" + i + "]"] = productIds[i];
-
+		local p = {product_id: data.id, user_version: 0};
+				
 		Server.setHttpHeader(headers.join("\n"));
 		Server.setBaseURL(App.baseUrl[App.mode]);
 
 		Spinner.show("Fetching Downloads");
-		
-		deleteDownloadedArchives();
 
-		Server.callWithGET(endpoint, p, function(status, response)
+		Server.callWithGET(endpoint, p, function[data](status, response)
 		{
 			Spinner.hide();
-
+		
 			if (status == 0)
 				return Engine.showMessageBox("Server Error: " + status, "Unable to connect to the server. Please check your internet connection and try again. If the problem persists, try again later.", 1);
-
+		
 			if (status != 200 && isDefined(response.message))
 				return Engine.showMessageBox("Server Error: " + status, response.message, 1);
-
+		
 			if (status != 200)
 				return Engine.showMessageBox("Server Error: " + status, "A server error occurred. Please try again later.", 1);
-
+		
 			if (!isDefined(response[0]) || !response[0])
 				return Engine.showMessageBox("Verification Required", response.message, 1);
 
-			downloadFiles(response);
+			data.downloads = response;
+			data.progress = {value: 0};
+			queue.push(data);
+
+			DownloadList.refresh();
+
+			if (queue.length == 1)
+				downloadFiles(data.downloads);
 		});
 	}
 

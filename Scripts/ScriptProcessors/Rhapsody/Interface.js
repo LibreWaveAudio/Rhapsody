@@ -34,14 +34,16 @@ include("UpdateChecker.js");
 include("ProductGrid.js");
 include("ProductTile.js");
 include("License.js");
-include("DownloadList.js");
 include("Downloader.js");
+include("InstallList.js");
+include("DownloadList.js");
 include("Installer.js");
 include("ManualInstaller.js");
 include("FilePicker.js");
 include("UserSettings.js");
 include("ProgressBar.js");
 include("ZoomHandler.js");
+
 function onNoteOn()
 {
 	
