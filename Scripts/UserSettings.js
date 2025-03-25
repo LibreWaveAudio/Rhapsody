@@ -189,7 +189,7 @@ namespace UserSettings
     	g.setFont("semibold", 20);
     	g.drawAlignedText(this.get("text"), a, "topLeft");
     	
-    	g.setFont("regular", 16);
+    	g.setFont("regular", 18);
     	g.drawAlignedText(this.get("tooltip"), Rect.removeFromTop(a, 50), "bottomLeft");
     }
     

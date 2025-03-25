@@ -26,11 +26,11 @@ namespace ManualInstaller
 
 		g.setColour(this.get("textColour"));
 		g.setFont("semibold", 20);
-		g.drawAlignedText(this.get("text"), a, "topLeft");
+		g.drawAlignedText(this.get("text"), Rect.fromTop(a, 25), "left");
 			
-		g.setFont("regular", 16);
-		g.drawAlignedText("Single Instrument: Drag and drop an .lwz file or click the Select File button.", Rect.removeFromTop(a, 50), "bottomLeft");
-		g.drawAlignedText("Multiple Instruments: Click the Select Folder button to install all .lwz files in a folder.", Rect.removeFromTop(a, 25), "bottomLeft");
+		g.setFont("regular", 18);
+		g.drawAlignedText("Single Instrument: Drag and drop an .lwz file or click the Select File button.", Rect.fromTop(a, 80), "left");
+		g.drawAlignedText("Multiple Instruments: Click the Select Folder button to install all .lwz files in a folder.", Rect.fromTop(a, 135), "left");
 	});
 
 	//! pnlDropZone
@@ -70,12 +70,12 @@ namespace ManualInstaller
 
 		g.setFont("phosphor", 48);
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.6 + 0.4 * this.data.hover));
-		g.drawAlignedText("\uee54", Rect.removeFromTop(a, 90), "centred");
+		g.drawAlignedText("\uee54", Rect.removeFromTop(a, 125), "centred");
 
 		g.setFont("regular", 18);
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.9));
-		g.drawAlignedText("Drag & Drop an .lwz File", [a[0], 90, a[2], 25], "centred");
-		g.drawAlignedText("Or", [a[0], 115, a[2], 25], "centred");		
+		g.drawAlignedText("Drag & Drop an .lwz File", [a[0], 100, a[2], 25], "centred");
+		g.drawAlignedText("Or", [a[0], 125, a[2], 25], "centred");		
 	});
 	
 	//! btnSelectLwzFile

@@ -33,7 +33,7 @@ namespace LookAndFeel
 		"backspace": "\ue0ae",
 		"folder": "\ue256",
 		"close": "\ue4f6",
-		"cancel": "\ue4f8",
+		"cancel": "\ue4f6",
 		"login": "\ue4c2",
 		"logout": "\ue42a",
 		"download": "\ue20a",

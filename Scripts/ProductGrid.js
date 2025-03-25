@@ -19,6 +19,7 @@ namespace ProductGrid
 {
 	const MARGIN = 10;
 	reg numCols = 4;
+	reg fontSize = 16;
 	reg filterQuery = "";
 
 	//! pnlProductGridContainer
@@ -57,7 +58,7 @@ namespace ProductGrid
 			local x = MARGIN + (index * width) + (index * MARGIN);
 			local y = Math.floor(i / numCols) * (height + MARGIN);
 
-			ProductTile.create(pnlProductGrid, e, [x, y, width, height]);
+			ProductTile.create(pnlProductGrid, e, [x, y, width, height], {fontSize: fontSize});
 		}
 		
 		pnlProductGridContainer.set("text", expansions.length > 0 ? "" : "No Instruments Found");
@@ -107,12 +108,12 @@ namespace ProductGrid
 				result.push(x);
 
 				break;	
-			}			
+			}
 		}
 
 		return result;
 	}
-	
+
 	//! Broadcasters
 	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)
 	{
@@ -125,9 +126,23 @@ namespace ProductGrid
 	bcScaleFactor.attachToComponentValue(["pnlZoom"], "");
 
 	bcScaleFactor.addListener(0, "Respond to UI scale changes", function(component, value)
-	{
-		numCols = value < 1.5 ? 4 : 5;
+	{	
+		if (value >= 0.0 && value < 1)
+		{
+			numCols = 4;
+			fontSize = 18;
+		}			
+		else if (value >= 1 && value <= 2)
+		{
+			numCols = 5;
+			fontSize = 16;
+		}			
+		else
+		{
+			numCols = 6;
+			fontSize = 14;
+		}
+
 		refresh();
-	});
-	
+	});	
 }

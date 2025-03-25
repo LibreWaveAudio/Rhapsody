@@ -255,7 +255,7 @@ namespace Cache
 			if (!response)
 				return DownloadList.refresh();
 
-			sync();				
+			sync();
 		});
 	}
 

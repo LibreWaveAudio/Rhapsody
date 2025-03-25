@@ -17,76 +17,117 @@
 
 namespace ProgressBar
 {
-	//! pnlProgress
-	const pnlProgress = Content.getComponent("pnlProgress");
-	pnlProgress.showControl(false);
+	const downloadInstallStates = [0, 0];
 
-	pnlProgress.setPaintRoutine(function(g)
+	//! pnlProgress
+	const pnlProgress = Content.getAllComponents("pnlProgress\\d");
+	
+	for (x in pnlProgress)
+		x.showControl(false);
+
+	pnlProgress[0].setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-		
-		LookAndFeel.fullPageBackground();		
 
-		g.setColour(this.get("textColour"));
-		g.setFont("bold", 30);
-		g.drawAlignedText(this.get("text"), [a[0] + 25, a[1] + 25, a[2], a[3]], "topLeft");
-	
+		g.fillAll(this.get("bgColour"));
 		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
-		
-	//! pnlProgressBar
-	const pnlProgressBar = Content.getComponent("pnlProgressBar");
-	
-	pnlProgressBar.setPaintRoutine(function(g)
+
+	pnlProgress[1].setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-		var v = this.getValue();
-		var radius = this.get("borderRadius");
+
+		g.drawDropShadow([a[0], a[1] + 15, a[2], a[3] - 25], Colours.withAlpha(Colours.black, 0.7), 20);
 
 		g.setColour(this.get("bgColour"));
-		g.fillRoundedRectangle(Rect.withSizeKeepingCentre(a, a[2], 8), radius);
+		g.fillRect([a[0], a[1], a[2], a[3] - 10]);
 
-		var fillArea = Rect.withSizeKeepingCentre(a, a[2] - 2, 6);		
-
-		g.setColour(this.get("itemColour"));
-		g.fillRoundedRectangle([fillArea[0], fillArea[1], fillArea[2] * v, fillArea[3]], radius);
-
-		g.setColour(this.get("textColour"));
-		g.setFont("medium", 22);
-		g.drawAlignedText(this.data.message + ": " + parseInt(v * 100) + "%", Rect.removeFromTop(a, 90), "left");
-
-		g.setFont("regular", 20);
-		g.drawAlignedText(this.get("text"), Rect.removeFromBottom(a, 90), "left");
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
 
+	//! imgProgress
+	const imgProgress = Content.getComponent("imgProgress");
+		
+	//! pnlProgressBar
+	const pnlProgressBar = Content.getAllComponents("pnlProgressBar\\d");
+
+	for (x in pnlProgressBar)
+		x.setPaintRoutine(function(g) {drawProgressBar();});
+
 	//! btnProgressCancel
-	const btnProgressCancel = Content.getComponent("btnProgressCancel");
-	btnProgressCancel.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	const btnProgressCancel = Content.getAllComponents("btnProgressCancel\\d");
+	
+	for (x in btnProgressCancel)
+		x.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 
 	//! Functions
+	inline function drawProgressBar()
+	{
+		if (this.data.productName == "" || this.data.text == "")
+			return;
+
+		local a = this.getLocalBounds(0);
+		local radius = this.get("borderRadius");
+		local fillArea = [a[0], a[3] - 17, a[2], 4];
+
+		g.setColour(this.get("bgColour"));
+		g.fillRoundedRectangle(fillArea, radius);
+
+		g.setColour(this.get("itemColour"));
+		g.fillRoundedRectangle([fillArea[0], fillArea[1], fillArea[2] * this.getValue(), fillArea[3]], radius);
+
+		g.setColour(this.get("textColour"));
+		g.setFont("bold", 20);
+		g.drawAlignedText(this.data.productName, [a[0], a[1] + 10, a[2], a[3]], "topLeft");
+
+		g.setColour(this.get("textColour"));
+		g.setFont("medium", 18);
+		g.drawAlignedText(this.data.text, [a[0], a[1] + 34, a[2], a[3]], "topLeft");
+	}
+	
 	inline function setProgress(progress: object)
 	{
-		pnlProgress.showControl(true);
-		pnlProgressBar.setValue(progress.value);
-		pnlProgressBar.data.message = progress.message;
-		pnlProgressBar.set("text", progress.text);
-		pnlProgressBar.repaint();
+		for (x in pnlProgressBar)
+		{
+			x.setValue(progress.value);
+
+			if (isDefined(progress.productName))
+				x.data.productName = progress.productName;
+
+			if (isDefined(progress.text))
+				x.data.text = progress.text;
+
+			x.repaint();
+		}
 	}
 	
 	inline function hide()
 	{
-		pnlProgress.showControl(false);
+		for (x in pnlProgress)
+			x.showControl(false);
+	}
+	
+	inline function setProductName(productName: string)
+	{
+		for (x in pnlProgressBar)
+			x.data.productName = productName;
+	}
+	
+	inline function setImage(imageFile: string)
+	{
+		imgProgress.setImageFile(imageFile, true);
 	}
 
 	//! Broadcasters
-	Downloader.broadcasters.isDownloading.addListener({}, "Show the progress bar during downloads", function(state, progress)
+	Downloader.broadcasters.isDownloading.addComponentPropertyListener(["pnlProgress0", "pnlProgress1"], "visible", "Disable menu during downloads", function(index, state)
 	{
-		if (typeof(progress) != "object")
-			return;
+		downloadInstallStates[0] = state;
+		return downloadInstallStates.contains(true);
+	});
 
-		if (state)
-			setProgress(progress);
-		else
-			hide();
+	Installer.broadcasters.isInstalling.addComponentPropertyListener(["pnlProgress0", "pnlProgress1"], "visible", "Disable menu during install", function(index, state)
+	{
+		downloadInstallStates[1] = state;
+		return downloadInstallStates.contains(true);
 	});
 }

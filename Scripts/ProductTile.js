@@ -17,7 +17,7 @@
 
 namespace ProductTile
 {
-	inline function: ScriptObject create(parentPanel: ScriptObject, expansion: object, area: Array)
+	inline function: ScriptObject create(parentPanel: ScriptObject, expansion: object, area: Array, options: object)
 	{
 		local p = parentPanel.addChildPanel();
 		p.set("allowCallbacks", "All Callbacks");
@@ -30,11 +30,14 @@ namespace ProductTile
 
 		for (x in expansionProperties)
 			p.data[x] = expansionProperties[x];
+			
+		for (x in options)
+			p.data[x] = options[x];
 
 		p.setPaintRoutine(function(g)
 		{
 			var a = this.getLocalBounds(0);
-			var fontSize = a[2] > 200 ? 18 : 16;
+			var fontSize = isDefined(this.data.fontSize) ? this.data.fontSize : a[2] > 200 ? 18 : 16;
 
 			g.beginLayer(false);			
 			g.setColour(Colours.withAlpha(Colours.white, this.data.hover ? 1.0 : 0.9));

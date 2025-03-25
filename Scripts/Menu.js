@@ -17,6 +17,8 @@
 
 namespace Menu
 {
+	const downloadInstallStates = [0, 0];
+
 	//! pnlPages
 	const pnlPages = Pager.create("pnlPages", "pnlMenu", 1);
 	
@@ -63,7 +65,7 @@ namespace Menu
 	}
 
 	//! Broadcasters
-	Account.broadcasters.loggedIn.addComponentPropertyListener("btnPage5", "enabled", "Set login button visibility based on logged in state", function(index, state)
+	Account.broadcasters.loggedIn.addComponentPropertyListener("btnPage5", "enabled", "Set login button enabled state based on logged in state", function(index, state)
 	{
 		return !state;
 	});
@@ -74,4 +76,17 @@ namespace Menu
 		//btnPage[0].setValue(1);
 		//btnPage[0].changed();
 	});
+
+	Downloader.broadcasters.isDownloading.addComponentPropertyListener("pnlMenu", "enabled", "Disable menu during downloads", function(index, state)
+	{
+		downloadInstallStates[0] = state;
+		return !downloadInstallStates.contains(true);
+	});
+
+	Installer.broadcasters.isInstalling.addComponentPropertyListener("pnlMenu", "enabled", "Disable menu during install", function(index, state)
+	{
+		downloadInstallStates[1] = state;
+		return !downloadInstallStates.contains(true);
+	});
+
 }

@@ -22,7 +22,8 @@ namespace Installer
 	reg numFiles;
 	reg success;
 	reg tempDir;
-		
+	reg postInstallCallback;
+	
 	//! Background worker
 	const worker = Engine.createBackgroundTask("fileMover");
 	worker.setTimeOut(2000);
@@ -38,9 +39,12 @@ namespace Installer
 		cleanup();
 	});
 
-	//! Functions		
+	//! Functions
 	inline function install(lwzFile: ScriptObject)
 	{
+		if (!lwzFile.isFile() || lwzFile.toString(lwzFile.Extension) != ".lwz")
+			return postInstallCallback();
+
 		local archives = getSiblingLwzFiles(lwzFile);
 		tempDir = lwzFile.getParentDirectory();
 		extractArchives(archives);
@@ -70,10 +74,18 @@ namespace Installer
 
 		Engine.sortWithFunction(archives, sortFiles);
 
+		broadcasters.isInstalling.state = true;
+
 		for (x in archives)
 		{
+			if (abort)
+				return cleanUp();
+
 			local filename = x.toString(x.Filename);
 			local target = getTempDirectoryForArchive(x);
+			local productName = getProductNameFromFilename(filename).replace("_", " ").capitalize();
+
+			ProgressBar.setProductName(productName);
 
 			if (filename.contains("_data_"))
 			{
@@ -116,12 +128,12 @@ namespace Installer
 
 		for (x in files)
 		{
+			if (abort)
+				continue;
+
 			var parentName = x.getParentDirectory().toString(x.Filename);
 			var filename = x.toString(x.Filename);
 			var ext = x.toString(x.Extension);
-
-			if (abort)
-				continue;
 
 			updateProgress("Installing File: ", fileCount / numFiles);
 
@@ -197,10 +209,11 @@ namespace Installer
 
 	inline function updateProgress(action: string, progress: number)
 	{		
+		local progressText = abort == 1 ? "Cancelling..." : action + (fileCount + 1) + "/" + numFiles;
+
 		local data = {
-			message: action + (fileCount + 1) + "/" + numFiles,
-			value: progress,
-			text: abort == 1 ? "Cancelling..." : ""
+			text: progressText,
+			value: progress
 		};
 
 		ProgressBar.setProgress(data);
@@ -236,8 +249,9 @@ namespace Installer
 	inline function: ScriptObject getTempDirectoryForArchive(file: ScriptObject)
 	{
 		local filename = file.toString(file.Filename);
-		local productName = getProductNameFromFilename(filename);
-		return file.getParentDirectory().createDirectory("librewave_temp_" + productName);
+		local productName = getProductNameFromFilename(filename);		
+		local dir = file.getParentDirectory();
+		return dir.createDirectory("librewave_temp_" + productName);
 	}
 
 	inline function cleanup()
@@ -245,27 +259,22 @@ namespace Installer
 		removeAbortButtonListener();
 		Expansions.refresh();
 		ProductGrid.refresh();
-		DownloadList.refresh();
 		ProgressBar.hide();
-	
+
 		if (!success && !abort)
 			Engine.showMessageBox("Installation Complete", "The installation finished but not all files could be copied. Please try again or contact support.", 1);
 		else
 			deleteTemporaryFiles();
+		
+		broadcasters.isInstalling.state = false;
+			
+		postInstallCallback();
 	}
 
 	inline function deleteTemporaryFiles()
 	{
 		for (x in FileSystem.findFiles(tempDir, "librewave_temp_*", false))
-			x.deleteFileOrDirectory();
-
-		local downloadsDir = UserSettings.getDirectory("downloadPath");
-
-		if (!isDefined(downloadsDir.Filename))
-			return;
-
-		for (x in FileSystem.findFiles(downloadsDir, "*.lwz", false))
-			x.deleteFileOrDirectory();
+			x.deleteFileOrDirectory();		
 	}
 
 	inline function createVariantHxi(filename: string, target: ScriptObject)
@@ -329,7 +338,7 @@ namespace Installer
 		if (isDefined(version))
 			return version.replace("_", ".");
 	
-		return "";		
+		return "";
 	}
 
 	inline function: number versionCompare(version1: string, version2: string)
@@ -356,6 +365,16 @@ namespace Installer
 		return 0;
 	}
 
+	inline function setPostInstallCallback(callback: Function)
+	{
+		postInstallCallback = callback;
+	}
+
+	inline function clearPostInstallCallback()
+	{
+		postInstallCallback = function(){};
+	}
+
 	inline function abortInstall()
 	{
 		abort = true;
@@ -365,7 +384,7 @@ namespace Installer
 
 	inline function addAbortButtonListener()
 	{
-		broadcasters.abort.attachToComponentValue(["btnProgressCancel"], "");
+		broadcasters.abort.attachToComponentValue(["btnProgressCancel0", "btnProgressCancel1"], "");
 
 		broadcasters.abort.addListener(0, "Abort Installation", function(component, value)
 		{
@@ -389,4 +408,8 @@ namespace Installer
 	//! Broadcasters
 	const broadcasters = {};
 	broadcasters.abort = Engine.createBroadcaster({id: "abortInstall", args: ["component", "value"]});
+	broadcasters.isInstalling = Engine.createBroadcaster({id: "installState", args: ["state"]});
+	
+	//! Calls
+	clearPostInstallCallback();
 }

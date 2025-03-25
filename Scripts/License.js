@@ -39,9 +39,9 @@ namespace License
 		g.setFont("semibold", 20);
 		g.drawAlignedText(this.get("text"), a, "topLeft");
 			
-		g.setFont("regular", 16);
-		g.drawAlignedText("1) Enter your license key and click activate.", Rect.removeFromTop(a, 50), "bottomLeft");
-		g.drawAlignedText("2) Once activated, go to the downloads list to download and install your instrument.", Rect.removeFromTop(a, 25), "bottomLeft");
+		g.setFont("regular", 18);
+		g.drawAlignedText("1) Enter your license key and click activate.", Rect.fromTop(a, 80), "left");
+		g.drawAlignedText("2) Once activated, go to the downloads list to download and install your instrument.", Rect.fromTop(a, 135), "left");
 		
 	});
 	

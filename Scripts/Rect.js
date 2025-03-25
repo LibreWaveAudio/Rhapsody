@@ -27,12 +27,24 @@ namespace Rect
 		return [area[0] + (area[2] - width) / 2, area[1] + (area[3] - height) / 2, width, height];
 	}
 	
+	// Returns a strip from the left-hand edge
+	inline function fromLeft(area: Array, amount: number)
+	{
+		return [area[0], area[1], amount, area[3]];
+	}
+	
 	// Removes a strip from the left-hand edge of this rectangle and returns it.
 	inline function removeFromLeft(area: Array, amount: number)
 	{
 		area[0] += amount;
 		area[2] -= amount;
 		return [area[0] - amount, area[1], amount, area[3]];
+	}
+	
+	// Returns a strip from the right-hand edge
+	inline function fromRight(area: Array, amount: number)
+	{
+		return [area[2] - amount, area[1], amount, area[3]];
 	}
 	
 	// Removes a strip from the right-hand edge of this rectangle and returns it.
@@ -42,12 +54,24 @@ namespace Rect
 		return [area[0] + area[2], area[1], amount, area[3]];
 	}
 	
+	// Returns a strip from the top edge
+	inline function fromTop(area: Array, amount: number)
+	{
+		return [area[0], area[1], area[2], amount];
+	}
+	
 	// Removes a strip from the top edge of this rectangle and returns it.
 	inline function removeFromTop(area: Array, amount: number)
 	{
 		area[1] += amount;
 		area[3] -= amount;
 		return [area[0], area[1] - amount, area[2], amount];
+	}
+	
+	// Returns a strip from the bottom edge
+	inline function fromBottom(area: Array, amount: number)
+	{
+		return [area[0], area[1] + area[3] - amount, area[2], amount];
 	}
 	
 	// Removes a strip from the bottom edge of this rectangle and returns it.
@@ -96,7 +120,7 @@ namespace Rect
 			x = area[0] + Math.abs(w - ar[2]) / 2.0;
 			y = area[1];
 		}
-		
+
 		return [x, y, w, h];
-	}
+	}	
 }

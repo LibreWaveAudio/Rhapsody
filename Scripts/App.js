@@ -39,6 +39,13 @@ namespace App
 	//! pnlMain
 	const pnlMain = Content.getComponent("pnlMain");
 
+	pnlMain.setFileDropCallback("All Callbacks", "*.pdf", onpnlMainFileDrop);
+	
+	inline function onpnlMainFileDrop(obj)
+	{
+		Console.print(trace(obj));
+	}
+
 	pnlMain.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
