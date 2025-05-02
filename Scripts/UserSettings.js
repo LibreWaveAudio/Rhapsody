@@ -184,15 +184,15 @@ namespace UserSettings
 	    	local lblArea = [x.get("x") - 10, x.get("y"), x.getWidth() + 20, x.getHeight()];
 	    	g.fillRoundedRectangle(lblArea, 2);	    		
     	}
-    	
+
     	g.setColour(this.get("textColour"));
-    	g.setFont("semibold", 20);
+    	g.setFont("semibold", 22);
     	g.drawAlignedText(this.get("text"), a, "topLeft");
     	
     	g.setFont("regular", 18);
-    	g.drawAlignedText(this.get("tooltip"), Rect.removeFromTop(a, 50), "bottomLeft");
+    	g.drawAlignedText(this.get("tooltip"), a.withTrimmedTop(35), "topLeft");
     }
-    
+
     inline function getDirectory(location: string)
     {
 	    local savedPath = getProperty("rhapsody", location);

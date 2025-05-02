@@ -56,7 +56,7 @@ namespace DownloadList
 				return;
 
 			g.setColour(Colours.withAlpha(Colours.white, 0.8));
-			g.drawImage(obj.text, Rect.reduced(a, 10), 0, 75);
+			g.drawImage(obj.text, a.reduced(10), 0, 75);
 		}
 		else
 		{
@@ -71,7 +71,7 @@ namespace DownloadList
 		var a = obj.area;
 		var item = filteredItems[obj.RowIndex];
 	
-		var c = queue.contains(item) ? 0xff6b6b6b : 0xffbbbbbb;
+		var c = queue.contains(item) ? 0xff6b6b6b : item.action == "update" ? 0xffcfc3b0 : 0xffbbbbbb;
 		g.setColour(Colours.withMultipliedBrightness(c, obj.over ? 1.0 - 0.1 * obj.down : 0.8));
 		g.fillRoundedRectangle([a[0] + 3, a[3] / 2 - 28 / 2, a[2] - 6, 28], 2);
 	
@@ -96,7 +96,7 @@ namespace DownloadList
 	
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
 		g.setFont("bold", 28);
-		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 10], "centred");
+		g.drawAlignedText(this.get("text"), a.withTrimmedBottom(10), "centred");
 	});
 	
 	//! vptAvailable
@@ -134,20 +134,22 @@ namespace DownloadList
 			addToQueue(item);
 	};
 	
-	//! btnSync
-	const btnSync = Content.getComponent("btnSync");
-	btnSync.setLocalLookAndFeel(LookAndFeel.textIconButton);
-	btnSync.setControlCallback(onbtnSyncControl);
-
-	inline function onbtnSyncControl(component, value)
+	//! pnlUpdateIndicator
+	const pnlUpdateIndicator = Content.getComponent("pnlUpdateIndicator");
+	
+	pnlUpdateIndicator.setPaintRoutine(function(g)
 	{
-		if (value)
-			return;
+		var a = this.getLocalBounds(0);
+		g.setColour(this.get("bgColour"));
+		
+		g.setFont("phosphorFill", a[2]);
+		g.drawAlignedText("\ue0ce", a, "centred");
 
-		Cache.sync();
-		loadImages();
-	}
-
+		g.setFont("bold", 12);
+		g.setColour(this.get("textColour"));
+		g.drawAlignedText(this.get("text"), a.withTrimmedBottom(1.5), "centred");
+	});
+	
 	//! Functions
 	inline function addToQueue(item: object)
 	{
@@ -273,6 +275,8 @@ namespace DownloadList
 	{
 		catalogue.clear();
 
+		local numUpdatable = 0;
+
 		for (x in Cache.getData())
 		{
 			local name = x.name;
@@ -291,10 +295,16 @@ namespace DownloadList
 			if (action == "")
 				continue;
 
+			if (action == "update")
+				numUpdatable++;
+
 			x.action = action;
-			catalogue.push(x);				
+			catalogue.push(x);
 		}
 
+		pnlUpdateIndicator.showControl(numUpdatable > 0);
+		pnlUpdateIndicator.set("text", numUpdatable < 10 ? numUpdatable : "");
+		
 		updateList();
 	}
 
@@ -310,8 +320,19 @@ namespace DownloadList
 				lafList.loadImage(img.toString(img.FullPath), x.id);
 		}
 	}
-
+	
 	//! Broadcasters
+	const bcMenuValue = Engine.createBroadcaster({id: "bcDownloadListMenuValue", args: ["component", "value"]});
+	bcMenuValue.attachToComponentValue("cmbMenu", "");
+
+	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		if (component.getItemText().toLowerCase() != "check for updates")
+			return;
+
+		Cache.sync();
+	});
+	
 	Downloader.broadcasters.isDownloading.addComponentPropertyListener("btnSync", "enabled", "Disable during downloads", function(index, state)
 	{
 		return !state;
@@ -323,10 +344,9 @@ namespace DownloadList
 
 	bcProgressVisible.addListener(0, "Adjust list position when progress bar is visible", function(component, isVisible)
 	{
-		pnlDownloads.set("y", isVisible ? 110 : 0);
-		pnlDownloads.set("height", isVisible ? 495 : 645);
-		vptDownloads.set("y", isVisible ? 10 : 25);
-		vptDownloads.set("height", isVisible ? 450 : 565);
+		pnlDownloads.set("y", isVisible ? 110 : 10);
+		pnlDownloads.set("height", isVisible ? 545 : 620);
+		vptDownloads.set("height", isVisible ? 535 : 620);
 	});
 
 	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)

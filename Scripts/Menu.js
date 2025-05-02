@@ -1,5 +1,5 @@
 /*
-    Copyright 2025 David Healey
+    Copyright 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,74 +19,72 @@ namespace Menu
 {
 	const downloadInstallStates = [0, 0];
 
-	//! pnlPages
-	const pnlPages = Pager.create("pnlPages", "pnlMenu", 1);
+	reg loggedIn;
+
+	//! cmbMenu
+	const cmbMenu = Content.getComponent("cmbMenu");
 	
-	//! pnlMenu
-	const pnlMenu = pnlPages.data.buttonContainer;
-
-	//! btnPage
-	const btnPage = Content.getAllComponents("btnPage\\d");
-
-	for (x in btnPage)
-		x.setLocalLookAndFeel(LookAndFeel.iconButtonToggle);
-
-	//! btnLogout
-	const btnLogout = Content.getComponent("btnLogout");
-
-	//! Functions
-	inline function setButtonPositions(online: number)
+	const lafcmbMenu = Content.createLocalLookAndFeel();
+	cmbMenu.setLocalLookAndFeel(lafcmbMenu);
+	cmbMenu.setControlCallback(oncmbMenuControl);
+	
+	inline function oncmbMenuControl(component, value)
 	{
-		local onlineButtonIndexes = [2, 3];
-		local buttons = [];
-
-		for (i = 0; i < btnPage.length; i++)
-		{
-			btnPage[i].showControl(false);
-
-			if (!btnPage[i].get("enabled"))
-				continue;
-
-			if (online || !onlineButtonIndexes.contains(i))
-				buttons.push(btnPage[i]);
-		}
-
-		local numButtons = buttons.length; // Add 1 for login button
-		local buttonWidth = buttons[0].getWidth();
-		local totalButtonWidth = numButtons * buttonWidth;
-		local margin = (pnlMenu.getWidth() - totalButtonWidth) / (numButtons - 1);
-
-		for (i = 0; i < buttons.length; i++)
-		{
-			local x = i * (buttonWidth + margin);
-			buttons[i].set("x", x);
-			buttons[i].showControl(true);
-		}
+		component.setValue(-1);
 	}
 
-	//! Broadcasters
-	Account.broadcasters.loggedIn.addComponentPropertyListener("btnPage5", "enabled", "Set login button enabled state based on logged in state", function(index, state)
+	lafcmbMenu.registerFunction("drawComboBox", function(g, obj)
 	{
-		return !state;
-	});
-	
-	Account.broadcasters.loggedIn.addListener({}, "Respond to changes in logged in status", function(state)
-	{
-		setButtonPositions(state && App.isOnline);		
-		//btnPage[0].setValue(1);
-		//btnPage[0].changed();
+		var c = Colours.withMultipliedBrightness(obj.textColour, obj.hover ? 1.0 - 0.3 * obj.down : 0.8);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
+
+		g.setFont("phosphorBold", obj.area[2]);
+		g.drawAlignedText("\ue208", obj.area, "centred");
 	});
 
-	Downloader.broadcasters.isDownloading.addComponentPropertyListener("pnlMenu", "enabled", "Disable menu during downloads", function(index, state)
+	lafcmbMenu.registerFunction("drawPopupMenuBackground", function(g, obj)
+	{
+	   	LookAndFeel.drawPopupMenuBackground();
+	});
+
+	lafcmbMenu.registerFunction("drawPopupMenuItem", function(g, obj)
+	{
+		LookAndFeel.drawPopupMenuItem();
+	});
+
+	lafcmbMenu.registerFunction("getIdealPopupMenuItemSize", function(obj)
+	{
+		var width = Engine.getStringWidth(obj.text, "regular", 18, 0.0) + 60;		
+		return [width, 30];
+	});
+
+	//! Functions
+	inline function updateMenuItems()
+	{
+		local items = ["Install Instrument from LWZ File", "Install Instruments from Folder"];
+		
+		items.push(loggedIn ? "Add License" : "~~Add License~~");
+		items.push(loggedIn ? "Check for Updates" : "~~Check for Updates~~");
+
+		cmbMenu.set("items", items.join("\n"));
+	}
+
+	//! Broadcasters	
+	Account.broadcasters.loggedIn.addListener(0, "Respond to changes in logged in status", function(state)
+	{
+		loggedIn = state;
+		updateMenuItems();
+	});
+
+	Downloader.broadcasters.isDownloading.addListener(0, "Respond to download start/end", function(state)
 	{
 		downloadInstallStates[0] = state;
-		return !downloadInstallStates.contains(true);
+		cmbMenu.set("enabled", !downloadInstallStates.contains(true));
 	});
-
-	Installer.broadcasters.isInstalling.addComponentPropertyListener("pnlMenu", "enabled", "Disable menu during install", function(index, state)
+	
+	Installer.broadcasters.isInstalling.addListener(0, "Respond to install start/end", function(state)
 	{
 		downloadInstallStates[1] = state;
-		return !downloadInstallStates.contains(true);
+		cmbMenu.set("enabled", !downloadInstallStates.contains(true));
 	});
-
 }

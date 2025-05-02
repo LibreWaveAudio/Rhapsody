@@ -25,28 +25,30 @@ namespace LookAndFeel
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/Inter-Bold.ttf", "bold");
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/JosefinSans-Bold.ttf", "title");
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor.ttf", "phosphor");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Bold.ttf", "phosphorBold");
 	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Fill.ttf", "phosphorFill");
 	
 	const icons = {
 		"show password": "\ue220",
-		"check for updates": "\ue094",
 		"backspace": "\ue0ae",
 		"folder": "\ue256",
 		"close": "\ue4f6",
 		"cancel": "\ue4f6",
+		"add": "\ue3d4",
+		"file": "\ue236",
+		"folderplus": "\ue258",
 		"login": "\ue4c2",
 		"logout": "\ue42a",
 		"download": "\ue20a",
 		"install": "\ue390",
 		"settings": "\ue270",
-		"key": "\ue2d6",
 		"library": "\ue464",
 		"favourites": "\ue2a8",
 		"work offline": "\ue4f2",
 		"info": "\ue2ce",
 		"warning": "\ue4e0",
 		"question": "\ue3e8",
-		"error": "\ue7fc"		
+		"error": "\ue7fc"
 	};
 	
     const laf = Engine.createGlobalScriptLookAndFeel();
@@ -103,7 +105,7 @@ namespace LookAndFeel
 	    g.drawAlignedText(icons[text], obj.area, "centred");
     });
     
-    //! iconToggleButton
+    //! iconButtonToggle
     const iconButtonToggle = Content.createLocalLookAndFeel();
     
     iconButtonToggle.registerFunction("drawToggleButton", function(g, obj)
@@ -116,7 +118,7 @@ namespace LookAndFeel
    	    var c = Colours.withMultipliedBrightness(obj.textColour, (obj.value ? 0.9 : 0.6) + 0.1 * obj.over - 0.2 * obj.down);	    
    	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
    
-   	    g.setFont("phosphor", obj.area[2]);
+   	    g.setFont("phosphorFill", obj.area[2]);
    	    g.drawAlignedText(icons[text], obj.area, "centred");
     });
     
@@ -135,7 +137,7 @@ namespace LookAndFeel
 		var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.2 * down : 0.8);
 		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-		g.setFont("phosphor", 16);				
+		g.setFont("phosphorBold", 16);				
 		g.drawAlignedText(icon, a, "left");
 
 		g.setFont("semibold", 16);
@@ -189,7 +191,7 @@ namespace LookAndFeel
    	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
    	{
 		var a = obj.area;
-   
+
    		g.setFont("phosphor", 42);
    		g.setColour(Colours.withAlpha(0xffcccccc, 0.8));
    		g.drawAlignedText(icons[obj.type.toLowerCase()], a, "centred");	
@@ -265,7 +267,7 @@ namespace LookAndFeel
 		g.drawAlignedText("\ue4f6", a, "centred");
 	});	
 	
-	//! Combo box
+	//! Popup Menu
 	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
 	{
 	   	drawPopupMenuBackground();
@@ -296,7 +298,7 @@ namespace LookAndFeel
 		
 		if (obj.isSeparator)
 		{
-			g.setColour(Colours.withAlpha(textColour, 0.3));
+			g.setColour(Colours.withMultipliedBrightness(textColour, 0.1));
 			g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
 			return;
 		}
@@ -309,24 +311,31 @@ namespace LookAndFeel
 		
 		local x = a[0] + 40;
 		g.setFont("regular", 18);
-		g.setColour(Colours.withMultipliedAlpha(textColour, obj.isHighlighted ? 1.0 : 0.9));
+
+		local c = Colours.withMultipliedBrightness(textColour, obj.isHighlighted ? 1.0 : 0.9);
+
+		g.setColour(obj.isActive ? c : Colours.withMultipliedBrightness(c, 0.5));
 		g.drawFittedText(obj.text, [x, a[1], a[2] - x - 10, a[3]], "left", 1.0, 1.0);
 		
 		local icons = {
-			"Install from File": "\ue390",
-			"Add a License": "\ue2d6",
-			"Add to Favourites": "\ue2a8",
-			"Remove Favourite": "\uebe8",
-			"Set Samples Folder": "\ue238",
-			"Uninstall": "\ue4a8",
-			"Visit Webpage": "\ue0f4"
+			"install instrument from lwz file": "\ue61e",
+			"install instruments from folder": "\uee54",
+			"add license": "\ue2d6",
+			"check for updates": "\ue094",
+			"add to favourites": "\ue2a8",
+			"remove favourite": "\uebe8",
+			"set samples folder": "\ue238",
+			"uninstall": "\ue4a8",
+			"visit webpage": "\ue0f4"
 		};		
 
-		if (!isDefined(icons[obj.text]))
+		local icon = icons[obj.text.toLowerCase()];
+
+		if (!isDefined(icon))
 			return;
 
 		g.setFont("phosphor", 22);
-		g.drawAlignedText(icons[obj.text], [a[0] + 10, a[1], a[2], a[3]], "left");
+		g.drawAlignedText(icon, [a[0] + 10, a[1], a[2], a[3]], "left");
     }
 
 	inline function fullPageBackground()
@@ -342,6 +351,8 @@ namespace LookAndFeel
 		
 		g.setFont("phosphor", 12);
 		g.drawAlignedText("\ue3f4", [85, 138 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
+
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	}
 
     inline function drawScrollbar(g, obj, bgColour)

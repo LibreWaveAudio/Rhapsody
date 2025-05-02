@@ -96,7 +96,7 @@ namespace ProductTile
 			var c = Colours.withMultipliedBrightness(this.get("textColour"), this.data.hover ? 1.0 : 0.8);
 			g.setColour(Colours.withAlpha(c, this.get("enabled") ? 1.0 : 0.5));
 
-			g.setFont("phosphor", a[2]);
+			g.setFont("phosphorBold", a[2]);
 			g.drawAlignedText("\ue208", a, "centred");
 		});
 		

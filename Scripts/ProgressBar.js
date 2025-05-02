@@ -21,6 +21,7 @@ namespace ProgressBar
 
 	//! pnlProgress
 	const pnlProgress = Content.getAllComponents("pnlProgress\\d");
+	Engine.sortWithFunction(pnlProgress, sortByComponentId);	
 	
 	for (x in pnlProgress)
 		x.showControl(false);
@@ -61,6 +62,14 @@ namespace ProgressBar
 		x.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 
 	//! Functions
+	inline function: number sortByComponentId(a: ScriptObject, b: ScriptObject)
+	{
+		if (a.getId() < b.getId())
+			return -1;
+
+		return a.getId() > b.getId();
+	}
+	
 	inline function drawProgressBar()
 	{
 		if (this.data.productName == "" || this.data.text == "")
@@ -130,4 +139,7 @@ namespace ProgressBar
 		downloadInstallStates[1] = state;
 		return downloadInstallStates.contains(true);
 	});
+	
+	//! Calls
+	setImage("");
 }

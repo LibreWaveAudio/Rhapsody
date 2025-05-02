@@ -89,12 +89,10 @@ namespace Cache
 		Server.setBaseURL(App.baseUrl[App.mode]);
 		Server.setHttpHeader(headers.join("\n"));
 
-		Spinner.show("Syncing with Server");
+		Spinner.setText("Syncing with Server");
 
 		Server.callWithGET(endpoint, {}, function(status, response)
-		{
-			Spinner.hide();
-
+		{			
 			if (status == 200 && typeof(response) == "object" && response.length > 0)
 				return handleSyncResponse(response);
 
@@ -161,7 +159,7 @@ namespace Cache
 		totalToDownload = urls.length;
 		downloadCount = 0;
 
-		Spinner.show("Downloading Images");
+		Spinner.setText("Downloading Images");
 
 		for (x in urls)
 		{
@@ -170,7 +168,7 @@ namespace Cache
 
 			Server.downloadFile(url, {}, f, function()
 			{
-				if (!this.data.finished || !this.data.success)
+				if (!this.data.finished)
 					return;
 
 				downloadCount++;
@@ -179,7 +177,6 @@ namespace Cache
 					return;
 
 				DownloadList.refresh();
-				Spinner.hide();
 			});
 		}
 	}
@@ -192,7 +189,7 @@ namespace Cache
 		local url = "wp-content/uploads/product_images.zip";
 		local f = FileSystem.getFolder(FileSystem.Temp).getChildFile("product_images.zip");
 
-		Spinner.show("Downloading Images");
+		Spinner.setText("Downloading Images");
 
 		Server.downloadFile(url, {}, f, function()
 		{
@@ -201,8 +198,6 @@ namespace Cache
 
 			if (this.data.success)
 				return extractImageArchive(this.getDownloadedTarget());
-
-			Spinner.hide();
 		});
 	}
 
@@ -216,7 +211,6 @@ namespace Cache
 			var zipFile = FileSystem.fromAbsolutePath(obj.ZipFile);
 			zipFile.deleteFileOrDirectory();
 
-			Spinner.hide();
 			DownloadList.refresh();
 		});
 	}

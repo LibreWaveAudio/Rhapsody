@@ -40,7 +40,7 @@ namespace LoginPage
 		g.drawAlignedText(this.get("text"), a, "topLeft");
 			
 		g.setFont("regular", 16);
-		g.drawAlignedText(this.get("tooltip"), Rect.removeFromTop(a, 50), "bottomLeft");
+		g.drawAlignedText(this.get("tooltip"), a.removeFromTop(50), "bottomLeft");
 	});
 
 	//! pnlLoginForm
@@ -64,21 +64,7 @@ namespace LoginPage
 		g.drawAlignedText("\ue218", [usernameArea[0] + 8, usernameArea[1], usernameArea[3], usernameArea[3]], "left");
 		g.drawAlignedText("\uea78", [passwordArea[0] + 8, passwordArea[1], passwordArea[3], passwordArea[3]], "left");
 	});
-	
-	//! pnlNoAccount
-	const pnlNoAccount = Content.getComponent("pnlNoAccount");
-	
-	pnlNoAccount.setPaintRoutine(function(g)
-	{
-		var a = this.getLocalBounds(0);		
-		var signupArea = [btnRegisterAccount.get("x"), btnRegisterAccount.get("y"), btnRegisterAccount.getWidth(), btnRegisterAccount.getHeight()];
-	
-		g.setFont("regular", 14);
-		g.setColour(this.get("textColour"));
-		g.drawAlignedText("No Account?", [a[0] + 20, a[1], a[2], a[3]], "left");
-		g.drawAlignedText("or", [signupArea[0] + signupArea[2], signupArea[1], 50, signupArea[3]], "left");
-	});
-	
+
 	//! lblUsername
 	const lblUsername = Content.getComponent("lblUsername");
 	
@@ -127,43 +113,6 @@ namespace LoginPage
 		if (!value)
 			Engine.openWebsite(App.baseUrl[App.mode] + "my-account/");
 	}
-	
-	//! btnOfflineMode
-	const btnOfflineMode = Content.getComponent("btnOfflineMode");
-	btnOfflineMode.setLocalLookAndFeel(lafPlainTextButton);
-	btnOfflineMode.setControlCallback(onbtnOfflineModeControl);
-	
-	inline function onbtnOfflineModeControl(component, value)
-	{
-		if (value)
-			return;
-
-		Account.logout();
-		UserSettings.setProperty("rhapsody", "workOffline", true);
-		hide();
-	}
-
-	//! btnGettingStarted
-	const btnGettingStarted = Content.getComponent("btnGettingStarted");
-	btnGettingStarted.setLocalLookAndFeel(LookAndFeel.linkButton);
-	btnGettingStarted.setControlCallback(onbtnGettingStartedControl);
-
-	inline function onbtnGettingStartedControl(component, value)
-	{
-		if (!value)
-			Engine.openWebsite(Engine.getProjectInfo().CompanyURL + "/rhapsody/");
-	}
-
-	//! btnDocumentation
-	const btnDocumentation = Content.getComponent("btnDocumentation");
-	btnDocumentation.setLocalLookAndFeel(LookAndFeel.linkButton);
-	btnDocumentation.setControlCallback(onbtnDocumentationControl);
-	
-	inline function onbtnDocumentationControl(component, value)
-	{
-		if (!value)
-			Engine.openWebsite(Engine.getProjectInfo().CompanyURL + "/knowledge-base/");
-	}
 
 	//! Functions	
 	inline function clear()
@@ -174,11 +123,10 @@ namespace LoginPage
 
 	//! Broadcasters
 	const bcClearOnVisiblity = Engine.createBroadcaster({id: "bcClearOnVisiblity", args: ["component", "property", "value"]});
-	bcClearOnVisiblity.attachToComponentProperties("pnlPage5", "visible", "");
+	bcClearOnVisiblity.attachToComponentProperties("pnlPage3", "visible", "");
 	
 	bcClearOnVisiblity.addListener(0, "Clear the login form on visiblity change", function(component, property, value)
 	{
 		clear();
-	});
-	
+	});	
 }

@@ -17,114 +17,86 @@
 
 namespace ManualInstaller
 {
-	//! pnlManualInstaller
-	const pnlManualInstaller = Content.getComponent("pnlManualInstaller");
+	//! pnlManualInstallerContainer
+	const pnlManualInstallerContainer = Content.getComponent("pnlManualInstallerContainer");
+	pnlManualInstallerContainer.showControl(false);
 
-	pnlManualInstaller.setPaintRoutine(function(g)
+	pnlManualInstallerContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-
-		g.setColour(this.get("textColour"));
-		g.setFont("semibold", 20);
-		g.drawAlignedText(this.get("text"), Rect.fromTop(a, 25), "left");
-			
-		g.setFont("regular", 18);
-		g.drawAlignedText("Single Instrument: Drag and drop an .lwz file or click the Select File button.", Rect.fromTop(a, 80), "left");
-		g.drawAlignedText("Multiple Instruments: Click the Select Folder button to install all .lwz files in a folder.", Rect.fromTop(a, 135), "left");
+		LookAndFeel.fullPageBackground();
 	});
-
-	//! pnlDropZone
-	const pnlDropZone = Content.getComponent("pnlDropZone");
-	pnlDropZone.setFileDropCallback("All Callbacks", "*.lwz", onpnlDropZoneFileDrop);
-
-	inline function onpnlDropZoneFileDrop(obj)
-	{
-		this.data.hover = obj.hover && !obj.drop;
-		this.repaint();
-
-		if (!obj.drop)
-			return;
-
-		local file = FileSystem.fromAbsolutePath(obj.fileName);
-		Installer.install(file);
-	}
-
-	pnlDropZone.setPaintRoutine(function(g)
-	{
-		var a = this.getLocalBounds(0);
-
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.05));
-
-		if (this.data.hover)
-			g.fillRoundedRectangle(Rect.reduced(a, 2), this.get("borderRadius"));
-
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5 + 0.5 * this.data.hover));
-
-		var p = Content.createPath();
-		p.addRoundedRectangle(Rect.reduced(a, 2), this.get("borderRadius"));
-		
-		var stroke = {EndCapStyle: "rounded", JointStyle: "curved", Thickness: 1.0};
-		var sp = p.createStrokedPath(stroke, [5, 10]);
-		
-		g.drawPath(sp, Rect.reduced(a, 2), stroke);
-
-		g.setFont("phosphor", 48);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.6 + 0.4 * this.data.hover));
-		g.drawAlignedText("\uee54", Rect.removeFromTop(a, 125), "centred");
-
-		g.setFont("regular", 18);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.9));
-		g.drawAlignedText("Drag & Drop an .lwz File", [a[0], 100, a[2], 25], "centred");
-		g.drawAlignedText("Or", [a[0], 125, a[2], 25], "centred");		
-	});
-	
-	//! btnSelectLwzFile
-	const btnSelectLwzFile = Content.getComponent("btnSelectLwzFile");
-	btnSelectLwzFile.setLocalLookAndFeel(LookAndFeel.textButton);
-	btnSelectLwzFile.setControlCallback(onbtnSelectLwzFileControl);
-	
-	inline function onbtnSelectLwzFileControl(component, value)
-	{
-		if (!value)
-			showFileBrowser();
-	}
-	
-	//! btnSelectLwzDir
-	const btnSelectLwzDir = Content.getComponent("btnSelectLwzDir");
-	btnSelectLwzDir.setLocalLookAndFeel(LookAndFeel.textButton);
-	btnSelectLwzDir.setControlCallback(onbtnSelectLwzDirControl);
-	
-	inline function onbtnSelectLwzDirControl(component, value)
-	{
-		if (!value)
-			showDirectoryBrowser();
-	}
 
 	//! Functions
 	inline function showFileBrowser()
 	{
-		FileSystem.browse(FileSystem.getFolder(FileSystem.Downloads), false, "*.lwz", function(file)
+		FilePicker.show({
+			startFolder: FileSystem.getFolder(FileSystem.Downloads),
+			mode: 0,
+			filter: "*.lwz",
+			title: "Install from File",
+			message: "Select a LWZ file to install.",
+			buttonText: "Ok",
+			hideOnSubmit: true,
+		}, function(file)
 		{
-			if (!file.isFile())
-				return;
-				
+			show();
 			Installer.install(file);
 		});
 	}
 
 	inline function showDirectoryBrowser()
 	{
-		FileSystem.browseForDirectory(FileSystem.getFolder(FileSystem.Downloads), function(dir)
+		FilePicker.show({
+			startFolder: FileSystem.getFolder(FileSystem.Downloads),
+			mode: 1,
+			filter: "",
+			title: "Batch Install",
+			message: "Select a folder containing LWZ files for one or more instruments.",
+			buttonText: "Ok",
+			hideOnSubmit: true,
+		}, function(dir)
 		{
-			if (!dir.isDirectory())
-				return;
-				
 			var files = FileSystem.findFiles(dir, "*.lwz", false);
 			
 			if (!files.length)
 				return Engine.showMessageBox("No Files", "No lwz files were found in the selected folder.", 1);
-				
+
+			show();
 			Installer.bulkInstall(dir);
 		});
 	}
+	
+	inline function show()
+	{
+		pnlManualInstallerContainer.showControl(true);
+	}
+	
+	inline function hide()
+	{
+		pnlManualInstallerContainer.showControl(false);
+	}
+	
+	//! Broadcasters
+	const bcMenuValue = Engine.createBroadcaster({id: "bcManualInstallerMenuValue", args: ["component", "value"]});
+	bcMenuValue.attachToComponentValue("cmbMenu", "");
+
+	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		if (component.getItemText().toLowerCase() == "install instrument from lwz file")
+			return showFileBrowser();
+
+		if (component.getItemText().toLowerCase() == "install instruments from folder")
+			return showDirectoryBrowser();
+	});
+
+	//! bcProgressVisiblity
+	const bcProgressVisibility = Engine.createBroadcaster({id: "bcProgressVisibility", args: ["component", "isVisible"]});
+	bcProgressVisibility.attachToComponentVisibility(["pnlProgress0"], "");
+
+	bcProgressVisibility.addListener(0, "Hide the manual installer page when the progress bar is hidden", function(component, isVisible)
+	{
+		if (!isVisible)
+			hide();
+	});
 }

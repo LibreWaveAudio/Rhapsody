@@ -19,7 +19,6 @@ Content.makeFrontInterface(1000, 710);
 
 include("App.js");
 include("Paths.js");
-include("Rect.js");
 include("LookAndFeel.js");
 include("Spinner.js");
 include("Pager.js");
@@ -37,6 +36,7 @@ include("Downloader.js");
 include("DownloadList.js");
 include("Installer.js");
 include("ManualInstaller.js");
+include("Navigation.js");
 include("Menu.js");
 include("FilePicker.js");
 include("UserSettings.js");

@@ -375,11 +375,6 @@ namespace Expansions
 
 	inline function: number validateSamplesDirectory(expansion: ScriptObject)
 	{
-		local sampleMaps = expansion.getSampleMapList();
-	
-		if (!sampleMaps.length && !Engine.isHISE())
-			return true;
-
 		local company = expansion.getProperties().Company;
 		local name = expansion.getProperties().Name;
 		local dir = getSamplesDirectory(company, name, false);

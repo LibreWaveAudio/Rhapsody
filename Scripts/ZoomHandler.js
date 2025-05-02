@@ -17,7 +17,7 @@
 
 namespace ZoomHandler
 {
-	const MIN_ZOOM = 0.75;
+	const MIN_ZOOM = 1.0;
 	const MAX_ZOOM = 4.0;
 	const ZOOM_STEP = 0.05;
 	const interfaceSize = Content.getInterfaceSize();

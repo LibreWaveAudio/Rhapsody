@@ -46,27 +46,26 @@ namespace Downloader
 		Server.setHttpHeader(headers.join("\n"));
 		Server.setBaseURL(App.baseUrl[App.mode]);
 
-		Spinner.show("Fetching Downloads");
+		Spinner.setText("Fetching Downloads");
 
 		Server.callWithGET(endpoint, p, function(status, response)
 		{
-			Spinner.hide();
-
 			var errorMsg = "";
 
 			if (status == 0)
-				errorMsg = "Unable to connect to the server. Please check your internet connection and try again. If the problem persists, try again later.";
+				errorMsg = "Unable to connect to the server. Please try again later.";
 
-			if (status != 200)
+			if (errorMsg == "" && status != 200)
 				errorMsg = isDefined(response.message) ? response.message : "A server error occurred. Please try again later.";
 
-			if (!isDefined(response[0]) || !response[0])
+			if (errorMsg == "" && (!isDefined(response[0]) || !response[0]))
 				errorMsg = isDefined(response.message) ? response.message : "An undefined server error occurred. Please try again later.";
 
 			if (errorMsg != "")
 			{				
 				Engine.showMessageBox("Server Error: " + status, errorMsg, 1);
 				DownloadList.clearQueue();
+				return;
 			}
 
 			downloadFiles(response);

@@ -259,6 +259,7 @@ namespace Installer
 		removeAbortButtonListener();
 		Expansions.refresh();
 		ProductGrid.refresh();
+		DownloadList.refresh();
 		ProgressBar.hide();
 
 		if (!success && !abort)

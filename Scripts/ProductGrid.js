@@ -36,6 +36,57 @@ namespace ProductGrid
 
 	//! pnlProductGrid
 	const pnlProductGrid = Content.getComponent("pnlProductGrid");
+
+	pnlProductGrid.setFileDropCallback("All Callbacks", "*.lwz", onpnlProductGridFileDrop);
+
+	inline function onpnlProductGridFileDrop(obj)
+	{
+		this.data.hover = obj.hover && !obj.drop;
+
+		pnlDropZone.fadeComponent(this.data.hover, 100);
+
+		if (!obj.drop)
+			return;
+
+		local file = FileSystem.fromAbsolutePath(obj.fileName);
+
+		ManualInstaller.show();
+		Installer.install(file);
+	}
+
+	//! pnlDropZone
+	const pnlDropZone = Content.getComponent("pnlDropZone");
+	pnlDropZone.showControl(false);
+	
+	pnlDropZone.setPaintRoutine(function(g)
+	{
+		var a = this.getLocalBounds(0);
+		var innerArea = this.getLocalBounds(200);
+		
+		g.setColour(this.get("bgColour"));
+		g.fillRect(a);
+	
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.15));
+	
+		g.fillRoundedRectangle(innerArea, this.get("borderRadius"));	
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5 + 0.5 * this.data.hover));
+	
+		var p = Content.createPath();
+		p.addRoundedRectangle(innerArea, this.get("borderRadius"));
+		
+		var stroke = {EndCapStyle: "rounded", JointStyle: "curved", Thickness: 2.0};
+		var sp = p.createStrokedPath(stroke, [5, 10]);
+		
+		g.drawPath(sp, innerArea, stroke);
+	
+		g.setFont("phosphorFill", 60);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.6 + 0.4 * this.data.hover));
+		g.drawAlignedText("\uee54", a.withTrimmedBottom(75), "centred");
+	
+		g.setFont("bold", 30);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.9));
+		g.drawAlignedText("Drop to Install", a.withTrimmedTop(75), "centred");
+	});
 	
 	//! Functions
 	inline function refresh()

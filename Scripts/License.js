@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023, 2025 David Healey
+    Copyright 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,11 +17,33 @@
 
 namespace License
 {
+	//! pnlAddLicenseContainer
+	const pnlAddLicenseContainer = Content.getComponent("pnlAddLicenseContainer");
+	pnlAddLicenseContainer.showControl(false);
+	
+	pnlAddLicenseContainer.setPaintRoutine(function(g)
+	{
+		g.fillAll(this.get("bgColour"));
+
+		var shadowArea = [pnlAddLicense.get("x"), pnlAddLicense.get("y"), pnlAddLicense.getWidth(), pnlAddLicense.getHeight()];
+		g.drawDropShadow(shadowArea, Colours.withAlpha(Colours.black, 1.0), 25);
+	});
+	
+	pnlAddLicenseContainer.setMouseCallback(function(event)
+	{
+		if (event.clicked && !event.rightClick)
+			hide();
+	});
+
+	//! pnlAddLicense
 	const pnlAddLicense = Content.getComponent("pnlAddLicense");
 	
 	pnlAddLicense.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
+		
+		g.setColour(this.get("bgColour"));
+		g.fillRoundedRectangle(a, this.get("borderRadius"));
 
 		// Label
 		g.setColour(this.get("itemColour"));
@@ -36,15 +58,27 @@ namespace License
 		
 		// Text
 		g.setColour(this.get("textColour"));
-		g.setFont("semibold", 20);
-		g.drawAlignedText(this.get("text"), a, "topLeft");
+		g.setFont("semibold", 22);
+		g.drawAlignedText(this.get("text"), a.reduced(25), "topLeft");
 			
 		g.setFont("regular", 18);
-		g.drawAlignedText("1) Enter your license key and click activate.", Rect.fromTop(a, 80), "left");
-		g.drawAlignedText("2) Once activated, go to the downloads list to download and install your instrument.", Rect.fromTop(a, 135), "left");
+		g.drawAlignedText("Enter your license key and click Activate.", a.reduced(25).withTrimmedTop(40), "topLeft");
+		g.drawAlignedText("Then go to the downloads list to install your instrument.", a.reduced(25).withTrimmedTop(70), "topLeft");
 		
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
 	
+	//! btnAddLicenseClose
+	const btnAddLicenseClose = Content.getComponent("btnAddLicenseClose");
+	btnAddLicenseClose.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	btnAddLicenseClose.setControlCallback(onbtnAddLicenseCloseControl);
+	
+	inline function onbtnAddLicenseCloseControl(component, value)
+	{
+		if (!value)
+			hide();
+	}
+
 	//! lblAddLicense
 	const lblAddLicense = Content.getComponent("lblAddLicense");
 	lblAddLicense.set("text", "");
@@ -75,6 +109,17 @@ namespace License
 	}
 	
 	//! Functions
+	inline function show()
+	{
+		pnlAddLicenseContainer.showControl(true);
+	}
+	
+	inline function hide()
+	{
+		pnlAddLicenseContainer.showControl(false);
+		lblAddLicense.set("text", "");
+	}
+	
 	inline function isLicenseFormatValid(license: string)
 	{
 		return (license != "" && license.contains("-") && license.length == 19);
@@ -86,34 +131,45 @@ namespace License
 		local endpoint = App.apiPrefix + "transfer_license";
 		local headers = ["Authorization: Bearer " + token];
 		local p = {"license_key": license};
-		
+
 		Server.setBaseURL(App.baseUrl[App.mode]);
 		Server.setHttpHeader(headers.join("\n"));
-		    	
-		Spinner.show("Adding license to your account");
-		
+
+		Spinner.setText("Adding license to your account");
+
 		Server.callWithPOST(endpoint, p, function(status, response)
 		{
-			Spinner.hide();
-		    
 			if (status == 200 && typeof(response) == "object")
 			{
 				if (isDefined(response.status))
 					return Engine.showMessageBox("Server Error: 200", trace(response), 1);
-	
-				//Products.sync();
-				lblAddLicense.set("text", "");
+
+				Cache.sync();
+				hide();
+
 				return Engine.showMessageBox("Success", "The license has been activated.", 0);
 			}
-	
+
 			var msg = "There was a problem adding the license to your account. Please contact support.";
-	
+
 			if (isDefined(response.code) && response.code == "rest_invalid_param")
 				msg = "The license key you entered was not recognised.";
 			else if (isDefined(response.message))
 				msg = response.message;
-	    
+
 			return Engine.showMessageBox("Server Error: " + status, msg, 1);
 		});
 	}
+	
+	//! Broadcasters
+	const bcMenuValue = Engine.createBroadcaster({id: "bcLicenseMenuValue", args: ["component", "value"]});
+	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	
+	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		if (component.getItemText().toLowerCase() != "add license")
+			return;
+			
+		show();	
+	});
 }

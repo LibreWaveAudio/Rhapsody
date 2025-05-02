@@ -60,26 +60,32 @@ namespace Spinner
     	this.repaint();
 	});
 
-	//! Functions
-	inline function setOption(key: string, value: NotUndefined)
-	{
-		pnlSpinner.data[key] = value;
-	}
-	
-	inline function show(text: string)
+	//! Functions	
+	inline function setText(text: string)
 	{
 		pnlSpinner.set("text", text);
+	}
+	
+	inline function show()
+	{
 		pnlSpinner.startTimer(150);
 		pnlSpinnerContainer.showControl(true);
-		Synth.startTimer(150 / 1000);
 	}
 
 	inline function hide()
 	{
 		pnlSpinnerContainer.showControl(false);
-		pnlSpinner.stopTimer();
 		pnlSpinner.setValue(0);
 		pnlSpinner.set("text", "");
-		pnlSpinner.data.title = "";
+		pnlSpinner.stopTimer();
 	}
+	
+	//! Calls
+	Server.setServerCallback(function(isWaiting)
+	{
+		if (isWaiting)
+			show();
+		else
+			hide();
+	});
 }

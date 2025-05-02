@@ -121,7 +121,7 @@ namespace Account
 
 	inline function: number isLoggedIn()
 	{
-		return readToken() != "";
+		return readToken() != "" && App.isOnline;
 	}
 
 	//! Broadcasters
