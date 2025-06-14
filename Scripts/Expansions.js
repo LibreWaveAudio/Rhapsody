@@ -363,6 +363,9 @@ namespace Expansions
 			if (Engine.isHISE())
 				return Console.print(company + " : " + name);
 
+			Spinner.setText("Launching " + name);
+			Spinner.show();
+
 			return eh.setCurrentExpansion(e);
 		}
 
