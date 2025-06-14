@@ -24,11 +24,14 @@ namespace UserSettings
 		"contentPath": documents.toString(documents.FullPath) + "/Rhapsody",
 		"downloadPath": temp.toString(temp.FullPath) + "/Rhapsody"
 	};
+	
+	//! pnlSettingsContainer
+	const pnlSettingsContainer = Content.getComponent("pnlSettingsContainer");
+	
+	//! pnlSettings
+	const pnlSettings = Content.getComponent("pnlSettings");	
 
-	//! pnlUserSettings
-	const pnlUserSettings = Content.getComponent("pnlUserSettings");	
-
-	pnlUserSettings.setPaintRoutine(function(g)
+	pnlSettings.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
 
@@ -111,7 +114,7 @@ namespace UserSettings
 
 	inline function setButtonLookAndFeel()
 	{
-		for (x in pnlUserSettings.getChildComponents())
+		for (x in pnlSettings.getChildComponents())
 		{
 			local id = x.getId();
 
@@ -252,12 +255,6 @@ namespace UserSettings
 
     	return obj[scope][key];
     }
-    
-    //! Broadcasters
-    Account.broadcasters.loggedIn.addComponentPropertyListener(["pnlSettingsBlock1", "pnlSettingsBlock2", "pnlSettingsBlock3"], "visible", "Set logout button visibility based on logged in state", function(index, state)
-    {
-    	return state;
-    });
     
     //! Calls
     restoreValues();

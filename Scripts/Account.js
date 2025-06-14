@@ -53,7 +53,7 @@ namespace Account
 
 		Server.callWithPOST("wp-json/jwt-auth/v1/token", p, function(status, response)
 		{
-			if (status == 200 && isDefined(response.data.token))
+			if (status == Server.StatusOK && isDefined(response.data.token))
 		        onLoginSuccess(response.data.token);
 		    else
 				onLoginFailed(response);
@@ -69,13 +69,12 @@ namespace Account
 	
 	inline function onLoginFailed(response: object)
 	{
+		if (status == Server.StatusNoConnection)
+			return Engine.showMessageBox("The server could not be reached. The Libre Wave website might be down. Please try again later.", msg, 1);
+
 		local msg = "A server error occurred. Please try again later.";
 
-		if (status == 0)
-		{
-			msg = "The server could not be reached. The Libre Wave website might be down. Please try again later.";
-		}
-		else if (isDefined(response.message))
+		if (isDefined(response.message))
 		{
 			if (response.message.contains("The password you entered"))
 				msg = "The password you entered is incorrect.";

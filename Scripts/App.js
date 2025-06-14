@@ -54,7 +54,7 @@ namespace App
 
 		g.setColour(this.get("textColour"));
 		g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
-		g.drawAlignedText("RHAPSODY", [a[0] + 25, a[1], a[2], 55 - (10 * (Engine.getOS() == "WIN"))], "left");
+		g.drawAlignedText("RHAPSODY", [a[0] + 10, a[1], a[2], 55 - (10 * (Engine.getOS() == "WIN"))], "left");
 
 		g.setColour(Colours.withMultipliedBrightness(this.get("itemColour"), 0.3));
 		g.drawHorizontalLine(54, a[0], a[2]);
