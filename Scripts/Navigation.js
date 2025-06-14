@@ -31,32 +31,28 @@ namespace Navigation
 	for (x in btnPage)
 		x.setLocalLookAndFeel(LookAndFeel.iconButtonToggle);
 
-	//! btnLogout
-	const btnLogout = Content.getComponent("btnLogout");
-
 	//! Functions
 	inline function setButtonPositions()
 	{
 		local buttons = [];
 
-		for (i = 0; i < btnPage.length; i++)
+		for (x in btnPage)
 		{
-			btnPage[i].showControl(false);
+			x.showControl(false);
 
-			if (!btnPage[i].get("enabled"))
-				continue;
-
-			buttons.push(btnPage[i]);
+			if (x.get("enabled"))
+				buttons.push(x);
 		}
 
-		local numButtons = buttons.length; // Add 1 for login button
+		local numButtons = buttons.length;
 		local buttonWidth = buttons[0].getWidth();
 		local totalButtonWidth = numButtons * buttonWidth;
-		local margin = (pnlNavigation.getWidth() - totalButtonWidth) / (numButtons - 1);
+		local totalSpacing = pnlNavigation.getWidth() - totalButtonWidth;
+		local margin = totalSpacing / (numButtons + 1); // +1 for left and right
 
 		for (i = 0; i < buttons.length; i++)
 		{
-			local x = i * (buttonWidth + margin);
+			local x = margin + i * (buttonWidth + margin);
 			buttons[i].set("x", x);
 			buttons[i].showControl(true);
 		}
@@ -64,9 +60,8 @@ namespace Navigation
 
 	//! Broadcasters
 	Account.broadcasters.loggedIn.addListener(0, "Respond to changes in logged in status", function(state)
-	{	
-		btnPage[1].set("enabled", state);
-		btnPage[3].set("enabled", !state);
+	{
+		btnPage[1].set("enabled", state);	
 
 		setButtonPositions();
 		btnPage[0].setValue(1);
@@ -84,5 +79,4 @@ namespace Navigation
 		downloadInstallStates[1] = state;
 		return !downloadInstallStates.contains(true);
 	});
-
 }
