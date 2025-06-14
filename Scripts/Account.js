@@ -129,15 +129,16 @@ namespace Account
 	//! loggedIn
 	broadcasters.loggedIn = Engine.createBroadcaster({id: "loggedIn", args: ["state"]});
 	
-	//! btnLogoutValue
-	broadcasters.btnLogoutValue = Engine.createBroadcaster({id: "btnLogoutValue", args: ["component", "value"]});
-	broadcasters.btnLogoutValue.attachToComponentValue("btnLogout", "");
-
-	broadcasters.btnLogoutValue.addListener({}, "Log the user out when the logout button is clicked", function(component, value)
+	const bcMenuValue = Engine.createBroadcaster({id: "bcLogoutMenuValue", args: ["component", "value"]});
+	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	
+	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
 	{
-		if (value)
-			logoutWithPrompt();
-	});	
+		if (component.getItemText().toLowerCase() != "logout")
+			return;
+	
+		logoutWithPrompt();
+	});
 
 	//! Calls
 	broadcasters.loggedIn.state = isLoggedIn();

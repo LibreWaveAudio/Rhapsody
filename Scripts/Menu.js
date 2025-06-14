@@ -65,6 +65,7 @@ namespace Menu
 		
 		items.push(loggedIn ? "Add License" : "~~Add License~~");
 		items.push(loggedIn ? "Check for Updates" : "~~Check for Updates~~");
+		items.push(loggedIn ? "Logout" : "Sign In");
 
 		cmbMenu.set("items", items.join("\n"));
 	}

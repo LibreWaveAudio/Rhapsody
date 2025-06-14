@@ -32,15 +32,12 @@ namespace LoginPage
 	const pnlLoginContainer = Content.getComponent("pnlLoginContainer");
 
 	pnlLoginContainer.setPaintRoutine(function(g)
-	{
-		var a = this.getLocalBounds(0);
+	{		
+		g.fillAll(Colours.withAlpha(Colours.black, 0.4));
 		
-		g.setColour(this.get("textColour"));
-		g.setFont("semibold", 20);
-		g.drawAlignedText(this.get("text"), a, "topLeft");
-			
-		g.setFont("regular", 16);
-		g.drawAlignedText(this.get("tooltip"), a.removeFromTop(50), "bottomLeft");
+		var a = [pnlLoginForm.get("x"), pnlLoginForm.get("y"), pnlLoginForm.getWidth(), pnlLoginForm.getHeight()];
+
+		g.drawDropShadow(a, Colours.withAlpha(Colours.black, 0.6), 20);
 	});
 
 	//! pnlLoginForm
@@ -48,6 +45,18 @@ namespace LoginPage
 
 	pnlLoginForm.setPaintRoutine(function(g)
 	{
+		var a = this.getLocalBounds(0);
+
+		g.setColour(this.get("bgColour"));
+		g.fillRoundedRectangle(a, this.get("borderRadius"));
+
+		g.setColour(this.get("textColour"));
+		g.setFont("semibold", 20);
+		g.drawAlignedText(this.get("text"), a.withBottom(75), "centred");
+			
+		g.setFont("regular", 18);
+		g.drawAlignedText(this.get("tooltip"), a.removeFromTop(160), "centred");
+
 		// Label backgrounds
 		g.setColour(this.get("itemColour"));
 
@@ -63,6 +72,8 @@ namespace LoginPage
 
 		g.drawAlignedText("\ue218", [usernameArea[0] + 8, usernameArea[1], usernameArea[3], usernameArea[3]], "left");
 		g.drawAlignedText("\uea78", [passwordArea[0] + 8, passwordArea[1], passwordArea[3], passwordArea[3]], "left");
+		
+		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
 	});
 
 	//! lblUsername
@@ -79,6 +90,17 @@ namespace LoginPage
 	inline function onbtnShowPasswordControl(component, value)
 	{
 		lblPassword.set("fontStyle", value ? "plain" : "Password");
+	}
+	
+	//! btnLoginCancel
+	const btnLoginCancel = Content.getComponent("btnLoginCancel");
+	btnLoginCancel.setLocalLookAndFeel(LookAndFeel.textButton);
+	btnLoginCancel.setControlCallback(onbtnLoginCancelControl);
+	
+	inline function onbtnLoginCancelControl(component, value)
+	{
+		if (!value)
+			workOffline();
 	}
 		
 	//! btnLoginSubmit
@@ -113,20 +135,60 @@ namespace LoginPage
 		if (!value)
 			Engine.openWebsite(App.baseUrl[App.mode] + "my-account/");
 	}
+	
+	//! btnLoginClose
+	const btnLoginClose = Content.getComponent("btnLoginClose");
+	btnLoginClose.setLocalLookAndFeel(LookAndFeel.closeButton);
+	btnLoginClose.setControlCallback(onbtnLoginCloseControl);
 
-	//! Functions	
+	inline function onbtnLoginCloseControl(component, value)
+	{
+		if (!value)
+			workOffline();
+	}
+
+	//! Functions
+	inline function show()
+	{
+		clear();
+		pnlLoginContainer.showControl(true);
+	}
+	
+	inline function hide()
+	{
+		pnlLoginContainer.showControl(false);
+		clear();
+	}
+	
 	inline function clear()
 	{
 		lblUsername.set("text", "");
 		lblPassword.set("text", "");		
 	}
+	
+	inline function workOffline()
+	{
+		UserSettings.setProperty("rhapsody", "workOffline", true);
+		hide();
+	}
 
 	//! Broadcasters
-	const bcClearOnVisiblity = Engine.createBroadcaster({id: "bcClearOnVisiblity", args: ["component", "property", "value"]});
-	bcClearOnVisiblity.attachToComponentProperties("pnlPage3", "visible", "");
-	
-	bcClearOnVisiblity.addListener(0, "Clear the login form on visiblity change", function(component, property, value)
+	Account.broadcasters.loggedIn.addListener(0, "Respond to changes in logged in status", function(state)
 	{
-		clear();
-	});	
+		if (!state && !UserSettings.getProperty("rhapsody", "workOffline"))
+			show();
+		else
+			hide();
+	});
+	
+	const bcMenuValue = Engine.createBroadcaster({id: "bcLoginMenuValue", args: ["component", "value"]});
+	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	
+	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		if (component.getItemText().toLowerCase() != "sign in")
+			return;
+
+		show();	
+	});
 }

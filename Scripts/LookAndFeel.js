@@ -265,7 +265,7 @@ namespace LookAndFeel
 		g.setColour(Colours.withMultipliedAlpha(c, obj.enabled ? 1.0 : 0.5));
 		
 		g.drawAlignedText("\ue4f6", a, "centred");
-	});	
+	});
 	
 	//! Popup Menu
 	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
@@ -326,7 +326,9 @@ namespace LookAndFeel
 			"remove favourite": "\uebe8",
 			"set samples folder": "\ue238",
 			"uninstall": "\ue4a8",
-			"visit webpage": "\ue0f4"
+			"visit webpage": "\ue0f4",
+			"sign in": "\ue4c2",
+			"logout": "\ue42a"
 		};		
 
 		local icon = icons[obj.text.toLowerCase()];
