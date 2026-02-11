@@ -10,7 +10,6 @@
           <ChildProcessors/>
           <Content>
             <Control type="ScriptLabel" id="lblFilter" value=""/>
-            <Control type="ScriptedViewport" id="vptSettings" value="0.0"/>
           </Content>
           <UIData Source="RhapsodyUIData"/>
         </Processor>

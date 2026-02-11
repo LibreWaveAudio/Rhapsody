@@ -54,6 +54,7 @@ namespace Pager
 		});
 
 		panel.data.buttonContainer = buttonContainer;
+
 		return panel;	
 	}
 }

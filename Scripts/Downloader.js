@@ -17,10 +17,8 @@
 
 namespace Downloader
 {
-	reg totalSize;
+	reg product;
 	reg abort = false;
-	reg downloadsDirectory;
-	reg productName;
 
 	const downloads = [];
 	const downloadedFiles = [];
@@ -33,21 +31,24 @@ namespace Downloader
 		updateProgress();
 	});
 
-	Server.setNumAllowedDownloads(3);
-
 	//! Functions
-	inline function downloadProduct(productId: number)
+	inline function downloadProduct(item: object)
 	{
+		product = item;
+
 		local headers = ["Authorization: Bearer " + Account.readToken()];
 		local endpoint =  App.apiPrefix + "get_downloads/";
 		local version = 0;
-		local p = {product_id: productId, user_version: 0};
+		local p = {product_id: item.id, user_version: 0};
 
 		Server.setHttpHeader(headers.join("\n"));
 		Server.setBaseURL(App.baseUrl[App.mode]);
 
 		Spinner.setText("Fetching Downloads");
-
+		
+		local img = Cache.getImage(item.id + ".jpg");		
+		ProgressBar.setImage(img.isFile() ? img.toString(img.FullPath) : "");
+		
 		Server.callWithGET(endpoint, p, function(status, response)
 		{
 			var errorMsg = "";
@@ -55,18 +56,14 @@ namespace Downloader
 			if (status == 0)
 				errorMsg = "Unable to connect to the server. Please try again later.";
 
-			if (errorMsg == "" && status != 200)
+			if (errorMsg == "" && status != Server.StatusOK)
 				errorMsg = isDefined(response.message) ? response.message : "A server error occurred. Please try again later.";
 
 			if (errorMsg == "" && (!isDefined(response[0]) || !response[0]))
 				errorMsg = isDefined(response.message) ? response.message : "An undefined server error occurred. Please try again later.";
 
 			if (errorMsg != "")
-			{				
-				Engine.showMessageBox("Server Error: " + status, errorMsg, 1);
-				DownloadList.clearQueue();
-				return;
-			}
+				return Engine.showMessageBox("Server Error: " + status, errorMsg, 1);
 
 			downloadFiles(response);
 		});
@@ -76,16 +73,15 @@ namespace Downloader
 	{
 		downloads.clear();
 		downloadedFiles.clear();
-		totalSize = 0;
+		product.totalSize = 0;
 		abort = false;
 
 		for (x in files)
-			totalSize += x.file_size;
-			
-		productName = files[0].product_name;
-		downloadsDirectory = getDownloadsDirectory(totalSize);	
+			product.totalSize += x.file_size;
 
-		if (!isDefined(downloadsDirectory.Filename) || totalSize <= 0)
+		product.downloadFolder = getDownloadsDirectory(product.id, product.totalSize);	
+
+		if (!product.downloadFolder.isDirectory() || product.totalSize <= 0)
 			return abortDownloads();
 
 		Server.setHttpHeader("");
@@ -96,7 +92,7 @@ namespace Downloader
 
 		for (x in files)
 		{
-			local f = downloadsDirectory.getChildFile(x.filename);
+			local f = product.downloadFolder.getChildFile(x.filename);
 			local url = x.download_url.replace(App.baseUrl[App.mode]);
 
 			if (f.isFile())
@@ -108,12 +104,11 @@ namespace Downloader
 		if (!downloads.length)
 		{
 			if (files.length > 0)
-				Installer.install(downloadsDirectory.getChildFile(files[0].filename));
+				Expansions.install(product.downloadFolder.getChildFile(files[0].filename), product.sampleFolder, false);
 
 			return broadcasters.isDownloading.state = false;
 		}
 
-		addAbortButtonListener();
 		progressTimer.startTimer(100);
 	}
 
@@ -131,22 +126,19 @@ namespace Downloader
 			return;
 
 		progressTimer.stopTimer();
-		removeAbortButtonListener();
-		broadcasters.isDownloading.state = false;
+		Server.cleanFinishedDownloads();
+		broadcasters.isDownloading.state = false;		
 
 		if (this.data.success && !abort)
-			return Installer.install(this.getDownloadedTarget());
+			return Expansions.install(this.getDownloadedTarget(), product.sampleFolder, false);
 
 		if (!abort)
-		{
 			Engine.showMessageBox("Download Failed", "One or more downloads failed. If you’re using a VPN, try disabling it. Also, ensure Rhapsody is allowed through your system firewall.", 0);
-			DownloadList.clearQueue();
-		}			
 	}
 
-	inline function: object getDownloadsDirectory(bytesRequired: number)
+	inline function: ScriptObject getDownloadsDirectory(productId: number, bytesRequired: number)
 	{
-		local result = UserSettings.getDirectory("downloadPath");
+		local result = FileSystem.getFolder(FileSystem.Temp).createDirectory("rhapsody");
 		local errorMsg = "";
 
 		if (!result.hasWriteAccess())
@@ -157,9 +149,8 @@ namespace Downloader
 
 		if (errorMsg != "")
 		{
-			Engine.showMessageBox("Download Folder Issue", errorMsg, 1);
-			DownloadList.clearQueue();
-			result = {};
+			Engine.showMessageBox("Download Issue", errorMsg, 1);
+			result = FileSystem.getFolder(FileSystem.AppData).getNonExistentSibling();
 		}
 
 		return result;
@@ -177,19 +168,17 @@ namespace Downloader
 			speed += x.getDownloadSpeed();
 		}
 
-		progress = bytesDownloaded / totalSize;
+		progress = bytesDownloaded / product.totalSize;
 
-		local timeRemaining = getFormattedTimeRemaining(totalSize, bytesDownloaded, speed);
-		local progressAsText = FileSystem.descriptionOfSizeInBytes(bytesDownloaded) + " / " + FileSystem.descriptionOfSizeInBytes(totalSize);
+		local timeRemaining = getFormattedTimeRemaining(product.totalSize, bytesDownloaded, speed);
+		local progressAsText = FileSystem.descriptionOfSizeInBytes(bytesDownloaded) + " / " + FileSystem.descriptionOfSizeInBytes(product.totalSize);
 		local speedAsText = FileSystem.descriptionOfSizeInBytes(speed) + "/s";
 		
-		local data = {					
-			productName: productName,
-			text: "Downloading: " + progressAsText + ", " + speedAsText + " - " + timeRemaining,
-			value: progress
-		};
-
-		ProgressBar.setProgress(data);
+		broadcasters.downloadProgress.sendAsyncMessage([
+			progress,
+			product.name,
+			"Downloading: " + progressAsText + ", " + speedAsText + " | " + timeRemaining
+		]);
 		
 		if (progress >= 1.0)
 			progressTimer.stopTimer();
@@ -233,45 +222,16 @@ namespace Downloader
 		abort = true;
 
 		progressTimer.stopTimer();
-		removeAbortButtonListener();
 		broadcasters.isDownloading.state = false;
-		DownloadList.processNextQueuedItem();
-	}
-	
-	inline function deleteDownloadedFiles()
-	{
-		for (x in downloadedFiles)
-			x.deleteFileOrDirectory();
-			
-		Server.cleanFinishedDownloads();
-	}
-
-	inline function addAbortButtonListener()
-	{
-		broadcasters.abort.attachToComponentValue("btnProgressCancel1", "");
-	
-		broadcasters.abort.addListener(0, "Abort downloads", function(component, value)
-		{
-			if (!value || !broadcasters.isDownloading.state)
-				return;
-
-			Engine.showYesNoWindow("Cancel", "Do you want to cancel this download?", function(response)
-			{
-				if (response)
-					abortDownloads();
-			});
-		});
-	}
-
-	inline function removeAbortButtonListener()
-	{
-		broadcasters.abort.removeAllSources();
-		broadcasters.abort.removeListener("Abort downloads");
 	}
 	
 	//! Broadcasters
 	const broadcasters = {};
 
+	broadcasters.downloadProgress = Engine.createBroadcaster({id: "downloadProgress", args: ["progress", "title", "message"]});
 	broadcasters.isDownloading = Engine.createBroadcaster({id: "downloadState", args: ["state"]});
-	broadcasters.abort = Engine.createBroadcaster({id: "abortDownload", args: ["component", "value"]});
+	
+	//! Function Calls
+	Server.setNumAllowedDownloads(3);
+	Server.cleanFinishedDownloads();
 }

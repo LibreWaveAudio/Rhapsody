@@ -18,18 +18,19 @@
 namespace Filter
 {
 	//! pnlFilter
-	const pnlFilter = Content.getComponent("pnlFilter");
+	const pnlFilter = Content.getComponent("pnlFilter");	
 
 	pnlFilter.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
 
+		var labelArea = Rectangle(lblFilter.get("x") - 30, lblFilter.get("y"), lblFilter.get("width") + 30, lblFilter.get("height"));
 		g.setColour(this.get("bgColour"));
-		g.fillRoundedRectangle(a, 2);
+		g.fillRoundedRectangle(labelArea, 5);
 
 		g.setColour(this.get("textColour"));
-		g.setFont("phosphor", 14);
-		g.drawAlignedText("\ue30c", [a[0] + 10, a[1], a[3], a[3]], "left");
+		g.setFont("phosphor", 16);
+		g.drawAlignedText("\ue30c", [labelArea[0] + 10, labelArea[1] + labelArea[3] / 2 - 16 / 2, 16, 16], "left");
 	});
 
 	//! lblFilter

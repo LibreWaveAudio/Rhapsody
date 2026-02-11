@@ -18,6 +18,25 @@
 namespace Navigation
 {
 	const downloadInstallStates = [0, 0];
+	
+	//! Look and Feel
+	const laf = Content.createLocalLookAndFeel();
+	
+	laf.registerFunction("drawToggleButton", function(g, obj)
+	{
+		 var a = obj.area;
+
+		 if (!obj.enabled)
+		 	g.setColour(Colours.withAlpha(obj.textColour, 0.2));
+		 else	
+		 	g.setColour(Colours.withAlpha(obj.textColour, (obj.value ? 0.9 + (0.1 * obj.over) : 0.5 + (0.3 * obj.over))));
+
+		 g.setFont("phosphorFill", 18);
+		 g.drawAlignedText(LookAndFeel.getIcon(obj.text), a, "left");
+		 
+		 g.setFont("medium", 18);
+		 g.drawAlignedText(obj.text, a, "right");
+	});
 
 	//! pnlPages
 	const pnlPages = Pager.create("pnlPages", "pnlNavigation", 1);
@@ -29,54 +48,31 @@ namespace Navigation
 	const btnPage = Content.getAllComponents("btnPage\\d");
 
 	for (x in btnPage)
-		x.setLocalLookAndFeel(LookAndFeel.iconButtonToggle);
+		x.setLocalLookAndFeel(laf);
 
 	//! Functions
 	inline function setButtonPositions()
 	{
-		local buttons = [];
+		local margin = 25;
+		local x = 0;
 
-		for (x in btnPage)
+		for (i = 0; i < btnPage.length; i++)
 		{
-			x.showControl(false);
-
-			if (x.get("enabled"))
-				buttons.push(x);
+			btnPage[i].set("x", x);
+			x += btnPage[i].get("width") + margin;
 		}
 
-		local numButtons = buttons.length;
-		local buttonWidth = buttons[0].getWidth();
-		local totalButtonWidth = numButtons * buttonWidth;
-		local totalSpacing = pnlNavigation.getWidth() - totalButtonWidth;
-		local margin = totalSpacing / (numButtons + 1); // +1 for left and right
-
-		for (i = 0; i < buttons.length; i++)
-		{
-			local x = margin + i * (buttonWidth + margin);
-			buttons[i].set("x", x);
-			buttons[i].showControl(true);
-		}
+		pnlNavigation.set("width", x - margin);
 	}
+	
+	//! Function Calls
+	setButtonPositions();
 
 	//! Broadcasters
 	Account.broadcasters.loggedIn.addListener(0, "Respond to changes in logged in status", function(state)
 	{
-		btnPage[1].set("enabled", state);	
-
-		setButtonPositions();
 		btnPage[0].setValue(1);
 		btnPage[0].changed();
-	});
-
-	Downloader.broadcasters.isDownloading.addComponentPropertyListener("pnlNavigation", "enabled", "Disable menu during downloads", function(index, state)
-	{
-		downloadInstallStates[0] = state;
-		return !downloadInstallStates.contains(true);
-	});
-
-	Installer.broadcasters.isInstalling.addComponentPropertyListener("pnlNavigation", "enabled", "Disable menu during install", function(index, state)
-	{
-		downloadInstallStates[1] = state;
-		return !downloadInstallStates.contains(true);
+		btnPage[1].set("enabled", state);
 	});
 }

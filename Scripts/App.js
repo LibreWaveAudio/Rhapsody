@@ -17,7 +17,7 @@
 
 namespace App
 {
-	const mode = "staging";
+	const mode = "development";
 
 	const isOnline = Server.isOnline();
 
@@ -50,18 +50,12 @@ namespace App
 	{
 		var a = this.getLocalBounds(0);
 
-		g.fillAll(this.get("bgColour"));	
+		g.fillAll(this.get("bgColour"));
 
 		g.setColour(this.get("textColour"));
-		g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
-		g.drawAlignedText("RHAPSODY", [a[0] + 10, a[1], a[2], 55 - (10 * (Engine.getOS() == "WIN"))], "left");
-
-		g.setColour(Colours.withMultipliedBrightness(this.get("itemColour"), 0.3));
-		g.drawHorizontalLine(54, a[0], a[2]);
-
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+		g.fillPath(Paths.rhapsodyFullLogo, [a[0] + 20, a[1] + 32, 168, 24]);
 	});
-			
+
 	//! Functions	
 	inline function createDefaultLinkFile()
 	{

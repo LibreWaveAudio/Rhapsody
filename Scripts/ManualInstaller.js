@@ -17,86 +17,75 @@
 
 namespace ManualInstaller
 {
-	//! pnlManualInstallerContainer
-	const pnlManualInstallerContainer = Content.getComponent("pnlManualInstallerContainer");
-	pnlManualInstallerContainer.showControl(false);
-
-	pnlManualInstallerContainer.setPaintRoutine(function(g)
+	//! btnManualInstall
+	const btnManualInstall = Content.getComponent("btnManualInstall");
+	btnManualInstall.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	btnManualInstall.setControlCallback(onbtnManualInstallControl);
+	
+	inline function onbtnManualInstallControl(component, value)
 	{
-		var a = this.getLocalBounds(0);
-		LookAndFeel.fullPageBackground();
-	});
+		if (!value)
+			promptForArchive();
+	}
 
 	//! Functions
-	inline function showFileBrowser()
+	inline function promptForArchive()
 	{
 		FilePicker.show({
 			startFolder: FileSystem.getFolder(FileSystem.Downloads),
 			mode: 0,
-			filter: "*.lwz",
+			filter: "*.hr1",
 			title: "Install from File",
-			message: "Select a LWZ file to install.",
+			message: "Select a .hr1 file to install",
 			buttonText: "Ok",
-			hideOnSubmit: true,
-		}, function(file)
+			hideOnSubmit: false,
+		}, function(file, data)
 		{
-			show();
-			Installer.install(file);
+			var img = Expansions.getImageForPackage(file);
+			ProgressBar.setImage(img);
+
+			promptForArchiveCallback(file);
 		});
 	}
+	
+	inline function promptForArchiveCallback(archive: ScriptObject)
+	{
+		local sampleFolder = Expansions.getSampleFolderForPackage(archive);
 
-	inline function showDirectoryBrowser()
+		if (!sampleFolder.isDirectory())
+			return promptForSampleFolder(archive);
+
+		FilePicker.hide();
+		Expansions.install(archive, sampleFolder, true);
+	}
+
+	inline function promptForSampleFolder(archive: ScriptObject)
 	{
 		FilePicker.show({
-			startFolder: FileSystem.getFolder(FileSystem.Downloads),
+			startFolder: FileSystem.getFolder(FileSystem.UserHome),
 			mode: 1,
 			filter: "",
-			title: "Batch Install",
-			message: "Select a folder containing LWZ files for one or more instruments.",
-			buttonText: "Ok",
-			hideOnSubmit: true,
-		}, function(dir)
+			title: "Install from File",
+			message: "Choose a location to install the samples.",
+			buttonText: "Install",
+			forWriting: true,
+			bytesRequired: archive.getSize(),
+			data: {archive: archive}
+		}, function(dir, data)
 		{
-			var files = FileSystem.findFiles(dir, "*.lwz", false);
-			
-			if (!files.length)
-				return Engine.showMessageBox("No Files", "No lwz files were found in the selected folder.", 1);
-
-			show();
-			Installer.bulkInstall(dir);
+			Expansions.install(data.archive, dir, true);
 		});
-	}
-	
-	inline function show()
-	{
-		pnlManualInstallerContainer.showControl(true);
-	}
-	
-	inline function hide()
-	{
-		pnlManualInstallerContainer.showControl(false);
 	}
 	
 	//! Broadcasters
-	const bcMenuValue = Engine.createBroadcaster({id: "bcManualInstallerMenuValue", args: ["component", "value"]});
-	bcMenuValue.attachToComponentValue("cmbMenu", "");
-
-	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	
+	//! bcbtnManualInstallVisibility
+	const var bcbtnManualInstallVisibility = Engine.createBroadcaster({id: "bcbtnManualInstallVisibility", args: ["component", "isVisible"]});
+	bcbtnManualInstallVisibility.attachToComponentVisibility(["pnlProductGridContainer"], "");
+	
+	bcbtnManualInstallVisibility.addComponentPropertyListener(["btnManualInstall"], ["visible"], "Only show manual install button when library is visible", function(index, component, isVisible)
 	{
-		if (component.getItemText().toLowerCase() == "install instrument from lwz file")
-			return showFileBrowser();
-
-		if (component.getItemText().toLowerCase() == "install instruments from folder")
-			return showDirectoryBrowser();
+		return isVisible;
 	});
-
-	//! bcProgressVisiblity
-	const bcProgressVisibility = Engine.createBroadcaster({id: "bcProgressVisibility", args: ["component", "isVisible"]});
-	bcProgressVisibility.attachToComponentVisibility(["pnlProgress0"], "");
-
-	bcProgressVisibility.addListener(0, "Hide the manual installer page when the progress bar is hidden", function(component, isVisible)
-	{
-		if (!isVisible)
-			hide();
-	});
+	
 }

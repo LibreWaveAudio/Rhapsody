@@ -18,8 +18,8 @@
 namespace ProductGrid
 {
 	const MARGIN = 10;
-	reg numCols = 4;
-	reg fontSize = 16;
+	reg numCols = getNumColumns();
+	reg fontSize = getFontSize();
 	reg filterQuery = "";
 
 	//! pnlProductGridContainer
@@ -36,71 +36,20 @@ namespace ProductGrid
 
 	//! pnlProductGrid
 	const pnlProductGrid = Content.getComponent("pnlProductGrid");
-
-	pnlProductGrid.setFileDropCallback("All Callbacks", "*.lwz", onpnlProductGridFileDrop);
-
-	inline function onpnlProductGridFileDrop(obj)
-	{
-		this.data.hover = obj.hover && !obj.drop;
-
-		pnlDropZone.fadeComponent(this.data.hover, 100);
-
-		if (!obj.drop)
-			return;
-
-		local file = FileSystem.fromAbsolutePath(obj.fileName);
-
-		ManualInstaller.show();
-		Installer.install(file);
-	}
-
-	//! pnlDropZone
-	const pnlDropZone = Content.getComponent("pnlDropZone");
-	pnlDropZone.showControl(false);
-	
-	pnlDropZone.setPaintRoutine(function(g)
-	{
-		var a = this.getLocalBounds(0);
-		var innerArea = this.getLocalBounds(200);
 		
-		g.setColour(this.get("bgColour"));
-		g.fillRect(a);
-	
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.15));
-	
-		g.fillRoundedRectangle(innerArea, this.get("borderRadius"));	
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5 + 0.5 * this.data.hover));
-	
-		var p = Content.createPath();
-		p.addRoundedRectangle(innerArea, this.get("borderRadius"));
-		
-		var stroke = {EndCapStyle: "rounded", JointStyle: "curved", Thickness: 2.0};
-		var sp = p.createStrokedPath(stroke, [5, 10]);
-		
-		g.drawPath(sp, innerArea, stroke);
-	
-		g.setFont("phosphorFill", 60);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.6 + 0.4 * this.data.hover));
-		g.drawAlignedText("\uee54", a.withTrimmedBottom(75), "centred");
-	
-		g.setFont("bold", 30);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 0.9));
-		g.drawAlignedText("Drop to Install", a.withTrimmedTop(75), "centred");
-	});
-	
 	//! Functions
 	inline function refresh()
 	{
-		local expansions = getExpansions(filterQuery);
+		local expansions = getExpansions(isDefined(filterQuery) ? filterQuery : "");
 		local width = pnlProductGrid.getWidth() / numCols - MARGIN;
 		local numRows = Math.ceil(expansions.length / numCols);
-		local height = width + 40;
+		local height = width + 30;
 		
 		removeAllChildPanels();
 		
 		Engine.sortWithFunction(expansions, sortExpansions);
 		
-		pnlProductGrid.set("height", Math.max(height, numRows * height + MARGIN * numRows));
+		pnlProductGrid.set("height", Math.max(height, numRows * height + MARGIN * (numRows - 1)));
 
 		for (i = 0; i < expansions.length; i++)
 		{
@@ -164,7 +113,27 @@ namespace ProductGrid
 
 		return result;
 	}
-
+	
+	inline function: number getNumColumns()
+	{
+		local result = UserSettings.getProperty("rhapsody", "gridColumns");
+		
+		if (!isDefined(result))
+			result = 4;
+			
+		return result;
+	}
+	
+	inline function: number getFontSize()
+	{
+		local result = UserSettings.getProperty("rhapsody", "gridFontSize");
+		
+		if (!isDefined(result))
+			result = 18;
+			
+		return result;
+	}
+	
 	//! Broadcasters
 	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)
 	{
@@ -172,28 +141,24 @@ namespace ProductGrid
 		refresh();
 	});
 
-	//! bcScaleFactor	
-	const bcScaleFactor = Engine.createBroadcaster({id: "bcScaleFactor", args: ["component", "value"]});
-	bcScaleFactor.attachToComponentValue(["pnlZoom"], "");
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcGridMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
+	
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		var selection = component.getItemText();
+		var options = [4, 5, 6];
+		var fontSizes = [18, 16, 14];
 
-	bcScaleFactor.addListener(0, "Respond to UI scale changes", function(component, value)
-	{	
-		if (value >= 0.0 && value < 1)
-		{
-			numCols = 4;
-			fontSize = 18;
-		}			
-		else if (value >= 1 && value <= 2)
-		{
-			numCols = 5;
-			fontSize = 16;
-		}			
-		else
-		{
-			numCols = 6;
-			fontSize = 14;
-		}
+		if (!options.contains(parseInt(selection)))
+			return;
+
+		numCols = parseInt(selection);
+		fontSize = fontSizes[options.indexOf(parseInt(selection))];
+		
+		UserSettings.setProperty("rhapsody", "gridColumns", numCols);
+		UserSettings.setProperty("rhapsody", "gridFontSize", fontSize);
 
 		refresh();
-	});	
+	});
 }

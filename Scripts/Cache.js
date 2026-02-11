@@ -22,17 +22,7 @@ namespace Cache
 	reg cacheData = read();	
 	reg totalToDownload;
 	reg downloadCount;
-	
-	//! btnClearImages
-	const btnClearImages = Content.getComponent("btnClearImages");
-	btnClearImages.setControlCallback(onbtnClearImagesControl);
-	
-	inline function onbtnClearImagesControl(component, value)
-	{
-		if (!value)
-			clearImages();
-	}
-	
+		
 	//! Functions
 	inline function: Array read()
 	{
@@ -73,10 +63,10 @@ namespace Cache
 		if ((now - lastSync) < MS_PER_WEEK)
 			return;
 	
-		sync();
+		sync(true);
 	}
 
-	inline function sync()
+	inline function sync(background: int)
 	{
 		local token = Account.readToken();
 
@@ -89,20 +79,24 @@ namespace Cache
 		Server.setBaseURL(App.baseUrl[App.mode]);
 		Server.setHttpHeader(headers.join("\n"));
 
-		Spinner.setText("Syncing with Server");
+		if (!background)
+			Spinner.setText("Syncing with Server");
 
-		Server.callWithGET(endpoint, {}, function(status, response)
+		Server.callWithGET(endpoint, {}, function[background](status, response)
 		{			
 			if (status == 200 && typeof(response) == "object" && response.length > 0)
 				return handleSyncResponse(response);
+
+			if (background)
+				return;
 
 			if (isDefined(response.message) && response.message.contains("You are not currently logged in"))
 				Account.logout();
 
 			if (isDefined(response.message))
-				Engine.showMessageBox("Error", response.message, 3);
-			else
-				Engine.showMessageBox("Error", "The server reported an error, please try again later.", 3);
+				return Engine.showMessageBox("Error", response.message, 3);
+
+			Engine.showMessageBox("Error", "The server reported an error, please try again later.", 3);
 		});
 	}
 
@@ -249,19 +243,30 @@ namespace Cache
 			if (!response)
 				return DownloadList.refresh();
 
-			sync();
+			sync(false);
 		});
 	}
 
 	//! Broadcasters
-	Account.broadcasters.loggedIn.addListener({}, "Sync on login, clear on logout", function(state)
+	Account.broadcasters.loggedIn.addListener(0, "Sync on login, clear on logout", function(state)
 	{
 		if (!state)
 			return clearCache();
 
 		if (!cacheData.length)
-			sync();
+			sync(false);
 		else
 			autoSync();
+	});
+	
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcDownloadListMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
+	
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		if (component.getItemText().toLowerCase() != "check for updates")
+			return;
+
+		sync(false);
 	});
 }

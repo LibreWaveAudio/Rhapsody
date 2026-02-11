@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023, 2025 David Healey
+    Copyright 2022, 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,13 +17,9 @@
 
 namespace FilePicker
 {
-	reg startFolder = FileSystem.Downloads;
-	reg mode = 0;
-	reg hideOnSubmit = true;
-	reg filter = "";
-	reg file;
+	const options = {};
 	reg callback;
-	reg data;
+	reg file;
 
 	//! pnlFilePicker
 	const pnlFilePicker = Content.getComponent("pnlFilePicker");
@@ -39,20 +35,20 @@ namespace FilePicker
 		var lblArea = [lblFilePicker.get("x") - 10, lblFilePicker.get("y"), lblFilePicker.getWidth() + 20, lblFilePicker.getHeight()];
 		g.fillRoundedRectangle(lblArea, 2);	  
 
-		g.setFont("semibold", 20);
+		g.setFont("semibold", 22);
 		g.setColour(this.get("textColour"));
 
-		if (isDefined(this.data.title))
-			g.drawAlignedText(this.data.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
+		if (isDefined(options.title))
+			g.drawAlignedText(options.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
 
-		if (!isDefined(this.data.message))
+		if (!isDefined(options.message))
 			return;
 
 		g.setFont("phosphor", 18);
 		g.drawAlignedText("\ue2ce", [lblArea[0] + 2, lblArea[1] - 40, 20, 20], "left");
 		
-		g.setFont("regular", 16);		
-		g.drawAlignedText(this.data.message, [lblArea[0] + 25, lblArea[1] - 40, lblArea[2], 20], "left");
+		g.setFont("regular", 18);		
+		g.drawAlignedText(options.message, [lblArea[0] + 25, lblArea[1] - 40, lblArea[2], 20], "left");
 	});
 	
 	//! lblFilePicker
@@ -63,15 +59,20 @@ namespace FilePicker
 	inline function onlblFilePickerControl(component, value)
 	{
 		file = FileSystem.fromAbsolutePath(value);
+		
+		component.set("text", "");
 
-		if ((mode == 0 && !file.isFile()) || (mode == 1 && !file.isDirectory()))
-		{
-			file = undefined;
-			return component.set("text", "");
-		}			
+		if (!isDefined(file))
+			return;
+
+		if (!options.mode && !file.isFile())
+			return file = undefined;
+			
+		if (options.mode && !file.isDirectory())
+			return file = undefined;
 
 		btnFilePickerSubmit.set("enabled", true);
-		lblFilePicker.set("text", getTruncatedPath(file, 55));
+		component.set("text", getTruncatedPath(file, 55));
 	}
 
 	//! btnFilePicker
@@ -82,7 +83,7 @@ namespace FilePicker
 	inline function onbtnFilePickerControl(component, value)
 	{
 	    if (!value)
-			mode == 0 ? showFileBrowser() : showDirectoryBrowser();			
+			options.mode == 0 ? showFileBrowser() : showDirectoryBrowser();			
 	}
 
 	//! btnFilePickerCancel
@@ -113,35 +114,43 @@ namespace FilePicker
     }
     
     //! Functions
+    inline function setDefaultOptions()
+    {
+		options.title = "";
+		options.message = "";
+		options.startFolder = FileSystem.Downloads;
+		options.mode = 0;
+		options.hideOnSubmit = true;
+		options.forWriting = false;
+		options.bytesRequired = 0;
+		options.filter =  "";
+		options.data = {};
+    }
+    
 	inline function show(properties, callbackFunction)
 	{
-		pnlFilePicker.data.title = properties.title;
-		pnlFilePicker.data.message = properties.message;
-		filter = isDefined(properties.filter) ? properties.filter : "";
-		mode = properties.mode;
-		hideOnSubmit = !isDefined(properties.hideOnSubmit) || properties.hideOnSubmit;
+		setDefaultOptions();
+
+		for (x in properties)
+			options[x] = properties[x];
+
 		callback = callbackFunction;
-		data = isDefined(properties.data) ? properties.data : {};
-		btnFilePickerSubmit.set("text", properties.buttonText);
+		
+		btnFilePickerSubmit.set("text", options.buttonText);
 		btnFilePickerSubmit.set("enabled", false);
-
-		if (isDefined(properties.startFolder) && properties.startFolder != "" && properties.startFolder.isDirectory())
-			startFolder = properties.startFolder;
-
-		if (isDefined(startFolder))
+		lblFilePicker.set("textColour", Colours.withAlpha(lblFilePicker.get("textColour"), options.mode ? 1.0 : 0.5));
+		lblFilePicker.set("text", "");
+		
+		if (isDefined(options.startFolder))
 		{
-			btnFilePickerSubmit.set("enabled", mode == 1);
-			lblFilePicker.set("text", getTruncatedPath(startFolder, 55));
-			file = startFolder;
-		}
-		else
-		{
-			lblFilePicker.set("text", "");
+			btnFilePickerSubmit.set("enabled", options.mode == 1);
+			lblFilePicker.set("text", getTruncatedPath(options.startFolder, 55));
+			file = options.startFolder;
 		}
 
 		pnlFilePicker.repaint();
-		
-		if (!isDefined(properties.fadeIn) || properties.fadeIn)
+
+		if (!isDefined(options.fadeIn) || options.fadeIn)
 			pnlFilePicker.fadeComponent(true, 100);
 		else
 			pnlFilePicker.fadeComponent(true, 1);
@@ -154,23 +163,35 @@ namespace FilePicker
     
     inline function showFileBrowser()
     {
-	    FileSystem.browse(startFolder, false, filter, function(f)
+	    FileSystem.browse(options.startFolder, false, options.filter, function(f)
 	    {
 			if (!f.isFile())
 				return;
 
 			file = f;
+
+			var fileName = f.toString(f.Filename);
+			var path = f.toString(f.FullPath).replace("/" + fileName);
+			var dir = path.substring(path.lastIndexOf("/"), path.length);
+
 			btnFilePickerSubmit.set("enabled", true);
-			lblFilePicker.set("text", f.toString(f.Filename));
+			lblFilePicker.set("text", ".." + dir + "/" + fileName);
+			lblFilePicker.set("textColour", Colours.withAlpha(lblFilePicker.get("textColour"), 1.0));
 	    });
     }
 
     inline function showDirectoryBrowser()
     {
-	    FileSystem.browseForDirectory(startFolder, function(dir)
+	    FileSystem.browseForDirectory(options.startFolder, function(dir)
 	    {
 		    if (!dir.isDirectory())
 		    	return;
+
+		    if (options.forWriting && !dir.hasWriteAccess())
+	    		return Engine.showMessageBox("Write Access", "It is not possible to write to the selected folder, please choose a different location.", 1);
+
+	    	if (options.bytesRequired > 0 && dir.getBytesFreeOnVolume() < (options.bytesRequired * 2))
+	    		return Engine.showMessageBox("Disk Space", "There is not enough free space on the select drive, please choose a different location.", 1);
 
 	    	file = dir;
 
@@ -178,17 +199,15 @@ namespace FilePicker
 	    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
 	    });
     }
-        
-    inline function getTruncatedPath(f, maxLength)
+
+    inline function: string getTruncatedPath(f: ScriptObject, maxLength: number)
     {
-		local fullPath = f.toString(startFolder.FullPath);
+		local fullPath = f.toString(f.FullPath);
 		
 		if (fullPath.length <= maxLength)
 			return fullPath;
 			
 		local subpath = fullPath.substring(fullPath.length - maxLength, fullPath.length);
-		local result = ".." + subpath.substring(subpath.indexOf("/"), subpath.length);
-		
-		return result;		
+		return ".." + subpath.substring(subpath.indexOf("/"), subpath.length);
     }
 }

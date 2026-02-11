@@ -18,7 +18,7 @@
 namespace Account
 {
 	const appData = FileSystem.getFolder(FileSystem.AppData);
-	
+
 	//! Functions
 	inline function logoutWithPrompt()
 	{
@@ -129,10 +129,10 @@ namespace Account
 	//! loggedIn
 	broadcasters.loggedIn = Engine.createBroadcaster({id: "loggedIn", args: ["state"]});
 	
-	const bcMenuValue = Engine.createBroadcaster({id: "bcLogoutMenuValue", args: ["component", "value"]});
-	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcLogoutMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
 	
-	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
 	{
 		if (component.getItemText().toLowerCase() != "logout")
 			return;

@@ -18,89 +18,60 @@
 namespace License
 {
 	//! pnlAddLicenseContainer
-	const pnlAddLicenseContainer = Content.getComponent("pnlAddLicenseContainer");
-	pnlAddLicenseContainer.showControl(false);
+	const pnlLicenseContainer = Content.getComponent("pnlLicenseContainer");
+	pnlLicenseContainer.showControl(false);
 	
-	pnlAddLicenseContainer.setPaintRoutine(function(g)
-	{
-		g.fillAll(this.get("bgColour"));
-
-		var shadowArea = [pnlAddLicense.get("x"), pnlAddLicense.get("y"), pnlAddLicense.getWidth(), pnlAddLicense.getHeight()];
-		g.drawDropShadow(shadowArea, Colours.withAlpha(Colours.black, 1.0), 25);
-	});
-	
-	pnlAddLicenseContainer.setMouseCallback(function(event)
-	{
-		if (event.clicked && !event.rightClick)
-			hide();
-	});
-
-	//! pnlAddLicense
-	const pnlAddLicense = Content.getComponent("pnlAddLicense");
-	
-	pnlAddLicense.setPaintRoutine(function(g)
+	pnlLicenseContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
 		
-		g.setColour(this.get("bgColour"));
-		g.fillRoundedRectangle(a, this.get("borderRadius"));
+		LookAndFeel.fullPageBackground();
 
 		// Label
 		g.setColour(this.get("itemColour"));
 
-		var lblArea = [lblAddLicense.get("x") - 30, lblAddLicense.get("y"), lblAddLicense.getWidth() + 60, lblAddLicense.getHeight()];
-		g.fillRoundedRectangle(lblArea, 2);
-
-		g.setFont("phosphor", 18);
-		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.8));
-
-		g.drawAlignedText("\ue2d6", [lblArea[0] + 8, lblArea[1], lblArea[3], lblArea[3]], "left");
+		var labelArea = Rectangle(lblLicense.get("x") - 36, lblLicense.get("y"), lblLicense.getWidth() + 50, lblLicense.getHeight());
+		g.fillRoundedRectangle(labelArea, 5);
 		
-		// Text
+		g.setFont("phosphor", 18);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
+		
+		g.drawAlignedText("\ue2d6", [labelArea[0] + 8, labelArea[1], labelArea[3], labelArea[3]], "left");
+		
+		// Title
 		g.setColour(this.get("textColour"));
 		g.setFont("semibold", 22);
-		g.drawAlignedText(this.get("text"), a.reduced(25), "topLeft");
-			
-		g.setFont("regular", 18);
-		g.drawAlignedText("Enter your license key and click Activate.", a.reduced(25).withTrimmedTop(40), "topLeft");
-		g.drawAlignedText("Then go to the downloads list to install your instrument.", a.reduced(25).withTrimmedTop(70), "topLeft");
+		g.drawAlignedText(this.get("text"), labelArea.translated(0, -110), "left");
 		
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+		// Tooltip
+		g.setFont("regular", 18);
+		g.setColour(this.get("textColour"));
+		g.drawAlignedText("Enter your license key and click Activate.", labelArea.translated(0, -70), "left");
+		g.drawAlignedText("Then go to the downloads list to install your instrument.", labelArea.translated(0, -45), "left");
 	});
-	
-	//! btnAddLicenseClose
-	const btnAddLicenseClose = Content.getComponent("btnAddLicenseClose");
-	btnAddLicenseClose.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
-	btnAddLicenseClose.setControlCallback(onbtnAddLicenseCloseControl);
-	
-	inline function onbtnAddLicenseCloseControl(component, value)
-	{
-		if (!value)
-			hide();
-	}
 
-	//! lblAddLicense
-	const lblAddLicense = Content.getComponent("lblAddLicense");
-	lblAddLicense.set("text", "");
-	lblAddLicense.setControlCallback(onlblAddLicenseControl);
+	//! lblLicense
+	const lblLicense = Content.getComponent("lblLicense");
+	lblLicense.set("text", "");
+	lblLicense.setControlCallback(onlblLicenseControl);
 	
-	inline function onlblAddLicenseControl(component, value)
+	inline function onlblLicenseControl(component, value)
 	{
-		btnAddLicenseSubmit.set("enabled", isLicenseFormatValid(value));
+		btnLicenseSubmit.set("enabled", isLicenseFormatValid(value));
 	}	
 
-	//! btnAddLicenseSubmit
-	const btnAddLicenseSubmit = Content.getComponent("btnAddLicenseSubmit");
-	btnAddLicenseSubmit.set("enabled", false);
-	btnAddLicenseSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
-	btnAddLicenseSubmit.setControlCallback(onbtnAddLicenseSubmitControl);
+	//! btnLicenseSubmit
+	const btnLicenseSubmit = Content.getComponent("btnLicenseSubmit");
+	btnLicenseSubmit.set("enabled", false);
+	btnLicenseSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
+	btnLicenseSubmit.setControlCallback(onbtnLicenseSubmitControl);
 	
-	inline function onbtnAddLicenseSubmitControl(component, value)
+	inline function onbtnLicenseSubmitControl(component, value)
 	{
 		if (value)
 			return;
 			
-		local license = lblAddLicense.get("text").trim();
+		local license = lblLicense.get("text").trim();
 
 		if (!isLicenseFormatValid(license))
 			return Engine.showMessageBox("License Error", "Please enter a valid license key.", 1);
@@ -108,25 +79,36 @@ namespace License
 		activateLicense(license);
 	}
 	
+	//! btnLicenseClose
+	const btnLicenseClose = Content.getComponent("btnLicenseClose");
+	btnLicenseClose.setLocalLookAndFeel(LookAndFeel.textButton);
+	btnLicenseClose.setControlCallback(onbtnLicenseCloseControl);
+	
+	inline function onbtnLicenseCloseControl(component, value)
+	{
+		if (!value)
+			hide();
+	}
+	
 	//! Functions
 	inline function show()
 	{
-		pnlAddLicenseContainer.showControl(true);
+		pnlLicenseContainer.showControl(true);
+		lblLicense.set("text", "");
 	}
 	
 	inline function hide()
 	{
-		pnlAddLicenseContainer.showControl(false);
-		lblAddLicense.set("text", "");
+		pnlLicenseContainer.showControl(false);
 	}
 	
 	inline function isLicenseFormatValid(license: string)
 	{
-		return (license != "" && license.contains("-") && license.length == 19);
+		return (license != "" && license.contains("-") && license.length >= 19);
 	}
 	
 	inline function activateLicense(license: string)
-	{		
+	{
 		local token = Account.readToken();
 		local endpoint = App.apiPrefix + "transfer_license";
 		local headers = ["Authorization: Bearer " + token];
@@ -144,7 +126,7 @@ namespace License
 				if (isDefined(response.status))
 					return Engine.showMessageBox("Server Error: 200", trace(response), 1);
 
-				Cache.sync();
+				Cache.sync(false);
 				hide();
 
 				return Engine.showMessageBox("Success", "The license has been activated.", 0);
@@ -162,10 +144,10 @@ namespace License
 	}
 	
 	//! Broadcasters
-	const bcMenuValue = Engine.createBroadcaster({id: "bcLicenseMenuValue", args: ["component", "value"]});
-	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcLicenseMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
 	
-	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
 	{
 		if (component.getItemText().toLowerCase() != "add license")
 			return;

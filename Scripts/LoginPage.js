@@ -32,39 +32,24 @@ namespace LoginPage
 	const pnlLoginContainer = Content.getComponent("pnlLoginContainer");
 
 	pnlLoginContainer.setPaintRoutine(function(g)
-	{		
-		g.fillAll(Colours.withAlpha(Colours.black, 0.4));
-		
-		var a = [pnlLoginForm.get("x"), pnlLoginForm.get("y"), pnlLoginForm.getWidth(), pnlLoginForm.getHeight()];
-
-		g.drawDropShadow(a, Colours.withAlpha(Colours.black, 0.6), 20);
-	});
-
-	//! pnlLoginForm
-	const pnlLoginForm = Content.getComponent("pnlLoginForm");
-
-	pnlLoginForm.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
 
-		g.setColour(this.get("bgColour"));
-		g.fillRoundedRectangle(a, this.get("borderRadius"));
-
-		g.setColour(this.get("textColour"));
-		g.setFont("semibold", 20);
-		g.drawAlignedText(this.get("text"), a.withBottom(75), "centred");
-			
-		g.setFont("regular", 18);
-		g.drawAlignedText(this.get("tooltip"), a.removeFromTop(160), "centred");
+		LookAndFeel.fullPageBackground();
 
 		// Label backgrounds
 		g.setColour(this.get("itemColour"));
 
-		var usernameArea = [lblUsername.get("x") - 36, lblUsername.get("y"), lblUsername.getWidth() + 50, lblUsername.getHeight()];
-		var passwordArea = [lblPassword.get("x") - 36, lblPassword.get("y"), lblPassword.getWidth() + 71, lblPassword.getHeight()];
+		var usernameArea = Rectangle(lblUsername.get("x") - 36, lblUsername.get("y"), lblUsername.getWidth() + 50, lblUsername.getHeight());
+		var passwordArea = Rectangle(lblPassword.get("x") - 36, lblPassword.get("y"), lblPassword.getWidth() + 71, lblPassword.getHeight());
 
-		g.fillRoundedRectangle(usernameArea, 2);
-		g.fillRoundedRectangle(passwordArea, 2);
+		g.fillRoundedRectangle(usernameArea, 5);
+		g.fillRoundedRectangle(passwordArea, 5);
+
+		// Tooltip
+		g.setFont("regular", 18);
+		g.setColour(this.get("textColour"));
+		g.drawAlignedText(this.get("tooltip"), usernameArea.translated(0, -60), "centred");
 
 		// Label icons
 		g.setFont("phosphor", 20);
@@ -72,8 +57,11 @@ namespace LoginPage
 
 		g.drawAlignedText("\ue218", [usernameArea[0] + 8, usernameArea[1], usernameArea[3], usernameArea[3]], "left");
 		g.drawAlignedText("\uea78", [passwordArea[0] + 8, passwordArea[1], passwordArea[3], passwordArea[3]], "left");
-		
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+
+		// Version
+		g.setFont("regular", 16);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5));
+		g.drawAlignedText("v" + Engine.getVersion(), a.reduced(20), "bottomRight");
 	});
 
 	//! lblUsername
@@ -135,17 +123,6 @@ namespace LoginPage
 		if (!value)
 			Engine.openWebsite(App.baseUrl[App.mode] + "my-account/");
 	}
-	
-	//! btnLoginClose
-	const btnLoginClose = Content.getComponent("btnLoginClose");
-	btnLoginClose.setLocalLookAndFeel(LookAndFeel.closeButton);
-	btnLoginClose.setControlCallback(onbtnLoginCloseControl);
-
-	inline function onbtnLoginCloseControl(component, value)
-	{
-		if (!value)
-			workOffline();
-	}
 
 	//! Functions
 	inline function show()
@@ -163,7 +140,7 @@ namespace LoginPage
 	inline function clear()
 	{
 		lblUsername.set("text", "");
-		lblPassword.set("text", "");		
+		lblPassword.set("text", "");
 	}
 	
 	inline function workOffline()
@@ -181,10 +158,10 @@ namespace LoginPage
 			hide();
 	});
 	
-	const bcMenuValue = Engine.createBroadcaster({id: "bcLoginMenuValue", args: ["component", "value"]});
-	bcMenuValue.attachToComponentValue("cmbMenu", "");
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcLoginUserMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
 	
-	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
 	{
 		if (component.getItemText().toLowerCase() != "sign in")
 			return;

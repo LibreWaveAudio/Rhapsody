@@ -17,9 +17,10 @@
 
 namespace ZoomHandler
 {
+	const zoomLevels = [0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0];
 	const MIN_ZOOM = 1.0;
 	const MAX_ZOOM = 4.0;
-	const ZOOM_STEP = 0.05;
+	const ZOOM_STEP = 0.1;
 	const interfaceSize = Content.getInterfaceSize();
 
 	//! pnlZoom
@@ -93,8 +94,27 @@ namespace ZoomHandler
 		panel.repaint();
 	}
 
+	//! Broadcasters
+
+	//! bccmbUserMenuZoom
+	const var bccmbUserMenu = Engine.createBroadcaster({"id": "bccmbUserMenu", "args": ["component", "value"]});
+	bccmbUserMenu.attachToComponentValue("cmbUserMenu", "");
+
+	bccmbUserMenu.addComponentValueListener("pnlZoom", "pnlZoom will follow changes to cmbZoom", function(index, component, value)
+	{
+		var menuItems = ["0.75x", "1.0x", "1.5x", "2x"];
+
+		if (!menuItems.contains(component.getItemText()))
+			return this.getValue();
+
+		var zoomLevel = parseFloat(component.getItemText());
+
+		Settings.setZoomLevel(zoomLevel);
+		
+		return zoomLevel;
+	});
+	
 	//! Calls
 	allowZoom(pnlZoom, true);
 	pnlZoom.setValue(Settings.getZoomLevel());
-	pnlZoom.changed(); // This probably doesn't do anything
 }

@@ -18,7 +18,6 @@
 namespace DownloadList
 {
 	const catalogue = [];
-	const queue = [];
 	
 	reg filter = "";
 	reg filteredItems = [];
@@ -26,43 +25,36 @@ namespace DownloadList
 	//! Look and Feel
 	const lafList = Content.createLocalLookAndFeel();
 	
-	lafList.registerFunction("drawTableHeaderBackground", function(g, obj)
-	{		 
-		g.fillAll(0xff1b1a1a);
-	});
+	lafList.registerFunction("drawTableHeaderBackground", function(g, obj) {});
 	
-	lafList.registerFunction("drawTableHeaderColumn", function(g, obj)
-	{
-		 var a = obj.area;
-	
-		 g.setFont("medium", 22);
-		 g.setColour(0xffcccccc);
-		 g.drawAlignedText(obj.text, a, "left");
-	});	
+	lafList.registerFunction("drawTableHeaderColumn", function(g, obj) {});	
 	
 	lafList.registerFunction("drawTableRowBackground", function(g, obj)
 	{
-		g.fillAll(Colours.withAlpha(obj.rowIndex % 2 == 0 ? 0xff171616 : 0xff1b1a1a, 0.5));
+		var a = obj.area;
+
+		g.setColour(obj.itemColour);
+		g.fillRoundedRectangle(a.withTrimmedBottom(5), 5);
 	});
 	
 	lafList.registerFunction("drawTableCell", function(g, obj)
 	{
 		var a = obj.area;
 		var col = obj.columnIndex;
-	
+
 		if (col == 0)
 		{
 			if (!this.isImageLoaded(obj.text))
 				return;
 
-			g.setColour(Colours.withAlpha(Colours.white, 0.8));
-			g.drawImage(obj.text, a.reduced(10), 0, 75);
+			g.setColour(Colours.withAlpha(Colours.white, 0.9));
+			g.drawImage(obj.text, a.withTrimmedBottom(5).reduced(7, 7), 0, 90);
 		}
 		else
 		{
-			g.setFont("regular", 20);
-			g.setColour(0xffcccccc);			
-			g.drawAlignedText(obj.text, [a[0] + 10 * (col == 1), a[1], a[2], a[3]], "left");
+			g.setFont("medium", 20);
+			g.setColour(obj.textColour);
+			g.drawAlignedText(obj.text, [a[0] + 10 * (col == 1), a[1], a[2], a[3] - 5], "left");
 		}
 	});
 	
@@ -70,21 +62,20 @@ namespace DownloadList
 	{
 		var a = obj.area;
 		var item = filteredItems[obj.RowIndex];
-	
-		var c = queue.contains(item) ? 0xff6b6b6b : item.action == "update" ? 0xffcfc3b0 : 0xffbbbbbb;
-		g.setColour(Colours.withMultipliedBrightness(c, obj.over ? 1.0 - 0.1 * obj.down : 0.8));
-		g.fillRoundedRectangle([a[0] + 3, a[3] / 2 - 28 / 2, a[2] - 6, 28], 2);
-	
+
+		g.setColour(Colours.withMultipliedBrightness(pnlDownloads.get("bgColour"), obj.over ? 1.0 - 0.1 * obj.down : 0.8));
+		g.fillRoundedRectangle(a.withTrimmedBottom(5).reduced(0, 20), 3);
+
 		g.setFont("medium", 18);
 		g.setColour(Colours.black);
 
-		var text = queue.contains(item) ? "Queued" : isDefined(item.action) ? item.action.capitalize() : "";
-		g.drawAlignedText(text, a, "centred");
+		var text = item.action.capitalize();
+		g.drawAlignedText(text, a.withTrimmedBottom(5), "centred");
 	});
 	
 	lafList.registerFunction("drawScrollbar", function(g, obj)
 	{
-		 LookAndFeel.drawScrollbar(g, obj, 0xff111111);
+		 LookAndFeel.drawScrollbar(g, obj, 0xff11111b);
 	});
 
 	//! pnlDownloads
@@ -99,7 +90,7 @@ namespace DownloadList
 		g.drawAlignedText(this.get("text"), a.withTrimmedBottom(10), "centred");
 	});
 	
-	//! vptAvailable
+	//! vptDownloads
 	const vptDownloads = Content.getComponent("vptDownloads");
 	vptDownloads.setLocalLookAndFeel(lafList);
 	
@@ -118,9 +109,9 @@ namespace DownloadList
 		{ID: "Size", Type: "Text", MinWidth: 125},
 		{ID: "Action", Type: "Button", Toggle: true, MinWidth: 100, MaxWidth: 100}
 	]);
-	
+
 	vptDownloads.setTableCallback(onvptDownloadsTableCallback);
-	
+
 	inline function onvptDownloadsTableCallback(obj)
 	{
 		if (obj.Type != "Button")
@@ -128,12 +119,12 @@ namespace DownloadList
 
 		local item = filteredItems[obj.rowIndex];
 
-		if (queue.contains(item))
-			removeFromQueue(item);
+		if (!item.sampleFolder.isDirectory())
+			promptForSampleFolder(item);
 		else
-			addToQueue(item);
+			Downloader.downloadProduct(item);
 	};
-	
+
 	//! pnlUpdateIndicator
 	const pnlUpdateIndicator = Content.getComponent("pnlUpdateIndicator");
 	
@@ -147,62 +138,36 @@ namespace DownloadList
 
 		g.setFont("bold", 12);
 		g.setColour(this.get("textColour"));
-		g.drawAlignedText(this.get("text"), a.withTrimmedBottom(1.5), "centred");
+		g.drawAlignedText(parseInt(this.get("text")), a.withTrimmedBottom(1.5), "centred");
 	});
 	
 	//! Functions
-	inline function addToQueue(item: object)
+	inline function promptForSampleFolder(item: object)
 	{
-		queue.push(item);
+		local startFolder;
+		local startFolderPath = UserSettings.getProperty("rhapsody", "lastSampleFolder");
+		
+		if (isDefined(startFolderPath) && startFolderPath != "")
+			startFolder = FileSystem.fromAbsolutePath(startFolderPath);
 
-		Installer.setPostInstallCallback(processNextQueuedItem);
+		if (!isDefined(startFolderPath) || startFolderPath == "" || !startFolder.isDirectory())
+			startFolder = FileSystem.getFolder(FileSystem.UserHome);	
 
-		if (queue.length == 1)
-			passToDownloader(queue[0].id);
-
-		updateList();
-	}
-	
-	inline function passToDownloader(productId: number)
-	{
-		local img = Cache.getImage(productId + ".jpg");		
-		ProgressBar.setImage(img.isFile() ? img.toString(img.FullPath) : "");
-
-		Downloader.downloadProduct(productId);
-	}
-
-	inline function processNextQueuedItem()
-	{
-		if (queue.length > 0)
-			removeFromQueue(queue[0]);
-
-		Downloader.deleteDownloadedFiles();
-
-		if (queue.length > 0)
-			passToDownloader(queue[0].id);
-
-		updateCatalogue();
-	}
-
-	inline function removeFromQueue(item: object)
-	{
-		if (!queue.contains(item))
-			return;
-
-		queue.remove(item);
-
-		updateList();
-
-		if (!queue.length)
-			return Installer.clearPostInstallCallback();
-	}	
-
-	inline function clearQueue()
-	{
-		queue.clear();
-		Downloader.deleteDownloadedFiles();
-		Installer.clearPostInstallCallback();
-		updateCatalogue();
+		FilePicker.show({
+			startFolder: startFolder,
+			mode: 1,
+			filter: "",
+			title: "Install",
+			message: "Choose a location to install the samples.",
+			buttonText: "Install",
+			forWriting: true,
+			data: {item: item}
+		}, function(dir, data)
+		{
+			UserSettings.setProperty("rhapsody", "lastSampleFolder", dir.toString(dir.FullPath));
+			data.item.sampleFolder = dir;
+			Downloader.downloadProduct(data.item);
+		});
 	}
 
 	inline function updateList()
@@ -279,31 +244,21 @@ namespace DownloadList
 
 		for (x in Cache.getData())
 		{
-			local name = x.name;
-
-			if (isDefined(x.projectName))
-				name = x.projectName;
-
-			if (isDefined(x.expansionName))
-				name = x.expansionName;
-
-			if (isDefined(x.variationName))
-				name += " - " + x.variationName;
-
-			local action = Expansions.isInstallable(x.company, name, x.latestVersion);
-
+			local action = Expansions.isInstallable(x.company, x.projectName, x.latestVersion);
+			
 			if (action == "")
 				continue;
 
 			if (action == "update")
 				numUpdatable++;
 
+			x.sampleFolder = Expansions.getSampleFolder(x.company, x.projectName);
 			x.action = action;
 			catalogue.push(x);
 		}
 
 		pnlUpdateIndicator.showControl(numUpdatable > 0);
-		pnlUpdateIndicator.set("text", numUpdatable < 10 ? numUpdatable : "");
+		pnlUpdateIndicator.set("text", numUpdatable < 10 ? Math.max(1, numUpdatable) : "!");
 		
 		updateList();
 	}
@@ -322,33 +277,6 @@ namespace DownloadList
 	}
 	
 	//! Broadcasters
-	const bcMenuValue = Engine.createBroadcaster({id: "bcDownloadListMenuValue", args: ["component", "value"]});
-	bcMenuValue.attachToComponentValue("cmbMenu", "");
-
-	bcMenuValue.addListener(0, "React to menu selection", function(component, value)
-	{
-		if (component.getItemText().toLowerCase() != "check for updates")
-			return;
-
-		Cache.sync();
-	});
-	
-	Downloader.broadcasters.isDownloading.addComponentPropertyListener("btnSync", "enabled", "Disable during downloads", function(index, state)
-	{
-		return !state;
-	});
-
-	//! bcProgressVisible
-	const bcProgressVisible = Engine.createBroadcaster({id: "bcProgressVisible", args: ["component", "isVisible"]});
-	bcProgressVisible.attachToComponentVisibility("pnlProgress1", "");
-
-	bcProgressVisible.addListener(0, "Adjust list position when progress bar is visible", function(component, isVisible)
-	{
-		pnlDownloads.set("y", isVisible ? 110 : 10);
-		pnlDownloads.set("height", isVisible ? 545 : 620);
-		vptDownloads.set("height", isVisible ? 535 : 620);
-	});
-
 	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)
 	{
 		filter = isDefined(value) ? value.toLowerCase().trim() : "";

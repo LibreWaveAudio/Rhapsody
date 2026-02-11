@@ -28,14 +28,15 @@ namespace Spinner
 
 	//! pnlSpinner
 	const pnlSpinner = Content.getComponent("pnlSpinner");
-
+	pnlSpinner.set("text", "");
+	
 	pnlSpinner.setPaintRoutine(function(g)
 	{
 		var a = [this.getWidth() / 2 - 40, this.getHeight() / 2 - 60, 80, 80];
 
 		for (i = 0; i < 10; i++)
-		{
-			this.getValue() == i ? g.setColour(Colours.white) : g.setColour(Colours.grey);
+		{			
+			g.setColour(Colours.withAlpha(this.get("itemColour"), this.getValue() == i ? 1.0 : 0.5));
 			
 			var x = this.getWidth() / 2;
 			var y1 = a[1] - 40;
@@ -46,8 +47,7 @@ namespace Spinner
 			g.rotate(Math.toRadians(360 / 10), [this.getWidth() / 2, this.getHeight() / 2]);
 		}
 
-		g.setColour(Colours.withAlpha(Colours.white, 1 / 10 * this.getValue()));
-
+		g.setColour(Colours.withAlpha(this.get("textColour"), 1 / 10 * this.getValue()));
 		g.setFont("medium", 28);
 		g.drawAlignedText(this.get("text"), [0, a[1] + a[3] + 125, this.getWidth(), 26], "centred");
 	});

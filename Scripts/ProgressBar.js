@@ -17,59 +17,52 @@
 
 namespace ProgressBar
 {
-	const downloadInstallStates = [0, 0];
-
-	//! pnlProgress
-	const pnlProgress = Content.getAllComponents("pnlProgress\\d");
-	Engine.sortWithFunction(pnlProgress, sortByComponentId);	
+	//! pnlProgressContainer
+	const pnlProgressContainer = Content.getComponent("pnlProgressContainer");
+	pnlProgressContainer.showControl(false);
 	
-	for (x in pnlProgress)
-		x.showControl(false);
-
-	pnlProgress[0].setPaintRoutine(function(g)
+	pnlProgressContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-
+		
 		g.fillAll(this.get("bgColour"));
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+		
+		var imgArea = Rectangle(imgProgress.get("x"), imgProgress.get("y"), imgProgress.get("width"), imgProgress.get("height"));
+		
+		g.setColour(this.get("itemColour"));
+		g.fillRoundedRectangle(imgArea.expanded(7), 5);		
 	});
-
-	pnlProgress[1].setPaintRoutine(function(g)
+	
+	pnlProgressContainer.setLoadingCallback(function(isPreloading)
 	{
-		var a = this.getLocalBounds(0);
-
-		g.drawDropShadow([a[0], a[1] + 15, a[2], a[3] - 25], Colours.withAlpha(Colours.black, 0.7), 20);
-
-		g.setColour(this.get("bgColour"));
-		g.fillRect([a[0], a[1], a[2], a[3] - 10]);
-
-		g.addNoise({alpha: 0.025, scaleFactor: 2.0, area: a, monochromatic: true});
+		this.showControl(isPreloading);
 	});
 
 	//! imgProgress
 	const imgProgress = Content.getComponent("imgProgress");
 		
 	//! pnlProgressBar
-	const pnlProgressBar = Content.getAllComponents("pnlProgressBar\\d");
-
-	for (x in pnlProgressBar)
-		x.setPaintRoutine(function(g) {drawProgressBar();});
+	const pnlProgressBar = Content.getComponent("pnlProgressBar");
+	pnlProgressBar.setPaintRoutine(function(g) {drawProgressBar();});
 
 	//! btnProgressCancel
-	const btnProgressCancel = Content.getAllComponents("btnProgressCancel\\d");
+	const btnProgressCancel = Content.getComponent("btnProgressCancel");
+	btnProgressCancel.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	btnProgressCancel.setControlCallback(onbtnProgressCancelControl);
 	
-	for (x in btnProgressCancel)
-		x.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
+	inline function onbtnProgressCancelControl(component, value)
+	{
+		if (value)
+			return;
+
+		Engine.showYesNoWindow("Cancel", "Do you want to cancel this download?", function(response)
+		{
+			if (response)
+				Downloader.abortDownloads();
+		});
+	}	
 
 	//! Functions
-	inline function: number sortByComponentId(a: ScriptObject, b: ScriptObject)
-	{
-		if (a.getId() < b.getId())
-			return -1;
-
-		return a.getId() > b.getId();
-	}
-	
 	inline function drawProgressBar()
 	{
 		if (this.data.productName == "" || this.data.text == "")
@@ -91,55 +84,43 @@ namespace ProgressBar
 
 		g.setColour(this.get("textColour"));
 		g.setFont("medium", 18);
-		g.drawAlignedText(this.data.text, [a[0], a[1] + 34, a[2], a[3]], "topLeft");
+		g.drawAlignedText(this.data.text, [a[0], a[1] + 40, a[2], a[3]], "topLeft");
 	}
-	
-	inline function setProgress(progress: object)
-	{
-		for (x in pnlProgressBar)
-		{
-			x.setValue(progress.value);
 
-			if (isDefined(progress.productName))
-				x.data.productName = progress.productName;
-
-			if (isDefined(progress.text))
-				x.data.text = progress.text;
-
-			x.repaint();
-		}
-	}
-	
-	inline function hide()
+	inline function setProgress(value: number, data: object)
 	{
-		for (x in pnlProgress)
-			x.showControl(false);
+		pnlProgressBar.setValue(value);
+		
+		for (x in data)
+			pnlProgressBar.data[x] = data[x];
+		
+		pnlProgressBar.repaint();
 	}
-	
-	inline function setProductName(productName: string)
+		
+	inline function setImage(imagePath: string)
 	{
-		for (x in pnlProgressBar)
-			x.data.productName = productName;
-	}
-	
-	inline function setImage(imageFile: string)
-	{
-		imgProgress.setImageFile(imageFile, true);
+		if (imagePath == "")
+			imgProgress.setImageFile("{PROJECT_FOLDER}Icon.png", true);
+		else
+			imgProgress.setImageFile(imagePath, true);
 	}
 
 	//! Broadcasters
-	Downloader.broadcasters.isDownloading.addComponentPropertyListener(["pnlProgress0", "pnlProgress1"], "visible", "Disable menu during downloads", function(index, state)
+	Downloader.broadcasters.isDownloading.addComponentPropertyListener(["pnlProgressContainer", "btnProgressCancel"], "visible", "Set visibility during downloads", function(index, state)
 	{
-		downloadInstallStates[0] = state;
-		return downloadInstallStates.contains(true);
-	});
-
-	Installer.broadcasters.isInstalling.addComponentPropertyListener(["pnlProgress0", "pnlProgress1"], "visible", "Disable menu during install", function(index, state)
-	{
-		downloadInstallStates[1] = state;
-		return downloadInstallStates.contains(true);
+		return state;
 	});
 	
-	//! Calls
+	Downloader.broadcasters.downloadProgress.addListener(0, "Update the progress bar", function(progress, title, message)
+	{
+		setProgress(progress, {productName: title, text: message});
+	});
+		
+	Expansions.broadcasters.installationProgress.addListener(0, "Update the progress bar", function(progress, title, message)
+	{
+		setProgress(progress, {productName: title, text: message});
+	});
+	
+	//! Functions Calls
 	setImage("");
 }
