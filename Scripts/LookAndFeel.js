@@ -302,7 +302,7 @@ namespace LookAndFeel
 	
 	laf.registerFunction("getIdealPopupMenuItemSize", function(obj)
 	{
-		var width = Engine.getStringWidth(obj.text, "regular", 18, 0.0) + 60;		
+		var width = Engine.getStringWidth(obj.text, "regular", 18, 0.0) + 60;
 		return [width, 40];
 	});
 
@@ -323,6 +323,7 @@ namespace LookAndFeel
 		local radius = 5;
 		local text = obj.text;
 		local textColour = extraColours.textColour;
+		local hasIcon = isDefined(icons[text.toLowerCase()]) || isDefined(menuIcons[text.toLowerCase()]);
 
 		if (obj.isSeparator)
 		{
@@ -353,16 +354,16 @@ namespace LookAndFeel
 		g.setColour(obj.isActive ? textColour : Colours.withAlpha(textColour, 0.5));
 		g.drawFittedText(text, [x, a[1], a[2] - x - 10, a[3]], "left", 1.0, 1.0);
 		
+		if (!hasIcon)
+			return;
+
 		local icon;
-		
+
 		if (isDefined(menuIcons))
 			icon = menuIcons[text.toLowerCase()];
 
 		if (!isDefined(icon))
 			icon = icons[text.toLowerCase()];
-			
-		if (!isDefined(icon))
-			return;
 
 		g.setFont("phosphor", 22);
 		g.drawAlignedText(icon, [a[0] + 10, a[1], a[2], a[3]], "left");

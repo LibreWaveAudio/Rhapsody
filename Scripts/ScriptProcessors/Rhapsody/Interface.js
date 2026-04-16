@@ -21,29 +21,17 @@ include("App.js");
 include("Paths.js");
 include("LookAndFeel.js");
 include("Spinner.js");
-include("Pager.js");
-include("Account.js");
-include("LoginPage.js");
 include("Expansions.js");
 include("Filter.js");
-include("Cache.js");
-include("Manifest.js");
 include("UpdateChecker.js");
 include("ProductGrid.js");
 include("ProductTile.js");
-include("License.js");
-include("Downloader.js");
-include("DownloadList.js");
 include("ManualInstaller.js");
-include("Navigation.js");
-include("ThemeMap.js");
-include("Theme.js");
 include("UserMenu.js");
 include("FilePicker.js");
 include("UserSettings.js");
 include("ProgressBar.js");
 include("ZoomHandler.js");
-
 function onNoteOn()
 {
 	

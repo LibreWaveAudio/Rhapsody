@@ -1,5 +1,5 @@
 /*
-    Copyright 2023, 2025 David Healey
+    Copyright 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 namespace UpdateChecker
 {
-	reg sessionCheck = App.mode == "development" ; // Only allow one check per session
+	reg sessionCheck = App.mode == "development"; // Only allow one check per session
 
 	//! Functions
 	inline function autoCheck()
@@ -26,7 +26,7 @@ namespace UpdateChecker
 		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
 		local MS_PER_WEEK = 604800000;
 
-		if (!Account.isLoggedIn() || !App.isOnline)
+		if (!App.isOnline)
 			return;
 
 		 if ((now - lastChecked) < MS_PER_WEEK)
@@ -37,12 +37,10 @@ namespace UpdateChecker
 
 	inline function checkForAppUpdate()
 	{
-		local token = Account.readToken();
-
-		if (sessionCheck || !isDefined(token) || !App.isOnline)
+		if (sessionCheck || !App.isOnline)
 			return;
 
-		local endpoint = App.apiPrefix + "check_for_app_update/";
+		/*local endpoint = App.apiPrefix + "check_for_app_update/";
 		local headers = ["Authorization: Bearer " + token];
 		local p = {"user_version": Engine.getVersion()};
 
@@ -64,7 +62,7 @@ namespace UpdateChecker
 				if (response)					
 					Engine.openWebsite(Engine.getProjectInfo().CompanyURL);
 			});
-		});
+		});*/
 	}
 
 	inline function parseBody(body, version)
@@ -102,11 +100,4 @@ namespace UpdateChecker
 		
 		return heading + changelog + question;
 	}
-	
-	//! Calls
-	Account.broadcasters.loggedIn.addListener("Library login", "Respond to login changes", function(state)
-	{
-		if (state)
-			return autoCheck();
-	});	
 }

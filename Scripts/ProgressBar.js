@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023, 2024, 2025 David Healey
+    Copyright 2021, 2022, 2023, 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -105,17 +105,7 @@ namespace ProgressBar
 			imgProgress.setImageFile(imagePath, true);
 	}
 
-	//! Broadcasters
-	Downloader.broadcasters.isDownloading.addComponentPropertyListener(["pnlProgressContainer", "btnProgressCancel"], "visible", "Set visibility during downloads", function(index, state)
-	{
-		return state;
-	});
-	
-	Downloader.broadcasters.downloadProgress.addListener(0, "Update the progress bar", function(progress, title, message)
-	{
-		setProgress(progress, {productName: title, text: message});
-	});
-		
+	//! Broadcasters		
 	Expansions.broadcasters.installationProgress.addListener(0, "Update the progress bar", function(progress, title, message)
 	{
 		setProgress(progress, {productName: title, text: message});

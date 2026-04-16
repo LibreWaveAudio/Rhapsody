@@ -1,5 +1,5 @@
 /*
-    Copyright 2023, 2025 David Healey
+    Copyright 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,33 +18,17 @@
 namespace App
 {
 	const mode = "development";
-
 	const isOnline = Server.isOnline();
-
-	Synth.deferCallbacks(true);
-	
-	Engine.loadAudioFilesIntoPool();
-	
 	const systemId = FileSystem.getSystemId();
-	
-	const apiPrefix = "wp-json/librewave/v1/";
-	
-	const baseUrl = {
-		"development": "http://192.168.0.40/",
-		"testing": "http://192.168.0.40/",
-		"staging": "https://librewave.com/",
-		"release": "https://librewave.com/"
-	};
 	
 	//! pnlMain
 	const pnlMain = Content.getComponent("pnlMain");
-
-	pnlMain.setFileDropCallback("All Callbacks", "*.pdf", onpnlMainFileDrop);
+	/*pnlMain.setFileDropCallback("All Callbacks", "*.hr1", onpnlMainFileDrop);
 	
 	inline function onpnlMainFileDrop(obj)
 	{
 		Console.print(trace(obj));
-	}
+	}*/
 
 	pnlMain.setPaintRoutine(function(g)
 	{

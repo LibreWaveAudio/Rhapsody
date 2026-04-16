@@ -1,5 +1,5 @@
 /*
-    Copyright 2023, 2025 David Healey
+    Copyright 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,10 +17,6 @@
 
 namespace UserMenu
 {
-	const downloadInstallStates = [0, 0];
-
-	reg loggedIn;
-
 	//! pnlUserMenuContainer
 	const pnlUserMenuContainer = Content.getComponent("pnlUserMenuContainer");
 	pnlUserMenuContainer.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
@@ -43,7 +39,7 @@ namespace UserMenu
 		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
 		g.setFont("phosphorBold", obj.area[2]);
-		g.drawAlignedText("\ue4c2", obj.area, "centred");
+		g.drawAlignedText("\ue272", obj.area, "centred");
 	});
 
 	lafcmbUserMenu.registerFunction("drawPopupMenuBackground", function(g, obj)
@@ -53,8 +49,8 @@ namespace UserMenu
 
 	lafcmbUserMenu.registerFunction("drawPopupMenuItem", function(g, obj)
 	{
-		var topLevel = ["sign in", "logout", "check for updates", "add license", "preferences"];
-		var menuIcons = {"sign in": "\ue428", "logout": "\ue42a", "add license": "\ue2d6", "check for updates": "\ue094"};	
+		var topLevel = ["columns", "zoom level", "check for updates"];
+		var menuIcons = {"columns": "\ue546", "zoom level": "\ued6e", "check for updates": "\ue094"};
 
 		LookAndFeel.drawPopupMenuItem();
 	});
@@ -68,36 +64,26 @@ namespace UserMenu
 	//! Functions
 	inline function updateMenuItems()
 	{
-		local themes = Theme.getThemeNames();
 		local items = [];
 		
-		for (x in themes)
-			items.push("Preferences::Theme::" + x.capitalize());
-
 		items.concat([
-			"Preferences::Columns::4",
-			"Preferences::Columns::5",
-			"Preferences::Columns::6"
+			"Columns::4",
+			"Columns::5",
+			"Columns::6"
 		]);
 
 		items.concat([
-			"Preferences::Zoom Level::0.75x",
-			"Preferences::Zoom Level::1.0x",
-			"Preferences::Zoom Level::1.5x",
-			"Preferences::Zoom Level::2x"
+			"Zoom Level::0.75x",
+			"Zoom Level::1.0x",
+			"Zoom Level::1.5x",
+			"Zoom Level::2x"
 		]);
 
-		items.push(loggedIn ? "Add License" : "~~Add License~~");
-		items.push(loggedIn ? "Check for Updates" : "~~Check for Updates~~");
-		items.push(loggedIn ? "Logout" : "Sign In");
+		items.push("Check for Updates");
 
 		cmbUserMenu.set("items", items.join("\n"));
 	}
-
-	//! Broadcasters
-	Account.broadcasters.loggedIn.addListener(0, "Respond to changes in logged in status", function(state)
-	{
-		loggedIn = state;
-		updateMenuItems();
-	});
+	
+	//! Calls
+	updateMenuItems();
 }
