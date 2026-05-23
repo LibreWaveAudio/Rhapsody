@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023, 2024 David Healey
+    Copyright 2022, 2023, 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,447 +17,314 @@
 
 namespace Expansions
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData);	
-	const expHandler = Engine.createExpansionHandler();
+	const list = [];
 
-	reg extractionCount;
-	reg numZips;
-	reg callback;
-	reg abort;
-	reg isManual = false;
-	
-	inline function askForSampleDirectory(data, callback)
-	{
-		local defaultSamplePath = UserSettings.getProperty(Engine.getName().toLowerCase(), "defaultSamplePath");
-		local startFolder = FileSystem.getFolder(FileSystem.Desktop);
-	
-		if (isDefined(defaultSamplePath) && defaultSamplePath != "")
-			startFolder = FileSystem.fromAbsolutePath(defaultSamplePath);
-				
-		FilePicker.show({
-			startFolder: startFolder,
-			mode: 1,
-			filter: "",
-			title: "Manual Installer",
-			message: "Choose a location to install the samples.",
-			buttonText: "Install"
-		}, function[callback, data](dir) {
+	//! Expansion Handler
+	const eh = Engine.createExpansionHandler();
+	eh.setInstallFullDynamics(true);
 
-			if (!dir.hasWriteAccess())
-				return Engine.showMessageBox("Unwritable Directory", "You do not have write permission for the selected directory. Please choose a different one.", 1);
-				
-			if (isDefined(dir) && dir.isDirectory())		
-				UserSettings.setProperty(Engine.getName().toLowerCase(), "defaultSamplePath", dir.toString(dir.FullPath));
-		
-			callback(data, dir);
-		});
-	}
-	
-	inline function automatedInstall(data)
+	eh.setInstallCallback(function(obj)
 	{
-		isManual = false;
-	
-		local fileDir = data.tempDir;
-		local sampleDir = data.sampleDir;
-		local files = FileSystem.findFiles(fileDir, "*.lwz", false);
-		
-		if (!files.length)
-			return Console.print("Something has gone wrong!!");
-	
-		unpackArchives(files, sampleDir, data.bcProgress);
-	}
-	
-	inline function manualInstall(file, projectName)
-	{
-		isManual = true;
-		
-		if (projectName == "")
+		broadcasters.installationProgress.sendAsyncMessage([
+			obj.TotalProgress,
+			eh.getMetaDataFromPackage(obj.SourceFile).Name,
+			Engine.getPreloadMessage()
+		]);
+
+		if (obj.Status == 2 && isDefined(obj.Expansion))
 		{
-			FilePicker.hide();
-			return Engine.showMessageBox("Invalid File", "The filename is not in the correct format.", 1);
-		}	
+			var archive = obj.SourceFile;
+			var name = obj.Expansion.getProperties().Name;
 
-		local hasSamples = FileSystem.findFiles(file.getParentDirectory(), projectName.toLowerCase().replace(" ", "_") + "*_samples_*", false).length > 0;
-		local archives = getZipFilesForProduct(file.getParentDirectory(), projectName);
-		local e = expHandler.getExpansion(projectName);
-		
-		if (!hasSamples || isDefined(e))
-		{
-			unpackArchives(archives, "", -1);
-		}			
-		else
-		{
-			askForSampleDirectory(archives, function(data, dir)
-			{						
-				unpackArchives(data, dir, -1);
-			});
-		}
-	}	
+			obj.Expansion.rebuildUserPresets();
+			removeFromCache(obj.Expansion);
+			refresh();
 
-	inline function getZipFilesForProduct(dir, expansionName)
-	{
-		local formattedName = expansionName.toLowerCase().replace(" ", "_");
-		local result = FileSystem.findFiles(dir, formattedName + "*.lwz", false);
-		return result;
-	}	
-
-	inline function getNumExpansionsInDirectory(dir)
-	{
-		local files = FileSystem.findFiles(dir, "*.lwz", false);
-		local expansionNames = [];
-		
-		for (x in files)
-		{
-			local expName = Installer.getProjectNameFromFilename(x.toString(x.Filename));
-			expansionNames.pushIfNotAlreadyThere(expName);
+	    	Engine.showYesNoWindow("Installation Complete", "Do you want to delete the hr file?", function[archive](response)
+	    	{
+	    	    if (response)	    	    
+	    	        deleteArchives(archive);
+	    	});
 		}
 
-		return expansionNames.length;
-	}
+		if (obj.Status == 3)
+			Engine.showMessageBox("Cancelled", "The installation was cancelled", 0);
+	});
 
-	inline function unpackArchives(archives, defaultSampleDir, broadcaster)
+	eh.setErrorFunction(function(message, isCritical)
 	{
-		numZips = archives.length;
-		abort = false;
-		extractionCount = 0;
-	
-		FilePicker.hide();
-	
-		Engine.sortWithFunction(archives, sortFiles);
-		
-		if (isManual)
-		{
-			Spinner.show("Installing");
-			Spinner.showCancelButton(true);
-		}			
+		broadcasters.isLoadingExpansion.sendSyncMessage(["", false]);
+		Engine.showMessageBox("Error", message, 1);
+	});
 
-		for (x in archives)
-		{
-			local filename = x.toString(x.Filename);
-			local expName = Installer.getProjectNameFromFilename(filename);
-			local e = expHandler.getExpansion(expName);
-			local sampleDir = defaultSampleDir;
-			local dataDir = getDataDirectory(expName);
-
-			if (isDefined(e))
-			{
-				sampleDir = e.getSampleFolder();
-
-				if (!sampleDir.isDirectory())
-					sampleDir.createDirectory(sampleDir.toString(sampleDir.FullPath));
-					
-				if (!isManual)
-					e.unloadExpansion();
-			}
-
-			if (isDefined(sampleDir) && sampleDir != "")
-			{
-				if (sampleDir.toString(sampleDir.NoExtension) != expName)
-					sampleDir = sampleDir.createDirectory(expName);
-		
-				createLinkFile(expName, sampleDir);
-			}				
-
-			local targetDir;
-
-			if (filename.contains("_data_"))
-				targetDir = dataDir;				
-			else if (filename.contains("_samples_"))
-				targetDir = sampleDir;
-
-			if (!isDefined(targetDir) || !targetDir.isDirectory() || targetDir == "")
-			{
-				numZips--;
-				continue;
-			}
-
-			if (abort)
-				return;
-
-			x.extractZipFile(targetDir, true, function[broadcaster](obj)
-			{
-				extractionCallback(obj, broadcaster);
-			});			
-		}
-	}
-	
-	inline function extractionCallback(obj, broadcaster)
+	inline function rebuildList()
 	{
-		obj.Cancel = (obj.Error != "" || abort);
+		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("Cache.json");
+		local cache = f.isFile() ? f.loadAsObject() : [];
 
-		if (isDefined(broadcaster) && broadcaster != -1)
-			broadcaster.progress = {value: Math.round(obj.Progress * 100), message: "Installing: " + (extractionCount + 1) + "/" + numZips};
-		else
-			Spinner.setMessage("Installing: " + (extractionCount + 1) + "/" + numZips);
-	
-		if (obj.Status != 2)
-			return;
+		list.clear();
 
-		extractionCount++;
-		
-		if (extractionCount < numZips)
-			return;
+		eh.refreshExpansions();
 
-		refresh();
-
-		if (isManual)
-			Library.updateCatalogue();
-		else
-			Downloader.cleanUp();			
-
-		isManual = false;
-		Spinner.hide();
-	}
-
-	inline function getRhapsodyExpansionsDirectory()
-	{
-		return appData.getParentDirectory().createDirectory("Rhapsody").createDirectory("Expansions");
-	}
-
-	inline function createLinkFile(expName, target)
-	{
-		local linkFile;
-	
-		switch (Engine.getOS())
-		{
-			case "OSX": linkFile = "LinkOSX"; break;
-			case "LINUX": linkFile = "LinkLinux"; break;
-			case "WIN": linkFile = "LinkWindows"; break;
-		}
-	
-		local f = getRhapsodyExpansionsDirectory().createDirectory(expName).createDirectory("Samples").getChildFile(linkFile);
-
-		if (isDefined(f) && isDefined(target) && target.isDirectory())
-			f.writeString(target.toString(f.FullPath));
-	}
-
-	inline function getDataDirectory(expName)
-	{
-		return getRhapsodyExpansionsDirectory().createDirectory(expName);
-	}
-		
-	inline function refresh()
-	{
-		expHandler.refreshExpansions();
-
-		for (e in expHandler.getExpansionList())
-		{
-			e.setAllowDuplicateSamples(false);
-			e.rebuildUserPresets();
-		}				
-	}
-		
-	inline function getInstalledExpansionsData()
-	{
-		local result = {};
-			
-		for (e in expHandler.getExpansionList())
+		for (e in eh.getExpansionList())
 		{
 			local props = e.getProperties();
 
-			local obj = {
-				"name": props.Name,
-				"projectName": props.ProjectName,
-				"tags": props.Tags.replace(", ", ",").split(","),
-				"company": props.Company,
-				"format": "expansion",
-				"installedVersion": props.Version,
-				"sampleDir": e.getSampleFolder(),
-				"uuid": props.UUID
+			local data = {
+				name: props.Name,
+				uuid: props.UUID,
+				company: props.Company,
+				companyUrl: props.CompanyURL,
+				version: props.Version,
+				tags: props.Tags,
+				description: props.Description,
+				icon: e.getWildcardReference("Icon.png")
 			};
 
-			if (!isDefined(obj.tags))
-				obj.tags= [];
+			local hasUpdate;
 
-			obj.tags.push("installed");
+			for (k in cache)
+			{
+				if (data.uuid != "" && k.uuid == data.uuid)
+					hasUpdate = isDefined(k.hasUpdate) && k.hasUpdate;
+				else if (k.company == data.company && k.name.toLowerCase() == data.name.toLowerCase())
+					hasUpdate = isDefined(k.hasUpdate) && k.hasUpdate;
 
-			result[props.ProjectName] = obj;
+				if (isDefined(hasUpdate))
+					break;
+			}
+
+			data.hasUpdate = isDefined(hasUpdate) && hasUpdate;
+
+			list.push(data);
 		}
-	
-		return result;
-	}
-	
-	inline function getInstalledVersion(expName)
-	{
-		local e = expHandler.getExpansion(expName);
-		
-		if (!isDefined(e))
-			return undefined;
-			
-		return e.getProperties().Version;
-	}
-	
-	inline function uninstall(projectName, removePresets)
-	{
-		local e = expHandler.getExpansion(projectName);
-
-		if (!isDefined(e))
-			return Engine.showMessageBox("Failed", "The library was not found on your system.", 3);
-
-		uninstallData(e, removePresets);
-		uninstallSamples(e);
-		Library.removeManifestEntry(projectName);
 	}
 
-	inline function uninstallData(expansion, removePresets)
+	inline function getList()
 	{
-		local rootDir = expansion.getRootFolder();
-		local name = expansion.getProperties().Name.toLowerCase();
+		return list;
+	}
 
-		if (!isDefined(rootDir) || !rootDir.isDirectory() || rootDir.toString(rootDir.NoExtension).toLowerCase() != name)
+	inline function install(archive: ScriptObject, sampleFolder: ScriptObject)
+	{
+		local ext = archive.toString(archive.Extension);
+
+		if (!ext.contains(".hr"))
+			return Engine.showMessageBox("Invalid Format", "Archive format was not recognised.", 0);
+
+		local data = eh.getMetaDataFromPackage(archive);
+		local dir = getExpansionNamedSubFolder(data.Name, sampleFolder);
+
+		if (!dir.isDirectory())
 			return;
 
-		if (removePresets)
-			return rootDir.deleteFileOrDirectory();
-
-		local files = FileSystem.findFiles(rootDir, "*", false);
-		
-		for (x in files)
-		{
-			local filename = x.toString(x.Filename);
-			
-			if (["UserPresets", "User Presets"].contains(filename))
-				continue;
-
-			x.deleteFileOrDirectory();
-		}
-	}
-	
-	inline function uninstallSamples(expansion)
-	{
-		local sampleDir = expansion.getSampleFolder();
-		local name = expansion.getProperties().Name.toLowerCase();
-		
-		if (!isDefined(sampleDir) || !sampleDir.isDirectory() || sampleDir.toString(sampleDir.NoExtension).toLowerCase() != name)
-			return uninstallCleanUp(expansion);
-	
-		local files = FileSystem.findFiles(sampleDir, "*", false);
-		
-		for (x in files)
-		{
-			local extension = x.toString(x.Extension).toLowerCase();
-			
-			if (!extension.contains(".ch") && extension != ".wav") continue;
-	
-			x.deleteFileOrDirectory();
-		}
-		
-		files = FileSystem.findFiles(sampleDir, "*", false);
-	
-		if (!files.length)
-			sampleDir.deleteFileOrDirectory();
-	
-		uninstallCleanUp(expansion);
-	}
-	
-	inline function uninstallCleanUp(expansion)
-	{
-		expansion.unloadExpansion();
-		refresh();
-
-		Library.updateCatalogue();
+		return eh.installExpansionFromPackage(archive, dir);		
 	}
 
-	inline function edit(projectName)
+	inline function: ScriptObject getExpansionNamedSubFolder(name: string, dir: ScriptObject)
 	{
-		local e = expHandler.getExpansion(projectName);
+		local folderName = dir.toString(dir.NoExtension).toLowerCase().replace(" ").replace("_").replace("-");
 
+		if (folderName != name.toLowerCase().replace(" ").replace("_").replace("-"))
+			return dir.createDirectory(name);
+
+		return dir;
+	}
+
+	inline function: ScriptObject getSampleFolderForPackage(archive: ScriptObject)
+	{
+		local e = eh.getExpansionForInstallPackage(archive);
+
+		if (isDefined(e))
+			return e.getSampleFolder();
+
+		return archive.getNonExistentSibling();
+	}
+	
+	inline function: number isNewerVersionInstalled(archive: ScriptObject)
+	{
+		local e = eh.getExpansionForInstallPackage(archive);
+		
 		if (!isDefined(e))
-			return Engine.showMessageBox("Failed", "The library was not found on your system.", 3);
+			return false;
 
-		local name = e.getProperties().Name;
-		local sampleDir = e.getSampleFolder();
+		local data = eh.getMetaDataFromPackage(archive);
+		return compareVersion(e.getProperties().Version, data.Version) == 1;
+	}
+	
+	inline function uninstall(uuid: string, company: string, name: string)
+	{
+		local expansion = getExpansion(uuid, company, name);
 
-		if (!isDefined(sampleDir) || !sampleDir.isDirectory())
-			sampleDir = FileSystem.getFolder(FileSystem.Desktop);
+		Engine.showYesNoWindow("Uninstall", "Are you sure you want to remove " + name + "?", function[expansion, name](response1)
+		{
+			if (!response1)
+				return;
+
+			Engine.showYesNoWindow("Remove Presets", "Do you want to remove your custom presets?", function[expansion, name](response2)
+			{
+				removeFromCache(expansion);
+
+				if (eh.removeExpansion(expansion, response2))
+					Engine.showMessageBox("Complete", name + " has been uninstalled.", 0);
+				else
+					Engine.showMessageBox("Failed", "The uninstallation did not complete successfully.", 3);
+
+				refresh();
+			});
+		});
+	}
+
+	inline function getExpansion(uuid: string, company: string, name: string)
+	{
+		for (x in eh.getExpansionList())
+		{
+			local props = x.getProperties();
+			
+			if (uuid != "" && props.UUID == uuid)
+				return x;
+
+			if (props.Company == company && props.Name.toLowerCase() == name.toLowerCase())
+				return x;
+		}
+
+		return undefined;
+	}
+	
+	inline function refresh()
+	{
+		rebuildList();
+		allowDuplicateSamples();
+		ProductGrid.refresh();
+	}
+
+	inline function edit(uuid: string, company: string, name: string)
+	{
+		local expansion = getExpansion(uuid, company, name);
+		local sampleDir = expansion.getSampleFolder();
+
+		if (!sampleDir.isDirectory())
+			sampleDir = FileSystem.getFolder(FileSystem.UserHome);
 
 		FilePicker.show({
 			startFolder: sampleDir,
 			mode: 1,
 			filter: "",
 			title: "Locate Samples",
-			icon: ["hdd", 60, 42],
 			message: "Select the folder containing the .ch sample files for " + name,
 			buttonText: "Ok",
 			hideOnSubmit: true,
-			}, function[e](dir) {
-				relocateSamples(e, dir);
+			data: expansion,
+			}, function(dir, data) {
+				relocateSamples(data, dir);
 			});
 	}
-	
-	inline function relocateSamples(e, dir)
+		
+	inline function relocateSamples(expansion: ScriptObject, dir: ScriptObject)
 	{
-		if (!isDefined(dir) || !dir.isDirectory())
+		if (expansion.setSampleFolder(dir))
+			Engine.showMessageBox("Success", "Sample folder relocated successfully. Please restart Rhapsody.", 0);
+		else
+			Engine.showMessageBox("Failed", "Failed to relocate the sample folder. Please try a different folder.", 0);
+
+		eh.refreshExpansions();
+	}
+	
+	inline function deleteArchives(hr1: ScriptObject)
+	{
+		if (!hr1.isFile())
 			return;
-
-		local files = FileSystem.findFiles(dir, "*.ch1", false);
-
-		if ((files.length > 0 && e.setSampleFolder(dir)) || dir.isSameFileAs(e.getSampleFolder()))
-		{
-			Engine.showMessageBox("Success", "The sample folder was relocated. Please restart Rhapsody.", 0);
-			Engine.reloadAllSamples();
-		}
-		else
-		{
-			if (files.length > 0)
-				Engine.showMessageBox("Failed", "The selected folder could not be used.", 3);
-			else
-				Engine.showMessageBox("Failed", "The selected folder does not contain all the samples.", 3);						
-		}
-	}
-
-	inline function getImagePath(expName, imgName)
-	{
-		local e = expHandler.getExpansion(expName);
-
-		if (isDefined(e))
-		{
-			if (imgName == "Icon")
-				return e.getWildcardReference(imgName + ".png");
-
-			if (imgName == "thumbnail")
-			{
-				local rootDir = e.getRootFolder();
-				local f = rootDir.getChildFile(imgName + ".png");
-
-				if (isDefined(f) && f.isFile())
-					return f.toString(f.FullPath);
-			}
-		}
-
-		return undefined;
-	}
 	
-	inline function sortFiles(a, b)
-	{
-		if (a.toString(a.Filename) < b.toString(b.Filename))
-			return -1;
-		else
-			return a.toString(a.Filename) > b.toString(b.Filename);
-	}
+		local files = FileSystem.findFiles(hr1.getParentDirectory(), hr1.toString(hr1.NoExtension) + "*.hr*", false);
 	
-	inline function getExpansion(expName)
+		for (x in files)
+			x.deleteFileOrDirectory();
+	}
+
+	inline function setCurrent(uuid: string, company: string, name: string)
 	{
-		return expHandler.getExpansion(expName);
+		local e = getExpansion(uuid, company, name);
+
+		if (!isDefined(e))
+			return Engine.showMessageBox("Error", "The selected instrument could not be found.", 2);
+
+		if (Engine.isHISE())
+			return Console.print(e.getProperties().Name);
+
+		broadcasters.isLoadingExpansion.sendSyncMessage([name, true]);
+		return eh.setCurrentExpansion(e);
+	}
+		
+	inline function allowDuplicateSamples()
+	{
+		for (e in eh.getExpansionList())
+			e.setAllowDuplicateSamples(false);
 	}
 	
 	inline function abortInstallation()
 	{
-		abort = true;
+		eh.cancelInstallation();
 	}
-	
-	inline function setCurrent(expName)
+				
+	inline function removeFromCache(expansion: ScriptObject)
 	{
-		Spinner.show("Loading");
-		expHandler.setCurrentExpansion(expName);
+		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("Cache.json");		
+		local obj = f.isFile() ? f.loadAsObject() : [];
+
+		if (!Array.isArray(obj) || !obj.length)
+			return;
+
+		local props = expansion.getProperties();
+		local entry;
+
+		for (x in obj)
+		{
+			if (x.uuid != "" && x.uuid == props.UUID)
+				entry = x;
+			else if (x.company == props.Company && x.name.toLowerCase() == props.Name.toLowerCase())
+				entry = x;
+
+			if (isDefined(entry))
+				break;
+		}
+
+		if (!isDefined(entry))
+			return;
+
+		obj.remove(entry);
+		f.writeObject(obj);
 	}
 	
-	inline function allowDuplicateSamples()
+	inline function: number compareVersion(a: string, b: string)
 	{
-		for (e in expHandler.getExpansionList())
-			e.setAllowDuplicateSamples(false);
+		local aParts = a.split(".");
+		local bParts = b.split(".");
+
+		for (i = 0; i < 3; i++)
+		{
+			local diff = parseInt(aParts[i]) - parseInt(bParts[i]);
+			
+			if (diff != 0)
+				return diff > 0 ? 1 : -1;
+		}
+
+		return 0;
 	}
-	
-	//! Calls
+
+	inline function listExpansions()
+	{
+		eh.refreshExpansions();
+
+		for (e in eh.getExpansionList())
+			Console.print(trace(e.getProperties()));
+	}
+
+	//! Broadcasters
+	const broadcasters = {};
+	broadcasters.installationProgress = Engine.createBroadcaster({id: "installationProgress", args: ["progress", "title", "message"]});
+	broadcasters.isLoadingExpansion = Engine.createBroadcaster({id: "isLoadingExpansion", args: ["title", "isLoading"]});
+
+	//! Function Calls
 	allowDuplicateSamples();
+	rebuildList();
 }

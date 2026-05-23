@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,26 +19,59 @@ namespace App
 {
 	const mode = "development";
 	
-	Synth.deferCallbacks(true);
+	//! pnlMain
+	const pnlMain = Content.getComponent("pnlMain");
+	pnlMain.setFileDropCallback("All Callbacks", "*.hr1", onpnlMainFileDrop);
 	
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/JosefinSans-Bold.ttf", "title");
-	Engine.loadAudioFilesIntoPool();
+	inline function onpnlMainFileDrop(obj)
+	{
+		if (obj.hover)
+			FileDropper.show();
+	}
+
+	pnlMain.setPaintRoutine(function(g)
+	{
+		var a = this.getLocalBounds(0);
+
+		g.fillAll(this.get("bgColour"));
+
+		g.setFont("monoRegular", 12);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5));
+		g.drawAlignedText("v" + Engine.getVersion(), a.translated(-20, -5), "bottomRight");
+		
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
+	});
 	
-	const systemId = FileSystem.getSystemId();
+	//! Functions	
+	inline function registerMacros()
+	{
+		local names = [];
+
+		for (i = 1; i < 33; i++)
+			names.push("Macro " + i);
+
+		Engine.setFrontendMacros(names);
+	}
+
+	inline function createDefaultLinkFile()
+	{
+		local filename = "";
+		local appData = FileSystem.getFolder(FileSystem.AppData);
+
+		switch (Engine.getOS())
+		{
+			case "OSX": filename = "LinkOSX"; break;
+			case "LINUX": filename = "LinkLinux"; break;
+			case "WIN": filename = "LinkWindows"; break;
+		}
+
+		local f = appData.getChildFile(filename);
 	
-	const apiPrefix = "wp-json/librewave/v1/";
-	
-	const baseUrl = {
-		"development": "http://192.168.0.40/",
-		"testing": "http://192.168.0.40/",
-		"staging": "https://librewave.com/",
-		"release": "https://librewave.com/"
-	};
-	
-	const broadcasters = {
-		isDownloading: Engine.createBroadcaster({"id": "Global download State", "args": ["state"]}),
-		loginChanged: Engine.createBroadcaster({"id": "Triggered when user logs in or out", "args": ["state"]})
-	};
-	
-	broadcasters.isDownloading.state = false;
+		if (!isDefined(f) || !f.isFile())
+			f.writeString(appData.toString(appData.FullPath));		
+	}
+
+	//! Calls
+	createDefaultLinkFile();
+	registerMacros();
 }

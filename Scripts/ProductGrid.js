@@ -1,0 +1,169 @@
+/*
+    Copyright 2022, 2023, 2024, 2025, 2026 David Healey
+
+    This file is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This file is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with This file. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+namespace ProductGrid
+{
+	const MARGIN = 0;
+	const updates = [];
+
+	reg numCols = getNumColumns();
+	reg fontSize = getFontSize();
+	reg filterQuery = "";
+
+	//! pnlProductGridContainer
+	const pnlProductGridContainer = Content.getComponent("pnlProductGridContainer");
+	
+	pnlProductGridContainer.setPaintRoutine(function(g)
+	{
+		var a = this.getLocalBounds(0);
+		
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
+		g.setFont("monoBold", 28);
+		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 40], "centred");
+	});
+
+	//! pnlProductGrid
+	const pnlProductGrid = Content.getComponent("pnlProductGrid");
+	pnlProductGrid.setPaintRoutine(function(g){});
+		
+	//! Functions
+	inline function refresh()
+	{
+		local expansions = getExpansions(isDefined(filterQuery) ? filterQuery : "");
+		local width = pnlProductGrid.getWidth() / numCols - MARGIN;
+		local numRows = Math.ceil(expansions.length / numCols);
+		local height = width + 30;
+		
+		removeAllChildPanels();
+		
+		Engine.sortWithFunction(expansions, sortExpansions);
+
+		pnlProductGrid.set("height", Math.max(height, numRows * height + MARGIN * (numRows - 1)));
+
+		for (i = 0; i < expansions.length; i++)
+		{
+			local e = expansions[i];
+			local index = (i % numCols);
+			local x = MARGIN + (index * width) + (index * MARGIN);
+			local y = Math.floor(i / numCols) * (height + MARGIN);
+			
+			if (!isDefined(e))
+				continue;
+
+			ProductTile.create(pnlProductGrid, e, [x, y, width, height], {fontSize: fontSize});
+		}
+		
+		pnlProductGridContainer.set("text", expansions.length > 0 ? "" : "No Instruments Found");
+		pnlProductGridContainer.repaint();
+	}
+	
+	inline function removeAllChildPanels()
+	{
+		for (x in pnlProductGrid.getChildPanelList())
+			x.removeFromParent();
+	}
+	
+	inline function sortExpansions(a, b)
+	{
+		local nameA = a.name;
+		local nameB = b.Name;
+
+		if (nameA < nameB)
+			return -1;
+
+		return nameA > nameB;
+	}
+
+	inline function: Array getExpansions(query: string)
+	{
+		local result = [];
+		local expansions = Expansions.getList();
+
+		if (query == "")
+			return expansions;
+
+		for (e in expansions)
+		{
+			local tags = e.tags.split(",");
+
+			if (!isDefined(tags) || !tags.length)
+				tags = [""];
+
+			for (i = 0; i < tags.length; i++)
+			{
+				local t = tags[i].toLowerCase();
+
+				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(e.name.toLowerCase(), query) && !Engine.matchesRegex(e.company.toLowerCase(), query))
+					continue;
+					
+				result.push(e);
+
+				break;	
+			}
+		}
+
+		return result;
+	}
+	
+	inline function: number getNumColumns()
+	{
+		local result = UserSettings.getProperty("rhapsody", "gridColumns");
+		
+		if (!isDefined(result))
+			result = 4;
+			
+		return result;
+	}
+	
+	inline function: number getFontSize()
+	{
+		local result = UserSettings.getProperty("rhapsody", "gridFontSize");
+		
+		if (!isDefined(result))
+			result = 18;
+			
+		return result;
+	}
+	
+	//! Broadcasters
+	Filter.getValueBroadcaster().addListener(0, "Listen for filter change", function(value)
+	{
+		filterQuery = isDefined(value) ? value.toLowerCase().trim() : "";
+		refresh();
+	});
+
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcGridMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
+	
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		var selection = component.getItemText();
+		var options = [4, 5, 6];
+		var fontSizes = [16, 14, 12];
+
+		if (!options.contains(parseInt(selection)))
+			return;
+
+		numCols = parseInt(selection);
+		fontSize = fontSizes[options.indexOf(parseInt(selection))];
+
+		UserSettings.setProperty("rhapsody", "gridColumns", numCols);
+		UserSettings.setProperty("rhapsody", "gridFontSize", fontSize);
+
+		refresh();
+	});
+}

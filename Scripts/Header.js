@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,39 +17,22 @@
 
 namespace Header
 {
-	// pnlHeader
+	//! pnlHeader
 	const pnlHeader = Content.getComponent("pnlHeader");
-	
+
 	pnlHeader.setPaintRoutine(function(g)
 	{
-		g.fillAll(this.get("bgColour"));
+		var a = this.getLocalBounds(0);
+	
+		g.setColour(this.get("textColour"));
+		g.fillPath(Paths.rhapsodyFullLogo, [a[0] + 20, a[1] + 32, 168, 24]);
+
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
 	});
 	
-	// btnLogo
-	const btnLogo = Content.getComponent("btnLogo");
-	btnLogo.setControlCallback(onbtnLogoControl);
-	
-	inline function onbtnLogoControl(component, value)
+	pnlHeader.setMouseCallback(function(event)
 	{
-		if (value)
-			return;
-			
-		About.show();	
-	}
-
-	const lafbtnLogo = Content.createLocalLookAndFeel();
-	btnLogo.setLocalLookAndFeel(lafbtnLogo);
-
-	lafbtnLogo.registerFunction("drawToggleButton", function(g, obj)
-	{
-		 var a = obj.area;
-		 var down = obj.down || obj.value;
-		 
-		 g.setColour(Colours.withAlpha(obj.itemColour1, obj.over ? 1.0 - 0.2 * down: 0.8));
-		 		 
-		 g.fillPath(Paths.rhapsodyLogoWithBg, [a[0], a[1], a[3], a[3]]);
-
-		 g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
-		 g.drawAlignedText("RHAPSODY", [a[0] + 40, a[1], a[2] - 40, a[3] + 5 - (10 * (Engine.getOS() == "WIN"))], "left");
+		if (event.doubleClick && event.x < 200)
+			Settings.setZoomLevel(1.0);
 	});
 }

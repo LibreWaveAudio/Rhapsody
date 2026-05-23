@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023 David Healey
+    Copyright 2021, 2022, 2023, 2025 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,21 +17,13 @@
 
 namespace UserSettings
 {
-    // Functions
-	/**
-	* Store a key value pair in the AppData/UserSettings.json file.
-	* 
-	* @scope	string    	The scope that the value affects. For global settings use "rhapsody".
-	*					  	For project specific settings use the project's name or a unique id.
-	* @key		string	  	The key that the value is associated with
-	* @value	string/int	The value to store
-	*/
+    //! Functions
     inline function setProperty(scope, key, value)
     {
 		local obj = {};
 		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("UserSettings.json");
 		
-		if (isDefined(f) && f.isFile())
+		if (f.isFile())
 			obj = f.loadAsObject();
 			
 		if (!isDefined(obj[scope]))
@@ -41,24 +33,15 @@ namespace UserSettings
 		
 		f.writeObject(obj);
     }
-    
-    /**
-    * Store a key value pair in the AppData/UserSettings.json file.
-    * 
-    * @scope	string    The scope that the value affects. For global settings use "rhapsody".
-    *                     For project specific settings use the project's name or a unique id.
-    * @key		string    The key for the value you want to retrieve.
-    *
-    * @return		      The value that matches the scope and key, or undefined
-    */
+
     inline function getProperty(scope, key)
     {
 		local obj = {};
 	    local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("UserSettings.json");
 	    
-	    if (isDefined(f) && f.isFile())
+	    if (f.isFile())
 	    	obj = f.loadAsObject();
 
-	    return obj[scope][key];
+    	return obj[scope][key];
     }
 }

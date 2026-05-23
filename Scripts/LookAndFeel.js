@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023 David Healey
+    Copyright 2021, 2022, 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,309 +19,296 @@ namespace LookAndFeel
 {
 	Content.setUseHighResolutionForPanels(true);
 	
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Regular.ttf", "regular");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Medium.ttf", "medium");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-SemiBold.ttf", "semibold");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/Inter-Bold.ttf", "bold");
-	Engine.loadFontAs("{PROJECT_FOLDER}fonts/JosefinSans-Bold.ttf", "title");
-	
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/AtkinsonHyperlegibleMono-Regular.ttf", "monoRegular");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/AtkinsonHyperlegibleMono-Medium.ttf", "monoMedium");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/AtkinsonHyperlegibleMono-SemiBold.ttf", "monoSemiBold");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/AtkinsonHyperlegibleMono-Bold.ttf", "monoBold");	
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Text/JosefinSans-Bold.ttf", "title");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor.ttf", "phosphor");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Bold.ttf", "phosphorBold");
+	Engine.loadFontAs("{PROJECT_FOLDER}Fonts/Icons/Phosphor/Phosphor-Fill.ttf", "phosphorFill");
+
     const laf = Engine.createGlobalScriptLookAndFeel();
-    
-	// empty
-	const empty = Content.createLocalLookAndFeel();
-	
-	empty.registerFunction("drawToggleButton", function(g, obj) {});
-	empty.registerFunction("drawRotarySlider", function(g, obj) {});
-	
-	// Scrollbar
-	laf.registerFunction("drawScrollbar", function(g, obj)
+
+	//! Alert window	
+	laf.registerFunction("drawAlertWindow", function(g, obj)
 	{
-		drawScrollbar(g, obj, 0xff302F34);
+		drawAlertWindow();
 	});
 
-    // textButton
+	inline function drawAlertWindow()
+	{
+		local a = obj.area.expanded(20);
+		local titleFont = "monoSemiBold";
+		local titleFontSize = 24;
+		local font = "monoRegular";
+		local fontSize = 20;
+		local bgColour = 0xff2a2d32;
+		local itemColour = 0xff202428;
+		local itemColour2 = 0x55d7d8da;
+		local itemColour3 = 0xff15191d;
+		local textColour = 0xffd7d8da;
+		local radius = 2;
+		local borderSize = 1;
+		local labelRadius = 2;
+		local hasLabel = isDefined(obj.labelArea) && obj.labelArea[0] != 0;
+
+		g.drawDropShadow(a, Colours.withAlpha(Colours.black, 0.5), 20);
+
+		g.setColour(bgColour);
+		g.fillRoundedRectangle(a, radius);
+
+		g.setColour(itemColour);
+		g.fillRoundedRectangle([a[0], a[1], a[2], 45], {CornerSize: radius, Rounded:[1, 1, 0, 0]});
+
+		g.setColour(itemColour2);
+
+		if (borderSize > 0)
+			g.drawRoundedRectangle(a.reduced(borderSize / 2), radius, borderSize);
+
+		g.setFont(titleFont, titleFontSize);
+		g.setColour(textColour);
+		g.drawAlignedText(obj.title, [a[0], a[1] + 10, a[2], 25], "centred");
+
+		if (isDefined(obj.text))
+		{
+			g.setColour(textColour);
+			g.setFont(font, fontSize);
+
+			if (hasLabel)
+				g.drawAlignedText(obj.text, [a[0], a[1], a[2], a[3] - 85], "centred");
+			else
+				g.drawAlignedText(obj.text, [a[0], a[1], a[2], a[3] - 30], "centred");				
+		}
+
+		g.setColour(Colours.withMultipliedBrightness(itemColour3, 0.6));
+
+		if (hasLabel)
+			g.fillRoundedRectangle(obj.labelArea, labelRadius);
+
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
+	}
+
+	laf.registerFunction("getAlertWindowMarkdownStyleData", function(obj)
+	{
+		return getAlertWindowMarkdownStyleData();
+	});
+
+	inline function getAlertWindowMarkdownStyleData()
+	{
+		obj.headlineFont = "monoMedium";
+		obj.font = "monoRegular";
+		obj.fontSize = 22;
+		obj.textColour = 0xffd7d8da;
+		return obj;
+	}
+	
+	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
+	{
+		drawAlertWindowIcon();
+	});
+	
+	inline function drawAlertWindowIcon()
+	{
+		local a = obj.area;
+		local icons = {"Info": "\ue2ce", "Warning": "\ue4e0", "Question": "\ue3e8", "Error": "\ue7fc"};
+		local textColour = 0xffd7d8da;
+
+		g.setFont("phosphor", 42);
+		g.setColour(Colours.withAlpha(textColour, 0.8));
+		g.drawAlignedText(icons[obj.type], a, "centred");		
+	}
+	
+	laf.registerFunction("drawDialogButton", function(g, obj)
+	{
+		drawDialogButton();
+	});
+
+    //! Text Button
     const textButton = Content.createLocalLookAndFeel();
     
     textButton.registerFunction("drawToggleButton", function(g, obj)
     {
-		drawTextButton(obj, obj.text, obj.area);
-    });
-        
-    // linkButton
-    const linkButton = Content.createLocalLookAndFeel();
-    
-    linkButton.registerFunction("drawToggleButton", function(g, obj)
-    {
-	    var a = obj.area;
-
-	    g.setFont("medium", 14);
-	    g.setColour(Colours.withAlpha(obj.textColour, obj.over ? 1.0 - (0.3 * obj.value) : 0.8));
-	    g.drawAlignedText(obj.text, a, "left");
-
-	    var stringWidth = g.getStringWidth(obj.text);
-	    g.drawHorizontalLine(a[3] - 5, a[0], stringWidth);
+		drawTextButton(obj);
     });
 
-    // iconButton
-    const iconButton = Content.createLocalLookAndFeel();
-    
-    iconButton.registerFunction("drawToggleButton", function(g, obj)
-    {
-		var a = obj.area;
-		var icon = obj.text;
+	inline function drawTextButton(obj)
+	{
+		local a = obj.area;
+		local radius = 2;
+		local borderSize = 1;
+		local down = obj.down || obj.value;
 
-		if (icon.indexOf("iconOff") != -1 && !obj.value)
-		{
-			icon = icon.substring(icon.indexOf("iconOff-") + 8, icon.indexOf(" "));
-		}
-		else if (icon.indexOf("iconOn") != -1 && obj.value)
-		{
-			icon = icon.substring(icon.indexOf("iconOn-") + 7, icon.length);
-		}
-		else
-		{
-			if (icon.indexOf("circle-") != -1)
-			{
-				icon = icon.replace("circle-");
-				
-				g.setColour(Colours.withAlpha(obj.bgColour, obj.over ? 1.0 : 0.8));
-				g.fillEllipse(a);
-				a = [a[2] / 2 - (a[2] / 2) / 2, a[3] / 2 - (a[3] / 2) / 2, a[2] / 2, a[3] / 2];
-			}
-		}
+		local c = Colours.withMultipliedBrightness(obj.bgColour, obj.over ? 1.2 - 0.2 * down : 1.0);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-		var colour = obj.value == 0 ? obj.itemColour1 : obj.itemColour2;
-		g.setColour(Colours.withAlpha(colour, obj.over && obj.enabled ? 1.0 - (0.2 * obj.down) : 0.8 - (0.2 * obj.down) - (0.3 * !obj.enabled)));
-
-		g.fillPath(Paths.icons[icon], a);  
-    });
-    
-    // textIconButton
-    const textIconButton = Content.createLocalLookAndFeel();
-    
-    textIconButton.registerFunction("drawToggleButton", function(g, obj)
-    {
-		var a = obj.area;
-		var icon = obj.text;
-		var text = obj.text;
-		var size = [12, 12];
+		if (obj.bgColour != 0x0)
+			g.fillRoundedRectangle(a, radius);
 		
-		switch (obj.text)
-		{
-			case "sync":
-				break;
-
-			case "favourites":
-				icon = obj.value ? "heartFilled" : "heart";
-				size = [12, 11];
-				break;
-
-			case "log out":
-				icon = "logout";
-				size = [12, 11];
-				break;
-
-			case "login":
-				text = "Sign In";
-				size = [12, 11];
-				break;
-		}
-
-		g.setColour(Colours.withAlpha(obj.itemColour1, obj.over && obj.enabled ? 1.0 : 0.9 - (0.3 * !obj.enabled)));
-		g.fillPath(Paths.icons[icon], [a[0], a[3] / 2 - size[1] / 2, size[0], size[1]]);
+		g.setColour(Colours.withMultipliedBrightness(obj.itemColour1, obj.over ? 1.2 - 0.2 * down : 1.0));
+		g.drawRoundedRectangle(a.reduced(borderSize / 2), radius, borderSize);
 		
-		g.setFont("regular", 18);
-		g.drawAlignedText(text.capitalize(), a, "right");
-    });
+		g.setColour(Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.1 - 0.1 * down : 0.8));
+		g.setFont("monoSemiBold", 18);
+		g.drawAlignedText(obj.text.toUpperCase(), a, "centred");
+	}
+	
+	//! Dialog button
+	inline function drawDialogButton()
+	{
+		local a = obj.area;
+		local text = obj.text;
+		local bgColour = 0xff202428;
+		local textColour = 0xffd7d8da;
+		local font = "monoMedium";
+		local fontSize = 18;
+		local radius = 2;
+		
+		if (["Update Check", "Rhapsody Update", "Uninstall", "Open Website", "Installation Complete", "Remove Presets"].contains(obj.parentName))
+			text = obj.text == "OK" ? "Yes" : "No";
+	
+		g.setColour(Colours.withMultipliedBrightness(bgColour, obj.over ? 2.0 - 0.5 * obj.down : 1.0));
+		g.fillRoundedRectangle(a, radius);
+	
+		g.setColour(Colours.withAlpha(Colours.black, 0.7));
+		g.drawRoundedRectangle([a[0] + 0.25, a[1] + 0.25, a[2] - 0.5, a[3] - 0.5], radius, 1);
+	
+		g.setColour(Colours.withMultipliedBrightness(textColour, 1.0 + obj.over - 0.2 * obj.down));
+		g.setFont(font, fontSize);
+		g.drawAlignedText(text.toUpperCase(), a, "centred");
+	}
+
+    //! Icon Button Momentary
+    const iconButtonMomentary = Content.createLocalLookAndFeel();
     
-    // filledIconButton
-    const filledIconButton = Content.createLocalLookAndFeel();
-    
-    filledIconButton.registerFunction("drawToggleButton", function(g, obj)
+    iconButtonMomentary.registerFunction("drawToggleButton", function(g, obj)
     {
-		var a = obj.area;
-		var icon = obj.text;
-		var down = obj.down || obj.value;
+	    var c = Colours.withMultipliedBrightness(obj.textColour, obj.over ? 1.0 - 0.3 * obj.down : 0.8);
+	    g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
 
-		g.setColour(Colours.withAlpha(obj.bgColour, obj.over && obj.enabled ? 1.0 - 0.2 * down : 0.9 - (0.3 * !obj.enabled)));
-		g.fillRoundedRectangle(a, 2);
-
-		g.setColour(Colours.withAlpha(Colours.black, obj.enabled ? 1.0 : 0.6));
-		g.drawRoundedRectangle([a[0] + 0.5, a[1] + 0.5, a[2] - 1, a[3] - 1], 2, 1);
-
-		if (icon == "x")
-		{
-			var wh = a[3] / 3;
-			g.setColour(obj.itemColour1);
-			g.fillPath(Paths.icons[icon], [a[0] + a[2] / 2 - wh / 2, a[1] + a[3] / 2 - wh / 2, wh, wh]);  
-		}
-		else
-		{
-			var wh = a[3] / 1.8;
-			g.setColour(Colours.withAlpha(obj.textColour, obj.over && obj.enabled ? 0.8 + 0.2 * down: 0.9 - (0.3 * !obj.enabled)));
-			g.fillPath(Paths.icons[icon], [a[0] + a[2] / 2 - wh / 2, a[1] + a[3] / 2 - wh / 2, wh, wh]);
-		}
+	    g.setFont("phosphorBold", obj.area[2]);
+	    g.drawAlignedText(String.fromCharCode(obj.text), obj.area, "centred");
     });
-
-    // Combo box
+	
+	//! Popup Menu
 	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
 	{
 	   	drawPopupMenuBackground();
 	});
+	
+	inline function drawPopupMenuBackground()
+	{
+		local a = obj.area;
+		local bgColour = 0xff202428;
+		local borderColour = 0x77d7d8da;
+		local borderSize = 1;
+		local borderRadius = 2;
+	
+		g.setColour(bgColour);
+		g.fillRoundedRectangle(a, borderRadius);
+	
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
+	
+		g.setColour(borderColour);
+		g.drawRoundedRectangle(a.reduced(borderRadius / 4), borderRadius, borderSize);
+	}
 	
 	laf.registerFunction("drawPopupMenuItem", function(g, obj)
 	{
 		drawPopupMenuItem();
 	});
 	
+	inline function drawPopupMenuItem()
+	{
+		local a = obj.area;
+		local hasIcon = obj.text.startsWith("e");
+		local icon = obj.text.substring(0, obj.text.indexOf("-"));
+		local text = obj.text.replace(icon + "-");
+		local itemColour2 =0x995E6167;
+		local textColour = 0xffd7d8da;
+		local font = "monoRegular";
+		local fontSize = 18;
+		local iconFont = "phosphor";
+		local iconFontSize = 22;
+		local subMenuIcon = "e13a";
+		local subMenuIconFontSize = 16;
+		local radius = 2;
+
+		if (obj.isSeparator)
+		{
+			g.setColour(Colours.withAlpha(textColour, 0.3));
+			g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
+			return;
+		}
+	
+		if (obj.isHighlighted || obj.isTicked)
+		{
+			g.setColour(Colours.withMultipliedAlpha(itemColour2, obj.isHighlighted && !obj.isTicked ? 0.6 : 1.0));
+			g.fillRoundedRectangle(a.reduced(5, 2), radius);
+		}
+	
+		g.setFont(font, fontSize);
+		g.setColour(Colours.withMultipliedAlpha(textColour, obj.isHighlighted ? 1.0 : 0.9));
+		g.drawFittedText(text, a.withTrimmedRight(10 + (30 * hasIcon)).translated(10 + (30 * hasIcon), textOffsetY), "left", 1.0, 1.0);
+	
+		if (hasIcon)
+		{
+			g.setFont(iconFont, iconFontSize);
+			g.drawAlignedText(String.fromCharCode(icon), a.translated(10, 0), "left");
+		}			
+	
+		if (obj.hasSubMenu)
+		{
+			g.setFont(iconFont, subMenuIconFontSize);
+			g.drawAlignedText(String.fromCharCode(subMenuIcon), a.translated(-10, 0), "right");
+		}
+	
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
+	}
+	
 	laf.registerFunction("getIdealPopupMenuItemSize", function(obj)
 	{
-		return [163, 30];
+		return getIdealPopupMenuItemSize();
 	});
+	
+	inline function getIdealPopupMenuItemSize()
+	{
+		local width = Engine.getStringWidth(obj.text, "monoRegular", 18, 0.0) + 30;
+		return [width, 40];		
+	}
 
-    // Alert window    
-    laf.registerFunction("drawAlertWindow", function(g, obj)
-    {        
-        var a = obj.area;
-        var h = 40;
-
-		g.fillAll(0xff2F2F34);
-
-        g.setColour(0xff161619);
-        g.fillRect([a[0], a[1], a[2], h]);
-
-        g.setFont("semibold", 20);
-        g.setColour(Colours.white);
-        g.drawAlignedText(obj.title, [a[0] + 15, a[1], a[2], h], "left");        
-        
-        g.setColour(Colours.withAlpha(Colours.white, 0.3));
-		g.drawRect(a, 1);
-    });
-    
-    laf.registerFunction("getAlertWindowMarkdownStyleData", function(obj)
-    {
-        obj.font = "medium";
-        obj.fontSize = 18;
-        obj.textColour = Colours.white;
-        return obj;
-    });
-    
-	laf.registerFunction("drawAlertWindowIcon", function(g, obj)
-    {
-        var a = [obj.area[0], obj.area[1] + 10, obj.area[2], obj.area[3] - 10];
-        var path = Paths.icons[obj.type.toLowerCase()];
-		var multiplier = 1;
-		
-        switch (obj.type)
-        {
-	        case "Info": multiplier = 0.46; break;
-	        case "Warning": multiplier = 0.18; break;
-	        case "Question": multiplier = 0.58; break;
-	        case "Error":
-	        	multiplier = 0.18;
-	        	path = Paths.icons.warning;
-	        	break;
-		}
-
-		g.setColour(Colours.white);
-		g.fillPath(path, [a[0], a[1] + a[3] / 2 - a[3] / 1.5 / 2, a[3] * multiplier / 1.5, a[3] / 1.5]);
-    });
-        
-    laf.registerFunction("drawDialogButton", function(g, obj)
-    {
-    	var a = obj.area;
-
-    	obj.bgColour = 0xff161619;
-    	obj.textColour = Colours.white;
-    	var text = obj.text;
-
-		if (["Visit Website", "Confirmation", "Uninstall", "Uninstall Presets", "Batch Install"].contains(obj.parentName))
-			text = obj.text == "OK" ? "Yes" : "No";
-
-   		drawTextButton(obj, text, a);
-    });
-    
-    inline function drawTextButton(obj, text, area)
-    {
-		local alignment = "centred";
-		local down = obj.down || obj.value;
-
-		g.setColour(Colours.withAlpha(obj.bgColour, obj.over && obj.enabled ? 1.0 - 0.2 * down : 0.8 - (0.4 * !obj.enabled)));
-        g.fillRoundedRectangle(area, 5);
-
-        g.setColour(Colours.withAlpha(obj.textColour, obj.over && obj.enabled ? 1.0 - 0.2 * down : 0.9 - (0.3 * !obj.enabled)));
-        g.setFont("semibold", 16);
-        g.drawAlignedText(text, [area[0], area[1], area[2], area[3]], alignment);
-    }
-
-    inline function drawPopupMenuBackground()
-    {
-	    local a = [0, 0, obj.width, obj.height];
-
-	    g.fillAll(0xff1d1d21);
-
-	    g.setColour(Colours.grey);
-	    g.drawRect(a, 1);
-    }
-    
-    inline function drawPopupMenuItem()
-    {
-    	local a = obj.area;
-    
-		if (obj.isHighlighted)
-			g.fillAll(Colours.withAlpha(0xffa8b2bd, 0.8));
-
-    	local iconData = {
-	    	"Manual Install": ["deploy", 11, 12],
-			"Add a License": ["key", 15, 8],
-    		"Add to Favourites": ["heart", 12, 11],
-    		"Remove Favourite": ["heartFilled", 12, 11],
-    		"Locate Samples": ["search", 12, 12],
-    		"Uninstall": ["trash", 10, 12],
-    		"Visit Webpage": ["openInNew", 12, 12]
-    	};
-
-    	if (!obj.isSeparator)
-    	{
-	    	g.setFont("medium", 18);
-	    	obj.isHighlighted ? g.setColour(Colours.black): g.setColour(Colours.lightgrey);
-
-	    	if (!isDefined(Paths.icons[iconData[obj.text][0]]))
-		    	return g.drawFittedText(obj.text, [a[0] + 10, a[1], a[2] - 20, a[3]], "left", 1, 1.0);	
-
-			local icon = iconData[obj.text];
-
-			g.fillPath(Paths.icons[icon[0]], [a[0] + 10, a[3] / 2 - icon[2] / 2, icon[1], icon[2]]);
-			g.drawFittedText(obj.text, [a[0] + 30, a[1], a[2] - 20, a[3]], "left", 1, 1.0);	    	
-    	}
-    	else
-    	{	
-    		g.setColour(Colours.white);
-	    	g.drawHorizontalLine(a[3] / 2, a[0] + 5, a[2] - 10);
-    	}
-    }
-        
+	//! Full Page Background
 	inline function fullPageBackground()
 	{
 		g.fillAll(this.get("bgColour"));
-		
-		// Logo
+
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);    	
+		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);
+
 		g.setFont("title", Engine.getOS() == "WIN" ? 42 : 28);
 		g.drawAlignedText(Engine.getName().toUpperCase(), [0, 135 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
+
+		g.setFont("phosphor", 12);
+		g.drawAlignedText("\ue3f4", [85, 138 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
 	}
-        
-    inline function drawScrollbar(g, obj, bgColour)
+	
+	//! Scrollbar
+	laf.registerFunction("drawScrollbar", function(g, obj)
+	{
+		drawScrollbar();
+	});
+
+    inline function drawScrollbar()
     {
-    	local a = obj.area;
-    	local ha = obj.handle;
-    	local w = a[2] > 10 ? 10 : a[2];
+		local a = obj.area;
+		local radius = 1;
+		local ha = obj.handle;
+		local w = 10;
 
-    	g.setColour(Colours.withAlpha(bgColour, 0.8));
-    	g.fillRoundedRectangle([a[0] + a[2] - w + 2, a[1], w - 4, a[3]], 2);
+		g.setColour(obj.bgColour);
+		g.fillRoundedRectangle([a[2] - w + 2, a[1], w - 4, a[3]], radius + 1);
 
-    	g.setColour(Colours.withAlpha(0xff696970, obj.over ? 0.8 + (0.2 * obj.down) : 0.5));
-    	g.fillRoundedRectangle([ha[0] + a[2] - w, ha[1], w, ha[3]], 3);
+		g.setColour(Colours.withMultipliedBrightness(obj.itemColour, obj.over || obj.down ? 0.8 - 0.2 * obj.down : 0.5));
+		g.fillRoundedRectangle([a[2] - w + 3, ha[1] + 1, w - 6, ha[3] - 2], radius);
     }
 }

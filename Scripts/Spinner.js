@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023, 2024 David Healey
+    Copyright 2021, 2022, 2023, 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,128 +17,72 @@
 
 namespace Spinner
 {
-	// pnlSpinnerContainer
+	//! Server Callback
+	Server.setServerCallback(function(isWaiting)
+	{
+		isWaiting ? show() : hide();
+	});
+
+	//! pnlSpinnerContainer
 	const pnlSpinnerContainer = Content.getComponent("pnlSpinnerContainer");
+	pnlSpinnerContainer.showControl(false);
+	
+	pnlSpinnerContainer.setPaintRoutine(function(g)
+	{
+		g.fillAll(Colours.withAlpha(this.get("bgColour"), 0.9));			
+	});
 
-	// pnlSpinner
+	//! pnlSpinner
 	const pnlSpinner = Content.getComponent("pnlSpinner");
-	pnlSpinner.setValue(0);
-
+	pnlSpinner.set("text", "");
+	
 	pnlSpinner.setPaintRoutine(function(g)
 	{
-		var a = [this.getWidth() / 2 - 50, this.getHeight() / 2 - 50, 100, 100];
+		var a = [this.getWidth() / 2 - 40, this.getHeight() / 2 - 60, 80, 80];
 
-		g.fillAll(Colours.withAlpha(Colours.black, 0.5));
-			    
-	    for (i = 0; i < 10; i++)
-	    {
-	        this.getValue() == i ? g.setColour(Colours.white) : g.setColour(Colours.grey);
-	        
-	        var x = this.getWidth() / 2 - 0;
-	        var y1 = a[1] + 20;
-	        var y2 = this.getHeight() / 2 - 70;        
-	        
-	        g.drawLine(x, x, y1, y2, 4);
-	        
-	        g.rotate(Math.toRadians(360 / 10), [this.getWidth() / 2, this.getHeight() / 2]);
-	    }
+		for (i = 0; i < 10; i++)
+		{			
+			g.setColour(Colours.withAlpha(this.get("itemColour"), this.getValue() == i ? 1.0 : 0.5));
+			
+			var x = this.getWidth() / 2;
+			var y1 = a[1] - 40;
+			var y2 = this.getHeight() / 2 - 80;
+			
+			g.drawLine(x, x, y1, y2, 4);
+			
+			g.rotate(Math.toRadians(360 / 10), [this.getWidth() / 2, this.getHeight() / 2]);
+		}
 
-		g.setColour(Colours.withAlpha(Colours.white, 1 / 10 * this.getValue()));
-
-		if (this.data.msg != "")
-		{
-			g.setFont("medium", 26);
-			g.drawAlignedText(this.data.msg, [0, a[1] + a[3] + 50, this.getWidth(), 30], "centred");
-		}        	
+		g.setColour(Colours.withAlpha(this.get("textColour"), 1 / 10 * this.getValue()));
+		g.setFont("monoMedium", 28);
+		g.drawAlignedText(this.get("text"), [0, a[1] + a[3] + 125, this.getWidth(), 26], "centred");
 	});
-	
+
 	pnlSpinner.setTimerCallback(function()
 	{
-    	var v = (this.getValue() + 1) % 10;
+		var v = (this.getValue() + 1) % 10;
+
     	this.setValue(v);
     	this.repaint();
 	});
-	
-	//! btnSpinnerCancel
-	const btnSpinnerCancel = Content.getComponent("btnSpinnerCancel");
-	const lafbtnSpinnerCancel = Content.createLocalLookAndFeel();
-	btnSpinnerCancel.setLocalLookAndFeel(lafbtnSpinnerCancel);
-	btnSpinnerCancel.setControlCallback(onbtnSpinnerCancelControl);
-	
-	inline function onbtnSpinnerCancelControl(component, value)
-	{
-		if (!value)
-			return;
 
-		Engine.showYesNoWindow("Confirm", "Are you sure you want to cancel the installation?", function(response)
-		{
-			if (!response)
-				return;
-				
-			Expansions.abortInstallation();
-			hide();
-		});
+	//! Functions	
+	inline function setText(text: string)
+	{
+		pnlSpinner.set("text", text);
 	}
 	
-	lafbtnSpinnerCancel.registerFunction("drawToggleButton", function(g, obj)
-	{
-		var a = obj.area;
-		
-		g.setColour(Colours.withAlpha(obj.textColour, obj.over ? 1.0 - obj.value * 0.2 : 0.8)); 
-		g.setFont("bold", 18);
-		g.drawAlignedText(obj.text, a, "centred");
-	});
-	
-	// Functions
-	/**
-	* Sets the message displayed on the spinner panel
-	*
-	* @msg    string    The message to display
-	*/
-	inline function setMessage(msg)
-	{
-		pnlSpinner.data.msg = msg;
-	}
-	
-	/*
-	* Show the spinner
-	*
-	* @msg    string    The message to display
-	*/
-	inline function show(msg)
+	inline function show()
 	{
 		pnlSpinner.startTimer(150);
-		setMessage(msg);
 		pnlSpinnerContainer.showControl(true);
 	}
-	
-	/*
-	* Hide the spinner
-	*/
+
 	inline function hide()
 	{
-		pnlSpinner.setValue(0);
-		pnlSpinner.stopTimer();
 		pnlSpinnerContainer.showControl(false);
-		btnSpinnerCancel.showControl(false);
-		pnlSpinner.data.msg = "";
+		pnlSpinner.setValue(0);
+		pnlSpinner.set("text", "");
+		pnlSpinner.stopTimer();
 	}
-
-	inline function showCancelButton(shouldShow)
-	{
-		btnSpinnerCancel.showControl(shouldShow);
-	}
-
-	/*
-	* Check if the spinner is visible
-	*
-	* @return    boolean    The visibility property of pnlSpinner
-	*/
-	inline function isVisible()
-	{
-		return pnlSpinner.get("visible");
-	}
-
-	// Calls
-	hide();
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright 2023 David Healey
+    Copyright 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,26 +20,21 @@ Content.makeFrontInterface(1000, 710);
 include("App.js");
 include("Paths.js");
 include("LookAndFeel.js");
-include("UserSettings.js");
-include("About.js");
 include("Spinner.js");
-include("FilePicker.js");
-include("LicenseHandler.js");
+include("Expansions.js");
 include("Header.js");
 include("Filter.js");
-include("Expansions.js");
-include("Plugins.js");
-include("Installer.js");
-include("Grid.js");
-include("Account.js");
-include("Library.js");
-include("Tile.js");
-include("Downloader.js");
-include("UpdateChecker.js");
+include("UpdateHandler.js");
+include("ProductGrid.js");
+include("ProductTile.js");
+include("ManualInstaller.js");
+include("UserMenu.js");
+include("FilePicker.js");
+include("FileDropper.js");
+include("UserSettings.js");
+include("ProgressBar.js");
 include("ZoomHandler.js");
-include("SplashScreen.js");
 
-Engine.setFrontendMacros(["Macro1", "Macro2"]);
 function onNoteOn()
 {
 	

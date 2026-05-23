@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023 David Healey
+    Copyright 2022, 2023, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,57 +17,78 @@
 
 namespace FilePicker
 {
-	reg startFolder = FileSystem.Downloads;
-	reg storePath = false;
-	reg mode = 0;
-	reg hideOnSubmit = true;
-	reg filter = "";
-	reg file;
+	const options = {};
 	reg callback;
+	reg file;
 
-	// pnlFilePicker
+	//! pnlFilePicker
 	const pnlFilePicker = Content.getComponent("pnlFilePicker");
 	pnlFilePicker.showControl(false);
 
 	pnlFilePicker.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-				
+		var labelArea = Rectangle(lblFilePicker.get("x") - 10, lblFilePicker.get("y"), lblFilePicker.getWidth() + 20, lblFilePicker.getHeight());
+
 		LookAndFeel.fullPageBackground();
 		
-		var lblArea = [lblFilePicker.get("x") - 5, lblFilePicker.get("y") - 8, lblFilePicker.getWidth() + 40, lblFilePicker.getHeight() + 16];
 		g.setColour(this.get("itemColour"));
-		g.fillRoundedRectangle(lblArea, 5);
+		g.fillRoundedRectangle(labelArea, 2);
+		
+		g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), 0.2));
+		g.drawRoundedRectangle(labelArea.reduced(0.5), 2, 1);
 
-		g.setFont("semibold", 26);
-		g.setColour(Colours.withAlpha(this.get("textColour"), 1.0));
-		g.drawAlignedText(this.data.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
+		g.setFont("monoSemiBold", 22);
+		g.setColour(this.get("textColour"));
+
+		if (isDefined(options.title))
+			g.drawAlignedText(options.title, [labelArea[0] + 2, labelArea[1] - 90, a[2], 30], "left");
+
+		if (!isDefined(options.message))
+			return;
+
+		g.setFont("phosphor", 18);
+		g.drawAlignedText("\ue2ce", [labelArea[0] + 2, labelArea[1] - 40, 20, 20], "left");
 		
-		g.setColour(Colours.withAlpha(this.get("itemColour2"), 0.9));
-		
-		g.fillPath(Paths.icons.infoCircle, [lblArea[0] + 2, lblArea[1] - 37, 13, 13]);
-		
-		g.setFont("regular", 16);
-		g.drawAlignedText(this.data.message, [lblArea[0] + 22, lblArea[1] - 40, lblArea[2], 20], "left");
+		g.setFont("monoRegular", 16);
+		g.drawAlignedText(options.message, [labelArea[0] + 25, labelArea[1] - 40, labelArea[2] + 50, 20], "left");
 	});
 	
-	// lblFilePicker
+	//! lblFilePicker
 	const lblFilePicker = Content.getComponent("lblFilePicker");
-	lblFilePicker.setLocalLookAndFeel(LookAndFeel.empty);
-	lblFilePicker.set("text", "");
+	lblFilePicker.setControlCallback(onlblFilePickerControl);
+	
+	inline function onlblFilePickerControl(component, value)
+	{
+		file = FileSystem.fromAbsolutePath(value);
+		
+		component.set("text", "");
 
-	// btnFilePicker
+		if (!isDefined(file))
+			return;
+
+		if (!options.mode && !file.isFile())
+			return file = undefined;
+			
+		if (options.mode && !file.isDirectory())
+			return file = undefined;
+
+		btnFilePickerSubmit.set("enabled", true);
+		component.set("text", getTruncatedPath(file, 55));
+	}
+
+	//! btnFilePicker
 	const btnFilePicker = Content.getComponent("btnFilePicker");
-	btnFilePicker.setLocalLookAndFeel(LookAndFeel.iconButton);
+	btnFilePicker.setLocalLookAndFeel(LookAndFeel.iconButtonMomentary);
 	btnFilePicker.setControlCallback(onbtnFilePickerControl);
 	
 	inline function onbtnFilePickerControl(component, value)
 	{
 	    if (!value)
-			mode == 0 ? showFileBrowser() : showDirectoryBrowser();			
+			options.mode == 0 ? showFileBrowser() : showDirectoryBrowser();			
 	}
 
-	// btnFilePickerCancel
+	//! btnFilePickerCancel
 	const btnFilePickerCancel = Content.getComponent("btnFilePickerCancel");
 	btnFilePickerCancel.setLocalLookAndFeel(LookAndFeel.textButton);
 	btnFilePickerCancel.setControlCallback(onbtnFilePickerCancelControl);
@@ -78,55 +99,60 @@ namespace FilePicker
 	    	hide();
 	}
 	
-	// btnFilePickerSubmit
+	//! btnFilePickerSubmit
     const btnFilePickerSubmit = Content.getComponent("btnFilePickerSubmit");
     btnFilePickerSubmit.setLocalLookAndFeel(LookAndFeel.textButton);
     btnFilePickerSubmit.setControlCallback(onbtnFilePickerSubmitControl);
 
     inline function onbtnFilePickerSubmitControl(component, value)
     {
-        if (!value)
-        {
-			if (hideOnSubmit)
-	        	hide();
+        if (value)
+        	return;
 
-	        callback(file);
-        }
+		if (options.hideOnSubmit)
+        	hide();
+
+        callback(file, options.data);
     }
-
-    // Functions
-	inline function show(properties, cb)
+    
+    //! Functions
+    inline function setDefaultOptions()
+    {
+		options.title = "";
+		options.message = "";
+		options.startFolder = FileSystem.Downloads;
+		options.mode = 0;
+		options.hideOnSubmit = true;
+		options.forWriting = false;
+		options.bytesRequired = 0;
+		options.filter =  "";
+		options.data = {};
+    }
+    
+	inline function show(properties, callbackFunction)
 	{
-		pnlFilePicker.data.title = properties.title;
-		pnlFilePicker.data.message = properties.message;
-		pnlFilePicker.data.icon = properties.icon;
-		filter = isDefined(properties.filter) ? properties.filter : "";
-		mode = properties.mode;
-		hideOnSubmit = !isDefined(properties.hideOnSubmit) || properties.hideOnSubmit;
-		storePath = !isDefined(properties.startFolder);
-		callback = cb;
-		btnFilePickerSubmit.set("text", properties.buttonText);
+		setDefaultOptions();
+
+		for (x in properties)
+			options[x] = properties[x];
+
+		callback = callbackFunction;
+		
+		btnFilePickerSubmit.set("text", options.buttonText);
 		btnFilePickerSubmit.set("enabled", false);
-
-		if (isDefined(properties.startFolder) && properties.startFolder != "" && properties.startFolder.isDirectory())
-			startFolder = properties.startFolder;
-		else
-			startFolder = readDirFromDisk();
-
-		if (isDefined(startFolder))
+		lblFilePicker.set("textColour", Colours.withMultipliedBrightness(pnlFilePicker.get("textColour"), options.mode ? 1.0 : 0.5));
+		lblFilePicker.set("text", "");
+		
+		if (isDefined(options.startFolder))
 		{
-			btnFilePickerSubmit.set("enabled", mode == 1);
-			lblFilePicker.set("text", getTruncatedPath(startFolder, 55));
-			file = startFolder;
-		}
-		else
-		{
-			lblFilePicker.set("text", "");
+			btnFilePickerSubmit.set("enabled", options.mode == 1);
+			lblFilePicker.set("text", getTruncatedPath(options.startFolder, 55));
+			file = options.startFolder;
 		}
 
 		pnlFilePicker.repaint();
-		
-		if (!isDefined(properties.fadeIn) || properties.fadeIn)
+
+		if (!isDefined(options.fadeIn) || options.fadeIn)
 			pnlFilePicker.fadeComponent(true, 100);
 		else
 			pnlFilePicker.fadeComponent(true, 1);
@@ -139,78 +165,51 @@ namespace FilePicker
     
     inline function showFileBrowser()
     {
-	    FileSystem.browse(startFolder, false, filter, function(f)
+	    FileSystem.browse(options.startFolder, false, options.filter, function(f)
 	    {
-			if (isDefined(f) && f.isFile())
-			{
-				file = f;
-				btnFilePickerSubmit.set("enabled", true);
-				lblFilePicker.set("text", f.toString(f.Filename));
-			}
+			if (!f.isFile())
+				return;
+
+			file = f;
+
+			var fileName = f.toString(f.Filename);
+			var path = f.toString(f.FullPath).replace("/" + fileName);
+			var dir = path.substring(path.lastIndexOf("/"), path.length);
+
+			btnFilePickerSubmit.set("enabled", true);
+			lblFilePicker.set("text", ".." + dir + "/" + fileName);
+			lblFilePicker.set("textColour", pnlFilePicker.get("textColour"));
 	    });
     }
 
     inline function showDirectoryBrowser()
     {
-	    FileSystem.browseForDirectory(startFolder, function(dir)
+	    FileSystem.browseForDirectory(options.startFolder, function(dir)
 	    {
-		    if (isDefined(dir) && dir.isDirectory())
-		    {
-		    	file = dir;
+		    if (!dir.isDirectory())
+		    	return;
 
-		    	if (storePath)
-		    		writePathToDisk(dir.toString(dir.FullPath));
+		    if (options.forWriting && !dir.hasWriteAccess())
+	    		return Engine.showMessageBox("Write Access", "It is not possible to write to the selected folder, please choose a different location.", 1);
 
-		    	btnFilePickerSubmit.set("enabled", true);
-		    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
-		    }
+	    	if (options.bytesRequired > 0 && dir.getBytesFreeOnVolume() < (options.bytesRequired * 2))
+	    		return Engine.showMessageBox("Disk Space", "There is not enough free space on the selected drive, please choose a different location.", 1);
+
+	    	file = dir;
+
+	    	btnFilePickerSubmit.set("enabled", true);
+	    	lblFilePicker.set("text", getTruncatedPath(dir, 55));
 	    });
     }
-        
-    inline function getTruncatedPath(f, maxLength)
+
+    inline function: string getTruncatedPath(f: ScriptObject, maxLength: number)
     {
-		local fullPath = f.toString(startFolder.FullPath);
+		local fullPath = f.toString(f.FullPath);
 		
 		if (fullPath.length <= maxLength)
 			return fullPath;
 			
 		local subpath = fullPath.substring(fullPath.length - maxLength, fullPath.length);
-		local result = ".." + subpath.substring(subpath.indexOf("/"), subpath.length);
-		
-		return result;		
-    }
-    
-    inline function getLastFile()
-    {
-	    return file;
-    }
-    
-    inline function writePathToDisk(path)
-    {
-		local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("lastDir.txt");
-		
-		if (isDefined(f))
-			return f.writeString(path);
-			
-		return false;
-    }
-
-    inline function readDirFromDisk()
-    {
-	    local f = FileSystem.getFolder(FileSystem.AppData).getChildFile("lastDir.txt");
-
-	    if (isDefined(f) && f.isFile());
-	    {
-			local path = f.loadAsString();
-
-			if (isDefined(path) && path != "")
-			{
-				local dir = FileSystem.fromAbsolutePath(path);
-				file = dir;
-				return dir;
-			}
-	    }
-	
-	    return FileSystem.getFolder(FileSystem.Desktop);
+		return ".." + subpath.substring(subpath.indexOf("/"), subpath.length);
     }
 }
