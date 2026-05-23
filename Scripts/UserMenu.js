@@ -49,15 +49,17 @@ namespace UserMenu
 
 	lafcmbUserMenu.registerFunction("drawPopupMenuItem", function(g, obj)
 	{
-		var topLevel = ["columns", "zoom level", "check for updates"];
-		var menuIcons = {"columns": "\ue546", "zoom level": "\ued6e", "check for updates": "\ue094"};
+		if (obj.text.contains("Columns"))
+			obj.text = "e546-" + obj.text;
+		else if (obj.text.contains("Zoom"))
+			obj.text = "ed6e-" + obj.text;
 
 		LookAndFeel.drawPopupMenuItem();
 	});
 
 	lafcmbUserMenu.registerFunction("getIdealPopupMenuItemSize", function(obj)
 	{
-		var width = Engine.getStringWidth(obj.text, "regular", 18, 0.0) + 60;		
+		var width = Engine.getStringWidth(obj.text, "monoRegular", 18, 0.0) + 75;		
 		return [width, 40];
 	});
 
@@ -78,8 +80,6 @@ namespace UserMenu
 			"Zoom Level::1.5x",
 			"Zoom Level::2x"
 		]);
-
-		items.push("Check for Updates");
 
 		cmbUserMenu.set("items", items.join("\n"));
 	}

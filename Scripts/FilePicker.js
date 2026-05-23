@@ -28,32 +28,34 @@ namespace FilePicker
 	pnlFilePicker.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
+		var labelArea = Rectangle(lblFilePicker.get("x") - 10, lblFilePicker.get("y"), lblFilePicker.getWidth() + 20, lblFilePicker.getHeight());
 
 		LookAndFeel.fullPageBackground();
 		
 		g.setColour(this.get("itemColour"));
-		var lblArea = [lblFilePicker.get("x") - 10, lblFilePicker.get("y"), lblFilePicker.getWidth() + 20, lblFilePicker.getHeight()];
-		g.fillRoundedRectangle(lblArea, 2);	  
+		g.fillRoundedRectangle(labelArea, 2);
+		
+		g.setColour(Colours.withMultipliedBrightness(this.get("textColour"), 0.2));
+		g.drawRoundedRectangle(labelArea.reduced(0.5), 2, 1);
 
-		g.setFont("semibold", 22);
+		g.setFont("monoSemiBold", 22);
 		g.setColour(this.get("textColour"));
 
 		if (isDefined(options.title))
-			g.drawAlignedText(options.title, [lblArea[0] + 2, lblArea[1] - 90, a[2], 30], "left");
+			g.drawAlignedText(options.title, [labelArea[0] + 2, labelArea[1] - 90, a[2], 30], "left");
 
 		if (!isDefined(options.message))
 			return;
 
 		g.setFont("phosphor", 18);
-		g.drawAlignedText("\ue2ce", [lblArea[0] + 2, lblArea[1] - 40, 20, 20], "left");
+		g.drawAlignedText("\ue2ce", [labelArea[0] + 2, labelArea[1] - 40, 20, 20], "left");
 		
-		g.setFont("regular", 18);		
-		g.drawAlignedText(options.message, [lblArea[0] + 25, lblArea[1] - 40, lblArea[2], 20], "left");
+		g.setFont("monoRegular", 16);
+		g.drawAlignedText(options.message, [labelArea[0] + 25, labelArea[1] - 40, labelArea[2] + 50, 20], "left");
 	});
 	
 	//! lblFilePicker
 	const lblFilePicker = Content.getComponent("lblFilePicker");
-	lblFilePicker.setLocalLookAndFeel(LookAndFeel.empty);
 	lblFilePicker.setControlCallback(onlblFilePickerControl);
 	
 	inline function onlblFilePickerControl(component, value)
@@ -107,10 +109,10 @@ namespace FilePicker
         if (value)
         	return;
 
-		if (hideOnSubmit)
+		if (options.hideOnSubmit)
         	hide();
 
-        callback(file, data);
+        callback(file, options.data);
     }
     
     //! Functions
@@ -138,7 +140,7 @@ namespace FilePicker
 		
 		btnFilePickerSubmit.set("text", options.buttonText);
 		btnFilePickerSubmit.set("enabled", false);
-		lblFilePicker.set("textColour", Colours.withAlpha(lblFilePicker.get("textColour"), options.mode ? 1.0 : 0.5));
+		lblFilePicker.set("textColour", Colours.withMultipliedBrightness(pnlFilePicker.get("textColour"), options.mode ? 1.0 : 0.5));
 		lblFilePicker.set("text", "");
 		
 		if (isDefined(options.startFolder))
@@ -176,7 +178,7 @@ namespace FilePicker
 
 			btnFilePickerSubmit.set("enabled", true);
 			lblFilePicker.set("text", ".." + dir + "/" + fileName);
-			lblFilePicker.set("textColour", Colours.withAlpha(lblFilePicker.get("textColour"), 1.0));
+			lblFilePicker.set("textColour", pnlFilePicker.get("textColour"));
 	    });
     }
 
@@ -191,7 +193,7 @@ namespace FilePicker
 	    		return Engine.showMessageBox("Write Access", "It is not possible to write to the selected folder, please choose a different location.", 1);
 
 	    	if (options.bytesRequired > 0 && dir.getBytesFreeOnVolume() < (options.bytesRequired * 2))
-	    		return Engine.showMessageBox("Disk Space", "There is not enough free space on the select drive, please choose a different location.", 1);
+	    		return Engine.showMessageBox("Disk Space", "There is not enough free space on the selected drive, please choose a different location.", 1);
 
 	    	file = dir;
 

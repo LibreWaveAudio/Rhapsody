@@ -18,17 +18,16 @@
 namespace App
 {
 	const mode = "development";
-	const isOnline = Server.isOnline();
-	const systemId = FileSystem.getSystemId();
 	
 	//! pnlMain
 	const pnlMain = Content.getComponent("pnlMain");
-	/*pnlMain.setFileDropCallback("All Callbacks", "*.hr1", onpnlMainFileDrop);
+	pnlMain.setFileDropCallback("All Callbacks", "*.hr1", onpnlMainFileDrop);
 	
 	inline function onpnlMainFileDrop(obj)
 	{
-		Console.print(trace(obj));
-	}*/
+		if (obj.hover)
+			FileDropper.show();
+	}
 
 	pnlMain.setPaintRoutine(function(g)
 	{
@@ -36,11 +35,24 @@ namespace App
 
 		g.fillAll(this.get("bgColour"));
 
-		g.setColour(this.get("textColour"));
-		g.fillPath(Paths.rhapsodyFullLogo, [a[0] + 20, a[1] + 32, 168, 24]);
+		g.setFont("monoRegular", 12);
+		g.setColour(Colours.withAlpha(this.get("textColour"), 0.5));
+		g.drawAlignedText("v" + Engine.getVersion(), a.translated(-20, -5), "bottomRight");
+		
+		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
 	});
-
+	
 	//! Functions	
+	inline function registerMacros()
+	{
+		local names = [];
+
+		for (i = 1; i < 33; i++)
+			names.push("Macro " + i);
+
+		Engine.setFrontendMacros(names);
+	}
+
 	inline function createDefaultLinkFile()
 	{
 		local filename = "";
@@ -58,7 +70,8 @@ namespace App
 		if (!isDefined(f) || !f.isFile())
 			f.writeString(appData.toString(appData.FullPath));		
 	}
-	
+
 	//! Calls
-	createDefaultLinkFile();	
+	createDefaultLinkFile();
+	registerMacros();
 }

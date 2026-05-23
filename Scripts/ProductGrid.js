@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023, 2024, 2025 David Healey
+    Copyright 2022, 2023, 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 
 namespace ProductGrid
 {
-	const MARGIN = 10;
+	const MARGIN = 0;
+	const updates = [];
+
 	reg numCols = getNumColumns();
 	reg fontSize = getFontSize();
 	reg filterQuery = "";
@@ -30,12 +32,13 @@ namespace ProductGrid
 		var a = this.getLocalBounds(0);
 		
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.setFont("bold", 28);
+		g.setFont("monoBold", 28);
 		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 40], "centred");
 	});
 
 	//! pnlProductGrid
 	const pnlProductGrid = Content.getComponent("pnlProductGrid");
+	pnlProductGrid.setPaintRoutine(function(g){});
 		
 	//! Functions
 	inline function refresh()
@@ -48,7 +51,7 @@ namespace ProductGrid
 		removeAllChildPanels();
 		
 		Engine.sortWithFunction(expansions, sortExpansions);
-		
+
 		pnlProductGrid.set("height", Math.max(height, numRows * height + MARGIN * (numRows - 1)));
 
 		for (i = 0; i < expansions.length; i++)
@@ -57,6 +60,9 @@ namespace ProductGrid
 			local index = (i % numCols);
 			local x = MARGIN + (index * width) + (index * MARGIN);
 			local y = Math.floor(i / numCols) * (height + MARGIN);
+			
+			if (!isDefined(e))
+				continue;
 
 			ProductTile.create(pnlProductGrid, e, [x, y, width, height], {fontSize: fontSize});
 		}
@@ -73,8 +79,8 @@ namespace ProductGrid
 	
 	inline function sortExpansions(a, b)
 	{
-		local nameA = a.getProperties().Name;
-		local nameB = b.getProperties().Name;
+		local nameA = a.name;
+		local nameB = b.Name;
 
 		if (nameA < nameB)
 			return -1;
@@ -90,11 +96,10 @@ namespace ProductGrid
 		if (query == "")
 			return expansions;
 
-		for (x in expansions)
+		for (e in expansions)
 		{
-			local properties = x.getProperties();
-			local tags = properties.Tags.split(",");
-			
+			local tags = e.tags.split(",");
+
 			if (!isDefined(tags) || !tags.length)
 				tags = [""];
 
@@ -102,10 +107,10 @@ namespace ProductGrid
 			{
 				local t = tags[i].toLowerCase();
 
-				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(properties.Name.toLowerCase(), query) && !Engine.matchesRegex(properties.Company.toLowerCase(), query))
+				if (!Engine.matchesRegex(t.toLowerCase(), query) && !Engine.matchesRegex(e.name.toLowerCase(), query) && !Engine.matchesRegex(e.company.toLowerCase(), query))
 					continue;
 					
-				result.push(x);
+				result.push(e);
 
 				break;	
 			}
@@ -148,14 +153,14 @@ namespace ProductGrid
 	{
 		var selection = component.getItemText();
 		var options = [4, 5, 6];
-		var fontSizes = [18, 16, 14];
+		var fontSizes = [16, 14, 12];
 
 		if (!options.contains(parseInt(selection)))
 			return;
 
 		numCols = parseInt(selection);
 		fontSize = fontSizes[options.indexOf(parseInt(selection))];
-		
+
 		UserSettings.setProperty("rhapsody", "gridColumns", numCols);
 		UserSettings.setProperty("rhapsody", "gridFontSize", fontSize);
 

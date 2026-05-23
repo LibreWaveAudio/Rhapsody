@@ -1,5 +1,5 @@
 /*
-    Copyright 2021, 2022, 2023, 2024, 2025 David Healey
+    Copyright 2021, 2022, 2023, 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,12 @@
 
 namespace Spinner
 {
+	//! Server Callback
+	Server.setServerCallback(function(isWaiting)
+	{
+		isWaiting ? show() : hide();
+	});
+
 	//! pnlSpinnerContainer
 	const pnlSpinnerContainer = Content.getComponent("pnlSpinnerContainer");
 	pnlSpinnerContainer.showControl(false);
@@ -48,7 +54,7 @@ namespace Spinner
 		}
 
 		g.setColour(Colours.withAlpha(this.get("textColour"), 1 / 10 * this.getValue()));
-		g.setFont("medium", 28);
+		g.setFont("monoMedium", 28);
 		g.drawAlignedText(this.get("text"), [0, a[1] + a[3] + 125, this.getWidth(), 26], "centred");
 	});
 
@@ -79,13 +85,4 @@ namespace Spinner
 		pnlSpinner.set("text", "");
 		pnlSpinner.stopTimer();
 	}
-	
-	//! Calls
-	Server.setServerCallback(function(isWaiting)
-	{
-		if (isWaiting)
-			show();
-		else
-			hide();
-	});
 }

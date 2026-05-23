@@ -1,5 +1,5 @@
 /*
-    Copyright 2025 David Healey
+    Copyright 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,44 +36,41 @@ namespace ManualInstaller
 			mode: 0,
 			filter: "*.hr1",
 			title: "Install from File",
-			message: "Select a .hr1 file to install",
+			message: "Select a .hr1 file to install.",
 			buttonText: "Ok",
 			hideOnSubmit: false,
 		}, function(file, data)
 		{
-			var img = Expansions.getImageForPackage(file);
-			ProgressBar.setImage(img);
-
-			promptForArchiveCallback(file);
+			promptForSampleFolder(file);
 		});
-	}
-	
-	inline function promptForArchiveCallback(archive: ScriptObject)
-	{
-		local sampleFolder = Expansions.getSampleFolderForPackage(archive);
-
-		if (!sampleFolder.isDirectory())
-			return promptForSampleFolder(archive);
-
-		FilePicker.hide();
-		Expansions.install(archive, sampleFolder, true);
 	}
 
 	inline function promptForSampleFolder(archive: ScriptObject)
 	{
+		if (Expansions.isNewerVersionInstalled(archive))
+			return Engine.showMessageBox("Version", "A newer version is already installed. Please uninstall it before continuing.", 0);
+
+		local sampleFolder = Expansions.getSampleFolderForPackage(archive);
+
+		if (sampleFolder.isDirectory())
+		{
+			FilePicker.hide();
+			return Expansions.install(archive, sampleFolder);
+		}
+
 		FilePicker.show({
 			startFolder: FileSystem.getFolder(FileSystem.UserHome),
 			mode: 1,
 			filter: "",
 			title: "Install from File",
-			message: "Choose a location to install the samples.",
+			message: "Choose a folder to install the samples to.",
 			buttonText: "Install",
 			forWriting: true,
 			bytesRequired: archive.getSize(),
 			data: {archive: archive}
 		}, function(dir, data)
 		{
-			Expansions.install(data.archive, dir, true);
+			Expansions.install(data.archive, dir);
 		});
 	}
 	
