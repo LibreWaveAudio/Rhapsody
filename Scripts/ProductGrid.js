@@ -30,10 +30,22 @@ namespace ProductGrid
 	pnlProductGridContainer.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
-		
+		var value = this.getValue();
+
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
 		g.setFont("monoBold", 28);
-		g.drawAlignedText(this.get("text"), [a[0], a[1], a[2], a[3] - 40], "centred");
+		
+		if (value == 1) // No expansions found for search query
+		{
+			g.drawAlignedText("No Instruments Match Your Search", a.translated(0, -35), "centred");
+		}
+		else if (value == -1) // No expansions installed
+		{
+			g.drawAlignedText("Welcome to Rhapsody", a.translated(0, -60), "centred");
+
+			g.setFont("monoMedium", 20);
+			g.drawAlignedText("Click (+) to install an instrument", a.translated(0, -20), "centred");
+		}
 	});
 
 	//! pnlProductGrid
@@ -66,8 +78,12 @@ namespace ProductGrid
 
 			ProductTile.create(pnlProductGrid, e, [x, y, width, height], {fontSize: fontSize});
 		}
-		
-		pnlProductGridContainer.set("text", expansions.length > 0 ? "" : "No Instruments Found");
+
+		if (!Expansions.getList().length)
+			pnlProductGridContainer.setValue(-1);
+		else		
+			pnlProductGridContainer.setValue(!expansions.length && filterQuery != "");
+
 		pnlProductGridContainer.repaint();
 	}
 	

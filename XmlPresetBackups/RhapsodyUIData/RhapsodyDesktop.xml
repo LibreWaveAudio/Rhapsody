@@ -5,8 +5,9 @@
              itemColour="0" itemColour2="0" textColour="4292270813" bgColour="4279900698"
              borderSize="0.0" borderRadius="0.0">
     <Component type="ScriptPanel" id="pnlHeader" x="0" y="0" width="1000" height="90"
-               parentComponent="pnlMain" bgColour="0" itemColour="0" itemColour2="0"
-               textColour="4292270813" borderSize="0.0" borderRadius="0.0" allowCallbacks="Clicks Only">
+               parentComponent="pnlMain" bgColour="4279900698" itemColour="0"
+               itemColour2="0" textColour="4292270813" borderSize="0.0" borderRadius="0.0"
+               allowCallbacks="Clicks Only">
       <Component type="ScriptPanel" id="pnlFilter" x="750" y="0" width="235" height="90"
                  bgColour="4279243026" itemColour="0" itemColour2="0" textColour="4292270813"
                  borderSize="1.0" borderRadius="3.0" parentComponent="pnlHeader"
@@ -77,15 +78,17 @@
                textColour="4292270813" parentComponent="pnlMain" visible="0">
       <Component type="ScriptLabel" id="lblFilePicker" x="250" y="345" width="500"
                  height="36" itemColour2="0" parentComponent="pnlFilePicker" fontName="monoRegular"
-                 fontSize="16.0" alignment="left" text="/home/dave" textColour="-2696483"/>
+                 fontSize="16.0" alignment="left" text="/home/dave/Downloads"
+                 textColour="-9736850"/>
       <Component type="ScriptButton" id="btnFilePicker" x="732" y="353" text="e256"
                  width="20" height="20" bgColour="0" itemColour="0" itemColour2="0"
                  textColour="4292270813" saveInPreset="0" parentComponent="pnlFilePicker"
                  isMomentary="1" enableMidiLearn="0" mouseCursor="PointingHandCursor"/>
       <Component type="ScriptButton" id="btnFilePickerSubmit" x="635" y="409"
-                 text="Install" width="125" height="34" bgColour="4287993237"
-                 itemColour="0" itemColour2="0" saveInPreset="0" parentComponent="pnlFilePicker"
-                 isMomentary="1" enableMidiLearn="0" textColour="4278190080" mouseCursor="PointingHandCursor"/>
+                 text="Ok" width="125" height="34" bgColour="4287993237" itemColour="0"
+                 itemColour2="0" saveInPreset="0" parentComponent="pnlFilePicker"
+                 isMomentary="1" enableMidiLearn="0" textColour="4278190080" mouseCursor="PointingHandCursor"
+                 enabled="0"/>
       <Component type="ScriptButton" id="btnFilePickerCancel" x="490" y="409"
                  text="CANCEL" width="125" height="34" bgColour="0" itemColour="4282992970"
                  itemColour2="0" saveInPreset="0" parentComponent="pnlFilePicker"

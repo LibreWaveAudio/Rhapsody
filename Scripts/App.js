@@ -16,9 +16,7 @@
 */
 
 namespace App
-{
-	const mode = "development";
-	
+{	
 	//! pnlMain
 	const pnlMain = Content.getComponent("pnlMain");
 	pnlMain.setFileDropCallback("All Callbacks", "*.hr1", onpnlMainFileDrop);

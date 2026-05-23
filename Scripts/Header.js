@@ -24,6 +24,8 @@ namespace Header
 	{
 		var a = this.getLocalBounds(0);
 	
+		g.fillAll(this.get("bgColour"));
+	
 		g.setColour(this.get("textColour"));
 		g.fillPath(Paths.rhapsodyFullLogo, [a[0] + 20, a[1] + 32, 168, 24]);
 
