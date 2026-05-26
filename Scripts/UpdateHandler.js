@@ -24,16 +24,37 @@ namespace UpdateHandler
 	const expansionData = [];
 
 	//! Functions
+	inline function manualCheck()
+	{
+		local now = Date.getSystemTimeMs();
+		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
+		local msPerDay = 86400000;
+
+		if ((now - lastChecked) < msPerDay)
+			return Engine.showMessageBox("No Updates", "There are no new updates.", 0);
+
+		if (!Server.isOnline)
+			return Engine.showMessageBox("Offline", "You are currently offline.", 1);
+
+		UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
+
+		checkForExpansionUpdates();
+		checkForAppUpdate();
+	}
+	
 	inline function autoCheck()
 	{
 		local now = Date.getSystemTimeMs();
 		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
-		local MS_PER_WEEK = 604800000;
+		local msPerWeek = 604800000;
+
+		if (!isDefined(lastChecked))
+			return UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
 
 		if (!Server.isOnline)
 			return;
 
-		if ((now - lastChecked) < MS_PER_WEEK)
+		if ((now - lastChecked) < msPerWeek)
 			return;
 
 		Engine.showYesNoWindow("Update Check", "It's been a while since you last checked for updates. Check now?", function(response)
@@ -225,6 +246,20 @@ namespace UpdateHandler
 	
 		return 0;
 	}
+	
+	//! Broadcasters
+	const bcUserMenuValue = Engine.createBroadcaster({id: "bcUpdateMenuValue", args: ["component", "value"]});
+	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
+	
+	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
+	{
+		var selection = component.getItemText();
+
+		if (selection != "Check for Updates")
+			return;
+			
+		manualCheck();
+	});
 	
 	//! Calls
 	autoCheck();

@@ -47,7 +47,7 @@
                  height="22" parentComponent="pnlFooter" bgColour="0" itemColour="0"
                  itemColour2="0" textColour="0" borderSize="0.0" borderRadius="0.0">
         <Component type="ScriptComboBox" id="cmbUserMenu" x="0" y="0" width="22"
-                   height="22" max="7" saveInPreset="0" items="Columns::4&#10;Columns::5&#10;Columns::6&#10;Zoom Level::0.75x&#10;Zoom Level::1.0x&#10;Zoom Level::1.5x&#10;Zoom Level::2x"
+                   height="22" max="10" saveInPreset="0" items="Columns::4&#10;Columns::5&#10;Columns::6&#10;UI Scale::0.5x&#10;UI Scale::0.75x&#10;UI Scale::1.0x&#10;UI Scale::1.25x&#10;UI Scale::1.5x&#10;UI Scale::1.75x&#10;Check for Updates"
                    fontName="regular" fontSize="16.0" textColour="4292270813" parentComponent="pnlUserMenuContainer"
                    useCustomPopup="1" bgColour="0xff313244"/>
       </Component>

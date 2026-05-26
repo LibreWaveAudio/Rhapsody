@@ -164,14 +164,14 @@ namespace ProductGrid
 
 	const bcUserMenuValue = Engine.createBroadcaster({id: "bcGridMenuValue", args: ["component", "value"]});
 	bcUserMenuValue.attachToComponentValue("cmbUserMenu", "");
-	
+
 	bcUserMenuValue.addListener(0, "React to menu selection", function(component, value)
 	{
 		var selection = component.getItemText();
 		var options = [4, 5, 6];
 		var fontSizes = [16, 14, 12];
 
-		if (!options.contains(parseInt(selection)))
+		if (!Engine.matchesRegex(selection, "^\\d$"))
 			return;
 
 		numCols = parseInt(selection);

@@ -49,9 +49,11 @@ namespace UserMenu
 
 	lafcmbUserMenu.registerFunction("drawPopupMenuItem", function(g, obj)
 	{
-		if (obj.text.contains("Columns"))
+		if (obj.text.contains("Check for Update"))
+			obj.text = "e096-" + obj.text;
+		else if (obj.text.contains("Columns"))
 			obj.text = "e546-" + obj.text;
-		else if (obj.text.contains("Zoom"))
+		else if (obj.text.contains("UI Scale"))
 			obj.text = "ed6e-" + obj.text;
 
 		LookAndFeel.drawPopupMenuItem();
@@ -67,6 +69,7 @@ namespace UserMenu
 	inline function updateMenuItems()
 	{
 		local items = [];
+		local zoomLevels = ZoomHandler.getZoomLevels();
 		
 		items.concat([
 			"Columns::4",
@@ -74,12 +77,10 @@ namespace UserMenu
 			"Columns::6"
 		]);
 
-		items.concat([
-			"Zoom Level::0.75x",
-			"Zoom Level::1.0x",
-			"Zoom Level::1.5x",
-			"Zoom Level::2x"
-		]);
+		for (x in zoomLevels)
+			items.push("UI Scale::" + x + "x");
+		
+		items.push("Check for Updates");
 
 		cmbUserMenu.set("items", items.join("\n"));
 	}

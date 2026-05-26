@@ -1,5 +1,5 @@
 /*
-    Copyright 2024, 2025 David Healey
+    Copyright 2024, 2025, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
 
 namespace ZoomHandler
 {
-	const zoomLevels = [0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0];
-	const MIN_ZOOM = 1.0;
-	const MAX_ZOOM = 4.0;
-	const ZOOM_STEP = 0.1;
 	const interfaceSize = Content.getInterfaceSize();
+	const screenBounds = Content.getScreenBounds(false);
+	const minZoom = 0.5;
+	const maxZoom = Math.floor(screenBounds[3] / interfaceSize[1] * 4) / 4;
+	const zoomStep = 0.1;
 
 	//! pnlZoom
 	const pnlZoom = Content.addPanel("pnlZoom", 0, 0);
@@ -32,7 +32,8 @@ namespace ZoomHandler
 
 	inline function onpnlZoomControl(component, value)
 	{
-		Settings.setZoomLevel(value);
+		if (value <= maxZoom)
+			Settings.setZoomLevel(value);
 	}
 
 	pnlZoom.setPaintRoutine(function(g)
@@ -45,23 +46,23 @@ namespace ZoomHandler
 	pnlZoom.setMouseCallback(function(event)
 	{
 		this.data.hover = event.hover;
-		
+
 		if (event.mouseUp)
 			return;
-		
+
 		if (event.clicked)
 			this.data.zoomStart = Settings.getZoomLevel();
-	
+
 		if (!event.drag)
 			return this.repaint();
-	
+
 		if (!this.data.allowDrag)
 			return;
 
 		var diagonal = Math.sqrt(interfaceSize[0] * interfaceSize[0] + interfaceSize[1] * interfaceSize[1]);
 		var currentZoom = Settings.getZoomLevel();
 		var dragPixel = 0;
-		
+
 		if (event.dragX > event.dragY)
 			dragPixel = (event.dragX * currentZoom) / interfaceSize[0];
 		else
@@ -69,21 +70,17 @@ namespace ZoomHandler
 		
 		var maxScaleFactor = Content.getScreenBounds(false)[3] / interfaceSize[1];
 		var diagonalDrag = this.data.zoomStart + dragPixel;
-		
-		diagonalDrag += (ZOOM_STEP / 2);
-		
-		diagonalDrag = Math.min(diagonalDrag, maxScaleFactor);
-		
-		diagonalDrag -= Math.fmod(diagonalDrag, ZOOM_STEP);
-		diagonalDrag = Math.range(diagonalDrag, MIN_ZOOM, MAX_ZOOM);
-		
-		var zoomToUse = diagonalDrag;
 
-		if (currentZoom != zoomToUse)
-		{
-			this.setValue(zoomToUse);
-			this.changed();
-		}			
+		diagonalDrag += (zoomStep / 2);		
+		diagonalDrag = Math.min(diagonalDrag, maxScaleFactor);		
+		diagonalDrag -= Math.fmod(diagonalDrag, zoomStep);
+		diagonalDrag = Math.range(diagonalDrag, minZoom, maxZoom);
+
+		if (currentZoom == diagonalDrag)
+			return;
+
+		this.setValue(diagonalDrag);
+		this.changed();
 	});
 	
 	//! Functions
@@ -94,26 +91,37 @@ namespace ZoomHandler
 		panel.repaint();
 	}
 
+	inline function: Array getZoomLevels()
+	{
+		local result = [];
+		local level = 0.5;
+		
+		while(level <= maxZoom || level >= 4)
+		{
+			result.push(level);
+			level += 0.25;
+		}
+		
+		return result;
+	}
+	
 	//! Broadcasters
 
 	//! bccmbUserMenuZoom
-	const var bccmbUserMenu = Engine.createBroadcaster({"id": "bccmbUserMenu", "args": ["component", "value"]});
+	const var bccmbUserMenu = Engine.createBroadcaster({id: "bccmbUserMenu", args: ["component", "value"]});
 	bccmbUserMenu.attachToComponentValue("cmbUserMenu", "");
 
-	bccmbUserMenu.addComponentValueListener("pnlZoom", "pnlZoom will follow changes to cmbZoom", function(index, component, value)
+	bccmbUserMenu.addComponentValueListener(pnlZoom, "pnlZoom will follow changes to cmbZoom", function(index, component, value)
 	{
-		var menuItems = ["0.75x", "1.0x", "1.5x", "2x"];
-
-		if (!menuItems.contains(component.getItemText()))
+		if (!Engine.matchesRegex(component.getItemText(), "^(\\d+)(\\.\\d+)x$"))
 			return this.getValue();
 
 		var zoomLevel = parseFloat(component.getItemText());
-
 		Settings.setZoomLevel(zoomLevel);
-		
+
 		return zoomLevel;
 	});
-	
+
 	//! Calls
 	allowZoom(pnlZoom, true);
 	pnlZoom.setValue(Settings.getZoomLevel());

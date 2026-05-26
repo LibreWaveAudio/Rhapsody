@@ -28,12 +28,12 @@ include("UpdateHandler.js");
 include("ProductGrid.js");
 include("ProductTile.js");
 include("ManualInstaller.js");
+include("ZoomHandler.js");
 include("UserMenu.js");
 include("FilePicker.js");
 include("FileDropper.js");
 include("UserSettings.js");
 include("ProgressBar.js");
-include("ZoomHandler.js");
 
 function onNoteOn()
 {
