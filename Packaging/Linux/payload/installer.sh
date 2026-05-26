@@ -1,7 +1,7 @@
 #!/bin/bash
 
-COMPANY_NAME="company"
-PROJECT_NAME="product"
+COMPANY_NAME="Libre Wave"
+PROJECT_NAME="Rhapsody"
 INSTALL_DATA=false
 
 # Check available plugin formats
@@ -69,8 +69,7 @@ if $HAS_STANDALONE; then
          read STANDALONE_PATH
         done
         
-        cp -i "$PROJECT_NAME" "$STANDALONE_PATH"
-        cp -i "License.txt" "$STANDALONE_PATH"
+        cp -i standalone/"$PROJECT_NAME" "$STANDALONE_PATH"
 
       	# icons
         ICONS_BASE="/usr/share/icons/hicolor"
@@ -88,7 +87,7 @@ if $HAS_STANDALONE; then
           "$ICONS_BASE/${size}x${size}/apps/$ICON_NAME.png"
       	done
 
-	      # ensure icons are readable
+	# ensure icons are readable
         sudo chmod 644 /usr/share/icons/hicolor/*/apps/$ICON_NAME.*
 
         # desktop file (assumes one primary binary named like PROJECT_NAME)
@@ -103,6 +102,7 @@ if $HAS_STANDALONE; then
         Terminal=false
 EOF
         sudo chmod 644 "/usr/share/applications/$ICON_NAME.desktop"
+	sudo gtk-update-icon-cache /usr/share/icons/hicolor
     else
         echo "The standalone application(s) will not be installed"
     fi
