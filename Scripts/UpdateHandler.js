@@ -27,7 +27,7 @@ namespace UpdateHandler
 	inline function manualCheck()
 	{
 		local now = Date.getSystemTimeMs();
-		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
+		local lastChecked = parseInt(UserSettings.getProperty("rhapsody", "lastUpdateChecked"));
 		local msPerDay = 86400000;
 
 		if ((now - lastChecked) < msPerDay)
@@ -41,7 +41,7 @@ namespace UpdateHandler
 		checkForExpansionUpdates();
 		checkForAppUpdate();
 	}
-	
+
 	inline function autoCheck()
 	{
 		local now = Date.getSystemTimeMs();
@@ -54,7 +54,7 @@ namespace UpdateHandler
 		if (!Server.isOnline)
 			return;
 
-		if ((now - lastChecked) < msPerWeek)
+		if ((now - parseInt(lastChecked)) < msPerWeek)
 			return;
 
 		Engine.showYesNoWindow("Update Check", "It's been a while since you last checked for updates. Check now?", function(response)
