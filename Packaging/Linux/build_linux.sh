@@ -52,15 +52,17 @@ if [ "$BUILD_PROJECT" -eq 1 ]; then
 	mkdir -p "$PROJECT_DIR/Binaries"
 	cd "$PROJECT_DIR/Binaries"
 
+	"$HISE_PATH" clean -p:$PROJECT_DIR --all
+
 	echo Building the standalone app
-	"$HISE_PATH" export_ci "XmlPresetBackups/$PROJECT_NAME.xml" -t:standalone -a:x64 -p:""
+	"$HISE_PATH" export_ci "XmlPresetBackups/${PROJECT_NAME}.xml" -t:standalone -a:x64 -p:""
 	sh "./batchCompileLinux.sh"
 	cp "./Builds/LinuxMakefile/build/$PROJECT_NAME" "$PAYLOAD_DIR/standalone"
 
 	echo Building the plugin
-	"$HISE_PATH" export_ci "XmlPresetBackups/$PROJECT_NAME.xml" -t:instrument -p:VST3 -a:x64
+	"$HISE_PATH" export_ci "XmlPresetBackups/${PROJECT_NAME}.xml" -t:instrument -p:VST3 -a:x64
 	sh "./batchCompileLinux.sh"
-	cp -R "./Builds/LinuxMakefile/build/$PROJECT_NAME.vst3" "$PAYLOAD_DIR/vst3"
+	cp -R "./Builds/LinuxMakefile/build/${PROJECT_NAME}.vst3" "$PAYLOAD_DIR/vst3"
 fi
 
 if [ "$BUILD_INSTALLER" -eq 1 ]; then

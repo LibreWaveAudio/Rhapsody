@@ -12,5 +12,12 @@ Compiled/
 *.hxp
 *.hr*
 *.ch*
+*.run
+._*
+payload/vst3
+payload/clap
+payload/lv2
+payload/standalone
+icon_template.svg
 .DS_Store
 expansion_info.xml
