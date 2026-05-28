@@ -37,6 +37,10 @@ fi
 PROJECT_VERSION=$(grep "<Version" "$PROJECT_DIR/project_info.xml" | cut -d'"' -f2)
 
 if [ "$BUILD_PROJECT" -eq 1 ]; then
+	
+	cd $PROJECT_DIR 
+	git pull
+	
 	# Create PAYLOAD_DIR directories
 	rm -R -f "$PAYLOAD_DIR/vst3"
 	mkdir "$PAYLOAD_DIR/vst3"
@@ -67,7 +71,7 @@ fi
 
 if [ "$BUILD_INSTALLER" -eq 1 ]; then
 
-	ARCHIVE_NAME="${PROJECT_NAME}-${PROJECT_VERSION}.run"
+	ARCHIVE_NAME="${PROJECT_NAME}-Installer-${PROJECT_VERSION}.run"
 
 	echo
 	echo "Building installer: $ARCHIVE_NAME"

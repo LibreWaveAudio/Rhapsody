@@ -8,7 +8,7 @@ NOTARIZE=$5
 
 PROJECT_NAME="Rhapsody"
 BUNDLE_ID='com.'${PROJECT_NAME// /}'.pkg'
-AAX_ID=2B367510-55DC-11EF-A821-00505692C25A
+AAX_GUID=2B367510-55DC-11EF-A821-00505692C25A
 PROJECT_DIR="$(dirname "$(dirname "$(dirname "${BASH_SOURCE[0]}")")")"
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PAYLOAD_DIR=$SCRIPT_DIR/payload
@@ -45,6 +45,9 @@ PROJECT_VERSION=$(grep "<Version" "$PROJECT_DIR/project_info.xml" | cut -d'"' -f
 
 if (( BUILD_PROJECT == 1 )); then
 	
+  cd $PROJECT_DIR 
+  git pull
+  
   # Create PAYLOAD_DIR directory
 	rm -R -f "$PAYLOAD_DIR"
 	mkdir "$PAYLOAD_DIR"
@@ -52,12 +55,11 @@ if (( BUILD_PROJECT == 1 )); then
 	# Build the binaries
 	"$HISE_PATH" set_hise_folder -p:"$HISE_SOURCE"
 	"$HISE_PATH" set_project_folder -p:"$PROJECT_DIR"
+  "$HISE_PATH" clean -p:$PROJECT_DIR --all
 
 	# Create and enter binaries directory
 	mkdir -p "$PROJECT_DIR/Binaries"
 	cd "$PROJECT_DIR/Binaries"
-
-  "$HISE_PATH" clean -p:$PROJECT_DIR --all
   
 	echo Building the standalone app
   "$HISE_PATH" export_ci "XmlPresetBackups/${PROJECT_NAME}.xml" -t:standalone -p:""
@@ -87,7 +89,7 @@ if (( CODESIGN == 1 )); then
   
   echo Codesigning AAX
   codesign --remove-signature "$PAYLOAD_DIR/${PROJECT_NAME}.aaxplugin"  
-  $WRAPTOOL sign --verbose --account $AAX_ACCOUNT_NAME --signid "Developer ID Application: $TEAM_ID" --wcguid $AAX_ID --in "$PAYLOAD_DIR/${PROJECT_NAME}.aaxplugin" --out "$PAYLOAD_DIR/${PROJECT_NAME}.aaxplugin" --dsig1-compat off
+  $WRAPTOOL sign --verbose --account $AAX_ACCOUNT_NAME --signid "Developer ID Application: $TEAM_ID" --wcguid $AAX_GUID --in "$PAYLOAD_DIR/${PROJECT_NAME}.aaxplugin" --out "$PAYLOAD_DIR/${PROJECT_NAME}.aaxplugin" --dsig1-compat off
 fi
 
 if (( BUILD_INSTALLER == 1 )); then
