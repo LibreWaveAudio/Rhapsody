@@ -43,11 +43,11 @@ namespace LookAndFeel
 		local titleFontSize = 24;
 		local font = "monoRegular";
 		local fontSize = 20;
-		local bgColour = 0xff2a2d32;
-		local itemColour = 0xff202428;
-		local itemColour2 = 0x55d7d8da;
-		local itemColour3 = 0xff15191d;
-		local textColour = 0xffd7d8da;
+		local bgColour = 0xff2f2f2f;
+		local itemColour = 0xff1f1f1f;
+		local itemColour2 = 0x77d6dadd;
+		local itemColour3 = 0xff101112;
+		local textColour = 0xffd6dadd;
 		local radius = 2;
 		local borderSize = 1;
 		local labelRadius = 2;
@@ -158,8 +158,8 @@ namespace LookAndFeel
 	{
 		local a = obj.area;
 		local text = obj.text;
-		local bgColour = 0xff202428;
-		local textColour = 0xffd7d8da;
+		local bgColour = 0xff1d1d1d;
+		local textColour = 0xffd6dadd;
 		local font = "monoMedium";
 		local fontSize = 18;
 		local radius = 2;
@@ -199,8 +199,8 @@ namespace LookAndFeel
 	inline function drawPopupMenuBackground()
 	{
 		local a = obj.area;
-		local bgColour = 0xff202428;
-		local borderColour = 0x77d7d8da;
+		local bgColour = 0xff1f1f1f;
+		local borderColour = 0x77d6dadd;
 		local borderSize = 1;
 		local borderRadius = 2;
 	

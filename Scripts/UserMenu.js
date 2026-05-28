@@ -61,11 +61,17 @@ namespace UserMenu
 
 	lafcmbUserMenu.registerFunction("getIdealPopupMenuItemSize", function(obj)
 	{
-		var width = Engine.getStringWidth(obj.text, "monoRegular", 18, 0.0) + 75;		
+		var width = Engine.getStringWidth(obj.text, "monoRegular", 18, 0.0) + 40 + (35 * isTopLevel(obj.text));
 		return [width, 40];
 	});
 
 	//! Functions
+	inline function: number isTopLevel(text: string)
+	{
+		local topLevel = ["columns", "ui scale", "check for updates"];
+		return topLevel.contains(text.toLowerCase());
+	}
+	
 	inline function updateMenuItems()
 	{
 		local items = [];
