@@ -60,14 +60,14 @@ namespace ProductTile
 
 			var badgeArea = Rectangle(imgArea[0] + imgArea[2] - 38, imgArea[1] + 8, 30, 30).reduced(3);
 
-			g.setColour(0xffff9807);
+			g.setColour(0xffd8c29b);
 			g.fillEllipse(badgeArea);
 
-			g.setColour(Colours.white);
-			g.drawEllipse(badgeArea, 2);
+			g.setColour(Colours.black);
+			g.drawEllipse(badgeArea, 1);
 
-			g.setFont("phosphorFill", 16);
-			g.drawAlignedText("\ue5e8", badgeArea, "centred");
+			g.setFont("phosphor", 16);
+			g.drawAlignedText("\ue0ce", badgeArea, "centred");
 		});
 
 		p.setMouseCallback(function(event)
