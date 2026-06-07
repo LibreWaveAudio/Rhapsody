@@ -102,7 +102,7 @@ namespace ProductTile
 		g.fillRect(area);
 
 		g.setColour(0xffe2e2e2);
-		g.fillPath(Paths.rhapsodyLogoWithBg, area.reduced(60));
+		g.fillPath(Paths.rhapsodyIcon, area.reduced(75));
 	}
 	
 	inline function: ScriptObject createMenu(parentPanel: ScriptObject)

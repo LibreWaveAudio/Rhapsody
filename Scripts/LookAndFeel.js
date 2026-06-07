@@ -283,13 +283,8 @@ namespace LookAndFeel
 		g.fillAll(this.get("bgColour"));
 
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);
-
-		g.setFont("title", Engine.getOS() == "WIN" ? 42 : 28);
-		g.drawAlignedText(Engine.getName().toUpperCase(), [0, 135 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
-
-		g.setFont("phosphor", 12);
-		g.drawAlignedText("\ue3f4", [85, 138 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
+		g.fillPath(Paths.rhapsodyIcon, [a[2] / 2 - 36 / 2, 80, 36, 36]);		
+		g.fillPath(Paths.rhapsodyWordMark,  [a[2] / 2 - 164 / 2, 135, 164, 20]);
 	}
 	
 	//! Scrollbar
