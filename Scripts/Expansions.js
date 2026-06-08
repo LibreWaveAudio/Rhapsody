@@ -219,9 +219,12 @@ namespace Expansions
 				relocateSamples(data, dir);
 			});
 	}
-		
+
 	inline function relocateSamples(expansion: ScriptObject, dir: ScriptObject)
 	{
+		if (dir.isSameFileAs(expansion.getSampleFolder()))
+			return Engine.showMessageBox("Success", "Sample folder relocated successfully. Please restart Rhapsody.", 0);	
+
 		if (expansion.setSampleFolder(dir))
 			Engine.showMessageBox("Success", "Sample folder relocated successfully. Please restart Rhapsody.", 0);
 		else
