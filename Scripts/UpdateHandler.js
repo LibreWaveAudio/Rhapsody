@@ -46,7 +46,7 @@ namespace UpdateHandler
 	{
 		local now = Date.getSystemTimeMs();
 		local lastChecked = UserSettings.getProperty("rhapsody", "lastUpdateChecked");
-		local msPerWeek = 604800000;
+		local msPerMonth = 604800000 * 4;
 
 		if (!isDefined(lastChecked))
 			return UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
@@ -54,7 +54,7 @@ namespace UpdateHandler
 		if (!Server.isOnline)
 			return;
 
-		if ((now - parseInt(lastChecked)) < msPerWeek)
+		if ((now - parseInt(lastChecked)) < msPerMonth)
 			return;
 
 		Engine.showYesNoWindow("Update Check", "It's been a while since you last checked for updates. Check now?", function(response)
