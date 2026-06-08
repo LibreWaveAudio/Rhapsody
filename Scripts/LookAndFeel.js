@@ -283,8 +283,7 @@ namespace LookAndFeel
 		g.fillAll(this.get("bgColour"));
 
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.fillPath(Paths.rhapsodyIcon, [a[2] / 2 - 36 / 2, 80, 36, 36]);		
-		g.fillPath(Paths.rhapsodyWordMark,  [a[2] / 2 - 164 / 2, 135, 164, 20]);
+		g.fillPath(Paths.rhapsodyLogo, [a[2] / 2 - 223 / 2, 80, 223, 38]);
 	}
 	
 	//! Scrollbar

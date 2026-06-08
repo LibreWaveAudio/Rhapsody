@@ -27,7 +27,7 @@ namespace Header
 		g.fillAll(this.get("bgColour"));
 
 		g.setColour(this.get("textColour"));
-		g.fillPath(Paths.rhapsodyWordMark, [a[0] + 25, a[1] + 37, 131, 16]);
+		g.fillPath(Paths.rhapsodyLogo, [a[0] + 25, a[1] + 34, 141, 24]);
 
 		g.addNoise({alpha: 0.025, scaleFactor: 1.5, area: a.toArray(), monochromatic: true});
 	});
