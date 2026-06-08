@@ -6,7 +6,7 @@
              borderSize="0.0" borderRadius="0.0">
     <Component type="ScriptPanel" id="pnlHeader" x="0" y="0" width="1000" height="90"
                parentComponent="pnlMain" bgColour="4279900698" itemColour="0"
-               itemColour2="0" textColour="4292270813" borderSize="0.0" borderRadius="0.0"
+               itemColour2="0" textColour="4291480266" borderSize="0.0" borderRadius="0.0"
                allowCallbacks="Clicks Only">
       <Component type="ScriptPanel" id="pnlFilter" x="750" y="0" width="235" height="90"
                  bgColour="4279243026" itemColour="0" itemColour2="0" textColour="4292270813"
