@@ -77,7 +77,9 @@ if [ "$BUILD_INSTALLER" -eq 1 ]; then
 	echo "Building installer: $ARCHIVE_NAME"
 	echo
 
-	rm "$PAYLOAD_DIR/$ARCHIVE_NAME"
+	chmod +x "$PAYLOAD_DIR/installer.sh"
+
+	rm -f "$SCRIPT_DIR/$ARCHIVE_NAME"
 	
 	makeself --license "$PAYLOAD_DIR/License.txt" "$PAYLOAD_DIR" "$ARCHIVE_NAME" "$PROJECT_NAME" ./installer.sh
 fi
