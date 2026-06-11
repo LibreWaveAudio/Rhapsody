@@ -108,7 +108,7 @@ if (( BUILD_INSTALLER == 1 )); then
   
   echo Installer Cleanup
   rm -rf "$SCRIPT_DIR/build"
-  rm pkgproj
+  rm $pkgproj
 fi
 
 if (( NOTARIZE == 1 )); then
