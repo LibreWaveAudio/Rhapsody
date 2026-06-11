@@ -71,6 +71,8 @@ fi
 
 if [ "$BUILD_INSTALLER" -eq 1 ]; then
 
+	cd "$SCRIPT_DIR"
+
 	ARCHIVE_NAME="${PROJECT_NAME}-Installer-${PROJECT_VERSION}.run"
 
 	echo
