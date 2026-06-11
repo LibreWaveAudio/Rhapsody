@@ -21,13 +21,14 @@ namespace ZoomHandler
 	const screenBounds = Content.getScreenBounds(false);
 	const minZoom = 0.5;
 	const maxZoom = Math.floor(screenBounds[3] / interfaceSize[1] * 4) / 4;
-	const zoomStep = 0.1;
+	const zoomStep = 0.05;
 
 	//! pnlZoom
 	const pnlZoom = Content.addPanel("pnlZoom", 0, 0);
 	pnlZoom.set("parentComponent", "pnlMain");
-	pnlZoom.setPosition(interfaceSize[0] - 12, interfaceSize[1] - 12, 12, 12);
 	pnlZoom.set("allowCallbacks", "All Callbacks");
+	pnlZoom.setMouseCursor("BottomRightCornerResizeCursor", Colours.white, [0, 0]);
+	pnlZoom.setPosition(interfaceSize[0] - 12, interfaceSize[1] - 12, 12, 12);	
 	pnlZoom.setControlCallback(onpnlZoomControl);	
 
 	inline function onpnlZoomControl(component, value)
@@ -56,9 +57,6 @@ namespace ZoomHandler
 		if (!event.drag)
 			return this.repaint();
 
-		if (!this.data.allowDrag)
-			return;
-
 		var diagonal = Math.sqrt(interfaceSize[0] * interfaceSize[0] + interfaceSize[1] * interfaceSize[1]);
 		var currentZoom = Settings.getZoomLevel();
 		var dragPixel = 0;
@@ -68,7 +66,7 @@ namespace ZoomHandler
 		else
 			dragPixel = (event.dragY * currentZoom) / interfaceSize[1];
 		
-		var maxScaleFactor = Content.getScreenBounds(false)[3] / interfaceSize[1];
+		var maxScaleFactor = screenBounds[3] / interfaceSize[1];
 		var diagonalDrag = this.data.zoomStart + dragPixel;
 
 		diagonalDrag += (zoomStep / 2);		
@@ -84,13 +82,6 @@ namespace ZoomHandler
 	});
 	
 	//! Functions
-	inline function allowZoom(panel: ScriptObject, on: number)
-	{
-		panel.data.allowDrag = on;
-		panel.setMouseCursor(on ? "BottomRightCornerResizeCursor" : "NormalCursor", Colours.white, [0, 0]);
-		panel.repaint();
-	}
-
 	inline function: Array getZoomLevels()
 	{
 		local result = [];
@@ -111,7 +102,7 @@ namespace ZoomHandler
 	const var bccmbUserMenu = Engine.createBroadcaster({id: "bccmbUserMenu", args: ["component", "value"]});
 	bccmbUserMenu.attachToComponentValue("cmbUserMenu", "");
 
-	bccmbUserMenu.addComponentValueListener(pnlZoom, "pnlZoom will follow changes to cmbZoom", function(index, component, value)
+	bccmbUserMenu.addComponentValueListener(pnlZoom, "pnlZoom will follow changes to user menu option", function(index, component, value)
 	{
 		if (!Engine.matchesRegex(component.getItemText(), "^(\\d+)(\\.\\d+)x$"))
 			return this.getValue();
@@ -123,6 +114,5 @@ namespace ZoomHandler
 	});
 
 	//! Calls
-	allowZoom(pnlZoom, true);
 	pnlZoom.setValue(Settings.getZoomLevel());
 }
