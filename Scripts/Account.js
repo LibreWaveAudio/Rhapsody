@@ -17,7 +17,7 @@
 
 namespace Account
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData);
+	const appData = FileSystem.getFolder(FileSystem.AppData).getParentDirectory().createDirectory("Rhapsody");
 	reg workingOffline = UserSettings.getProperty(Engine.getName().toLowerCase(), "offline-mode");
 	
 	// btnAccount

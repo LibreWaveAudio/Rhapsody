@@ -185,7 +185,8 @@ namespace LookAndFeel
         var a = obj.area;
         var h = 40;
 
-		g.fillAll(0xff2F2F34);
+		g.setColour(0xff2F2F34);
+		g.fillRect(a);
 
         g.setColour(0xff161619);
         g.fillRect([a[0], a[1], a[2], h]);

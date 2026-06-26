@@ -17,7 +17,7 @@
 
 namespace Library
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData);
+	const appData = FileSystem.getFolder(FileSystem.AppData).getParentDirectory().createDirectory("Rhapsody");
 
 	reg cache = appData.createDirectory("cache");
 	

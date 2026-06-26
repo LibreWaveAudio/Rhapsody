@@ -17,7 +17,7 @@
 
 namespace Expansions
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData);	
+	const appData = FileSystem.getFolder(FileSystem.AppData).getParentDirectory().createDirectory("Rhapsody");
 	const expHandler = Engine.createExpansionHandler();
 
 	reg extractionCount;
@@ -203,7 +203,7 @@ namespace Expansions
 		if (isManual)
 			Library.updateCatalogue();
 		else
-			Downloader.cleanUp();			
+			Downloader.cleanUp();
 
 		isManual = false;
 		Spinner.hide();
@@ -211,7 +211,7 @@ namespace Expansions
 
 	inline function getRhapsodyExpansionsDirectory()
 	{
-		return appData.getParentDirectory().createDirectory("Rhapsody").createDirectory("Expansions");
+		return appData.createDirectory("Expansions");
 	}
 
 	inline function createLinkFile(expName, target)

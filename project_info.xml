@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ProjectSettings>
-  <Name value="Rhapsody"/>
-  <Version value="2.5.2"/>
+  <Name value="Rhapsody 2"/>
+  <Version value="2.6.0"/>
   <Description value="Application for downloading and managing Rhapsody sample libraries"/>
-  <BundleIdentifier value="com.librewave.rhapsody"/>
-  <PluginCode value="Lwrp"/>
+  <BundleIdentifier value="com.librewave.rhapsody2"/>
+  <PluginCode value="Lwra"/>
   <EmbedAudioFiles value="Yes"/>
   <EmbedImageFiles value="Yes"/>
   <SupportFullDynamicsHLAC value="1"/>
@@ -42,4 +42,5 @@
   <CompileWithDebugSymbols value="No"/>
   <IncludeLorisInFrontend value="No"/>
   <ExtraDefinitionsNetworkDll value=""/>
+  <ProjectType value="Instrument"/>
 </ProjectSettings>
