@@ -5,7 +5,6 @@ Expansions/
 Presets/
 Samples/
 PooledResources/
-Packaging/
 Compiled/
 *build
 *dev
@@ -13,8 +12,13 @@ Compiled/
 *.hxp
 *.hr*
 *.ch*
+*.run
+._*
 .DS_Store
+payload/vst3
+payload/clap
+payload/lv2
+payload/standalone
 expansion_info.xml
-current_tasks.js
-finished_tasks.js
-repo_settings.js
+icon_template.svg
+expansion_info.xml
