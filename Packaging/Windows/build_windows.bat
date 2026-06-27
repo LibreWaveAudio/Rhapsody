@@ -5,7 +5,7 @@ set BUILD_PROJECT=%2
 set BUILD_INSTALLER=%3
 set CODESIGN=%4
 
-set PROJECT_NAME=Rhapsody
+set PROJECT_NAME=Rhapsody2
 set SCRIPT_DIR=%~dp0
 for %%i in ("%SCRIPT_DIR%\..\..") do set PROJECT_DIR=%%~fi
 for %%i in ("%PROJECT_DIR%\..") do set PARENT_DIR=%%~fi

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ProjectSettings>
-  <Name value="Rhapsody 2"/>
+  <Name value="Rhapsody2"/>
   <Version value="2.6.0"/>
   <Description value="Application for downloading and managing Rhapsody sample libraries"/>
   <BundleIdentifier value="com.librewave.rhapsody2"/>

@@ -1,6 +1,6 @@
 #define AppPublisher "Libre Wave"
 #define AppURL "https://www.LibreWave.com/Rhapsody"
-#define AppId "{6901999E-1922-4C05-8BB8-A2F55E6C4169}" ; Generate this from the Tools menu or supply your own
+#define AppId "{6901999E-1922-4C05-8BB8-A2F55E6C41692}" ; Generate this from the Tools menu or supply your own
 
 [Setup]
 AppId={{#AppId}
