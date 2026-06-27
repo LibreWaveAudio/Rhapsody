@@ -19,7 +19,7 @@ namespace SplashScreen
 {
 	// pnlSplashScreen
 	const pnlSplashScreen = Content.getComponent("pnlSplashScreen");
-	
+
 	pnlSplashScreen.setPaintRoutine(function(g)
 	{
 		var a = this.getLocalBounds(0);
@@ -28,12 +28,8 @@ namespace SplashScreen
 		
 		g.setColour(this.get("textColour"));
 		
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 50 / 2, a[3] / 2 - 125, 50, 50]);
-		
-		g.setFont("title", Engine.getOS() == "WIN" ? 56 : 36);
-		g.drawAlignedText("RHAPSODY", [a[0], a[1] - 30 - ((Engine.getOS() == "WIN") * 5), a[2], a[3]], "centred");
-		
-		g.fillPath(Paths.icons.trademark, [608, 305, 12, 12]);
+		g.fillPath(Paths.rhapsodyFullLogo, [a[2] / 2 - 300 / 2, 300, 300, 50]);
+		g.fillPath(Paths.icons.trademark, [655, 305, 12, 12]);
 
 		var w = a[2] / 5;
 		var x = a[0] + a[2] / 2 - w / 2;

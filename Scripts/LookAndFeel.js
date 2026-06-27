@@ -308,9 +308,7 @@ namespace LookAndFeel
 		
 		// Logo
 		g.setColour(Colours.withAlpha(this.get("textColour"), 0.8));
-		g.fillPath(Paths.rhapsodyLogoWithBg, [a[2] / 2 - 36 / 2, 80, 36, 36]);    	
-		g.setFont("title", Engine.getOS() == "WIN" ? 42 : 28);
-		g.drawAlignedText(Engine.getName().toUpperCase(), [0, 135 - 7 * (Engine.getOS() == "WIN"), a[2], 30], "centred");
+		g.fillPath(Paths.rhapsodyFullLogo, [a[2] / 2 - 223 / 2, 80, 223, 38]);
 	}
         
     inline function drawScrollbar(g, obj, bgColour)

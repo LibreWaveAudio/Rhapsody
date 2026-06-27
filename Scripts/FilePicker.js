@@ -35,6 +35,9 @@ namespace FilePicker
 				
 		LookAndFeel.fullPageBackground();
 		
+		if (!this.data.title || !this.data.message)
+			return;
+		
 		var lblArea = [lblFilePicker.get("x") - 5, lblFilePicker.get("y") - 8, lblFilePicker.getWidth() + 40, lblFilePicker.getHeight() + 16];
 		g.setColour(this.get("itemColour"));
 		g.fillRoundedRectangle(lblArea, 5);

@@ -44,12 +44,8 @@ namespace Header
 	{
 		 var a = obj.area;
 		 var down = obj.down || obj.value;
-		 
-		 g.setColour(Colours.withAlpha(obj.itemColour1, obj.over ? 1.0 - 0.2 * down: 0.8));
-		 		 
-		 g.fillPath(Paths.rhapsodyLogoWithBg, [a[0], a[1], a[3], a[3]]);
 
-		 g.setFont("title", Engine.getOS() == "WIN" ? 38 : 25);
-		 g.drawAlignedText("RHAPSODY", [a[0] + 40, a[1], a[2] - 40, a[3] + 5 - (10 * (Engine.getOS() == "WIN"))], "left");
+		 g.setColour(Colours.withAlpha(obj.itemColour1, obj.over ? 1.0 - 0.2 * down: 0.8));
+		 g.fillPath(Paths.rhapsodyFullLogo, [a[0], a[3] / 2 - 24 / 2, 141, 24]);
 	});
 }
