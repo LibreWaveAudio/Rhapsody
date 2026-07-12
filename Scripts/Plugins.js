@@ -121,8 +121,6 @@ namespace Plugins
 
 		if (isManual)
 			Library.updateCatalogue();
-		else
-			Downloader.cleanUp();
 	}
 
 	inline function getPluginLocation(type)

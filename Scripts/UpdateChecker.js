@@ -99,7 +99,7 @@ namespace UpdateChecker
 		local lastChecked = UserSettings.getProperty(Engine.getName(), "lastUpdateChecked");
 		local updateFrequency = 7;
 
-		if (!Account.isLoggedIn() || !Server.isOnline())
+		if (!Server.isOnline())
 			return;
 
 		if (isDefined(lastChecked))
@@ -120,18 +120,21 @@ namespace UpdateChecker
 
 		Server.callWithGET(endpoint, {}, function(status, response)
 		{
-			if (status == 200)
-			{
-				UserSettings.setProperty(Engine.getName(), "lastUpdateChecked", Date.getSystemTimeISO8601(true));
+			if (status != 200)
+				return;
 
-				if (isDefined(response[0].tag_name) && response[0].tag_name > Engine.getVersion())
+			UserSettings.setProperty(Engine.getName(), "lastUpdateChecked", Date.getSystemTimeISO8601(true));
+
+			if (isDefined(response[0].tag_name) && response[0].tag_name > Engine.getVersion())
+			{
+				if (response[0].tag_name.startsWith("2."))
 				{
 					parseBody(response[0].body, response[0].tag_name);
-					show();
+					show();					
 				}
-				
-				sessionCheck = true;
 			}
+
+			sessionCheck = true;
 		});
 	}
 
@@ -181,13 +184,6 @@ namespace UpdateChecker
 		pnlUpdateCheckerContainer.fadeComponent(false, 250);
 	}
 	
-	// Listeners
-	App.broadcasters.loginChanged.addListener("Update Checker Login", "Respond to login changes", function(state)
-	{
-		if (state)
-			checkForAppUpdate();
-	});
-
 	// Calls
 	autocheck();
 }

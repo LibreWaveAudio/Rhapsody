@@ -21,23 +21,22 @@ include("App.js");
 include("Paths.js");
 include("LookAndFeel.js");
 include("UserSettings.js");
+include("ErrorManager.js");
 include("About.js");
 include("Spinner.js");
 include("FilePicker.js");
-include("LicenseHandler.js");
 include("Header.js");
 include("Filter.js");
 include("Expansions.js");
 include("Plugins.js");
 include("Installer.js");
 include("Grid.js");
-include("Account.js");
 include("Library.js");
 include("Tile.js");
-include("Downloader.js");
 include("UpdateChecker.js");
 include("ZoomHandler.js");
 include("SplashScreen.js");
+
 function onNoteOn()
 {
 	

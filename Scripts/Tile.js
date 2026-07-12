@@ -17,7 +17,7 @@
 
 namespace Tile
 {
-	inline function create(panel, area, data, isOnline)
+	inline function create(panel, area, data)
 	{
 		local cp = panel.addChildPanel();
 		
@@ -90,42 +90,18 @@ namespace Tile
 			}
 		});
 
-		App.broadcasters.isDownloading.addListener(cp, "Disable the panel while downloads are in progress", function(state)
-		{
-			this.set("enabled", !state);
-			this.repaint();
-		});
-
-		addListeners(cp);
-		addButtons(cp, isOnline);
+		addButtons(cp);
 
 		return cp;
 	}
 		
-	inline function addButtons(cp, isOnline)
+	inline function addButtons(cp)
 	{
 		local data = cp.data;
 		local isInstalled = isDefined(data.installedVersion) && data.installedVersion > 0;
 
 		if (isInstalled)
 			data.btnEdit = createEditMenu(cp);
-
-		if (!isOnline)
-			return;
-
-		if ((!isDefined(data.hasLicense) || !data.hasLicense ) && !isInstalled && isDefined(data.url) && data.regularPrice != "0")
-			return createBuyButton(cp);
-
-		if ((!isDefined(data.hasLicense) || !data.hasLicense) && data.regularPrice != "0")
-			return;
-
-		if (!isInstalled)
-			data.btnInstall = createInstallButton(cp, "Install");
-		else if (isInstalled && isDefined(data.hasUpdate) && data.hasUpdate)
-			data.btnInstall = createInstallButton(cp, "Update");
-			
-		if (!isInstalled || (isDefined(data.hasUpdate) && data.hasUpdate))
-			data.btnAbort = createAbortButton(cp);
 	}
 
 	inline function createEditMenu(parent)
@@ -182,141 +158,6 @@ namespace Tile
 			this.repaint();
 		});
 
-		App.broadcasters.isDownloading.addListener(b, "Disable the edit menu while downloads are in progress", function(state)
-		{
-			this.set("enabled", !state);
-			this.repaint();
-		});
-
-		return b;
-	}
-
-	inline function createBuyButton(parent)
-	{
-		local area = parent.getLocalBounds(0);
-		local b = parent.addChildPanel();
-	
-		b.setPosition(area[2] - 28, area[3] - 27, 16, 16);	
-		b.set("tooltip", type + " " + parent.get("text") + ".");
-		b.set("itemColour", 0xffa8b2bd);
-		b.set("allowCallbacks", "Clicks & Hover");
-		b.data.icon = Paths.icons.openInNew;
-		b.data.url = parent.data.url;
-	
-		b.setPaintRoutine(function(g)
-		{
-			var a = this.getLocalBounds(0);
-	
-			if (this.get("enabled"))
-				g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8));
-			else
-				g.setColour(Colours.withAlpha(this.get("itemColour"), 0.2));
-	
-			g.fillPath(this.data.icon, a);
-		});
-	
-		b.setMouseCallback(function(event)
-		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
-	
-			if (event.mouseUp)
-				Engine.openWebsite(this.data.url);
-		});
-	
-		return b;		
-	}
-
-	inline function createInstallButton(parent, type)
-	{
-		local area = parent.getLocalBounds(0);
-		local b = parent.addChildPanel();
-
-		if (type == "Install")
-			b.setPosition(area[2] - 30, area[3] - 29, 18, 18);
-		else
-			b.setPosition(area[2] - 45, area[3] - 29, 18, 18);
-
-		b.set("tooltip", type + " " + parent.get("text") + ".");
-		b.set("itemColour", 0xff7fff74);
-		b.set("allowCallbacks", "Clicks & Hover");
-		b.setControlCallback(onbtnInstallControl);
-		b.data.icon = type == "Install" ? Paths.icons.download : Paths.icons.update;
-
-		b.setPaintRoutine(function(g)
-		{
-			var a = this.getLocalBounds(0);
-	
-			if (this.get("enabled"))
-				g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 1.0 - 0.3 * this.getValue() : 0.8));
-			else
-				g.setColour(Colours.withAlpha(this.get("itemColour"), 0.2));
-
-			g.fillPath(this.data.icon, a);
-		});
-
-		b.setMouseCallback(function(event)
-		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
-	
-			if (event.mouseUp)
-				this.changed();
-		});
-		
-		parent.data.bcIsDownloading.addListener(b, "Hide the install/update button while downloading", function(state)
-		{
-			this.showControl(!state);
-			this.repaint();
-		});
-
-		return b;		
-	}
-	
-	inline function createAbortButton(parent)
-	{	
-		local area = parent.getLocalBounds(0);	
-		local b = parent.addChildPanel();
-
-		b.setPosition(area[2] - 25, area[1] + 10, 14, 14);
-		b.set("allowCallbacks", "Clicks & Hover");
-		b.set("itemColour", Colours.white);
-		b.data.icon = "x";
-		b.showControl(false);
-		b.setControlCallback(onbtnAbortControl);
-			
-		b.setPaintRoutine(function(g)
-		{
-			var a = this.getLocalBounds(0);
-	
-			g.setColour(Colours.black);
-			g.drawPath(Paths.icons[this.data.icon], a, 2);
-	
-			g.setColour(Colours.withAlpha(this.get("itemColour"), this.data.hover ? 0.8 + 0.2 * this.getValue() : 0.9));
-			g.fillPath(Paths.icons[this.data.icon], a);
-		});
-			
-		b.setMouseCallback(function(event)
-		{
-			this.setMouseCursor("PointingHandCursor", Colours.white, [0, 0]);
-			this.setValue(event.clicked);
-			this.data.hover = event.hover;
-			this.repaint();
-	
-			if (event.mouseUp)
-				this.changed();
-		});
-
-		parent.data.bcIsDownloading.addListener(b, "Show abort button during download", function(state)
-		{
-			this.showControl(state);
-			this.repaint();
-		});
-	
 		return b;
 	}
 
@@ -380,7 +221,7 @@ namespace Tile
 			case "Remove Favourite":
 				data.favourite = Library.toggleFavourite(data.projectName);
 				removeButtons(parent);
-				addButtons(parent, true);
+				addButtons(parent);
 
 				if (!data.favourite)
 					Grid.filterTiles();
@@ -399,36 +240,6 @@ namespace Tile
 				break;
 		}
 	}
-
-	inline function onbtnInstallControl(component, value)
-	{
-		if (value)
-			return;
-
-		local data = component.getParentPanel().data;
-
-		if (Engine.isPlugin() && Engine.getOS() == "WIN" && data.format == "plugin")
-			return Engine.showMessageBox("Permission Required", "Please use the standalone version of Rhapsody to install " + data.name, "0");
-			
-		if ((isDefined(data.sampleDir) && data.sampleDir.isDirectory()) || data.format == "plugin")
-			Downloader.addToQueue(data);
-		else
-			promptForSampleDirectory(data);
-	}
-
-	inline function onbtnAbortControl(component, value)
-	{
-		local data = component.getParentPanel().data;
-
-		Engine.showYesNoWindow("Cancel", "Do you want to cancel the download and installation?", function[data](response)
-		{
-			if (!response)
-				return;
-			
-			Downloader.abortDownloads(data);
-			Expansions.abortInstallation();
-		});
-	}
 	
 	inline function uninstall(data)
 	{
@@ -446,54 +257,10 @@ namespace Tile
 			}
 		});
 	}
-	
-	inline function promptForSampleDirectory(tileData)
-	{	
-		Expansions.askForSampleDirectory(tileData, function(data, dir)
-		{
-			data.sampleDir = dir;
-			Downloader.addToQueue(data);
-		});
-	}
-	
+		
 	inline function removeButtons(cp)
 	{
 		for (x in cp.getChildPanelList())
 			x.removeFromParent();
 	}
-
-	inline function addListeners(cp)
-	{
-		local data = cp.data;
-		local isInstalled = isDefined(data.installedVersion) && data.installedVersion > 0;
-
-		if (data.regularPrice != "0")
-			if (!data.hasLicense || (isInstalled && (!isDefined(data.hasUpdate) || !data.hasUpdate)))
-				return;
-
-		data.bcIsDownloading = Engine.createBroadcaster({"id": data.name + "Download State", "args": ["state"]});
-		data.bcProgress = Engine.createBroadcaster({"id": data.name + "Download Progress", "args": ["progress"]});
-	
-		data.bcIsDownloading.addListener(cp, "Update panel when download state changes", function(state)
-		{
-			this.set("enabled", !state);
-	
-			if (!state)
-			{
-				removeButtons(this);
-				addButtons(this, Server.isOnline());
-			}
-
-			this.repaint();
-		});
-
-		data.bcProgress.addListener(cp, "Update download progress", function(progress)
-		{
-			if (isDefined(progress.message) && progress.message.contains("Installing"))
-				this.data.btnAbort.showControl(false);
-	
-			this.data.progress = progress == -1 ? undefined : progress;
-			this.repaint();
-		});
-	}	
 }

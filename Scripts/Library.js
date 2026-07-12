@@ -17,122 +17,35 @@
 
 namespace Library
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData).getParentDirectory().createDirectory("Rhapsody");
+	const appData = FileSystem.getFolder(FileSystem.AppData);
 
 	reg cache = appData.createDirectory("cache");
 	
-	// cmbAdd
-	const cmbAdd = Content.getComponent("cmbAdd");
-	cmbAdd.setControlCallback(oncmbAddControl);
-
-	inline function oncmbAddControl(component, value)
+	//! btnAdd
+	const btnAdd = Content.getComponent("btnAdd");
+	btnAdd.setControlCallback(onbtnAddControl);
+	
+	inline function onbtnAddControl(component, value)
 	{
-		switch (value)
-		{
-			case 1:
-				Installer.install();
-				break;
-
-			case 2:
-				LicenseHandler.show();
-				break;
-		}		
-
-		component.setValue(-1);
+		if (!value)
+			Installer.install();
 	}
+		
+	const lafbtnAdd = Content.createLocalLookAndFeel();
+	btnAdd.setLocalLookAndFeel(lafbtnAdd);
 	
-	const lafcmbAdd = Content.createLocalLookAndFeel();
-	cmbAdd.setLocalLookAndFeel(lafcmbAdd);
-	
-	lafcmbAdd.registerFunction("drawComboBox", function(g, obj)
+	lafbtnAdd.registerFunction("drawToggleButton", function(g, obj)
 	{
 		var a = obj.area;
 
-		g.setColour(Colours.withAlpha(obj.itemColour1, obj.hover && obj.enabled ? 1.0 : 0.9 - (0.3 * !obj.enabled)));
+		g.setColour(Colours.withAlpha(obj.itemColour1, obj.over ? 1.0 - 0.2 * obj.down : 0.9));
 		g.fillPath(Paths.icons.add, [a[0], a[3] / 2 - 12 / 2, 12, 12]);
 		
 		g.setFont("regular", 18);
 		g.drawAlignedText(obj.text, a, "right");
 	});
-	
-	lafcmbAdd.registerFunction("drawPopupMenuBackground", function(g, obj)
-	{
-		LookAndFeel.drawPopupMenuBackground(); 
-	});
-	
-	lafcmbAdd.registerFunction("drawPopupMenuItem", function(g, obj)
-	{
-		LookAndFeel.drawPopupMenuItem();
-	});
-
-	lafcmbAdd.registerFunction("getIdealPopupMenuItemSize", function(obj)
-	{
-		return [140, 30];
-	});
-	
-	App.broadcasters.isDownloading.addListener(cmbAdd, "Disable the add combo box while downloads are in progress", function(state)
-	{
-		this.set("enabled", !state);
-	});
-	
-	// btnSync
-	const btnSync = Content.getComponent("btnSync");
-	btnSync.set("enabled", Account.isLoggedIn());
-	btnSync.setLocalLookAndFeel(LookAndFeel.textIconButton);
-	btnSync.setControlCallback(onbtnSyncControl);
-
-	inline function onbtnSyncControl(component, value)
-	{
-		if (value)
-			return;
-
-		if (!Account.isLoggedIn())
-			return Engine.showMessageBox("Login Required", "Please login to sync your account.", 0);
-			
-		if (!Server.isOnline())
-			return Engine.showMessageBox("Offline", "An internet connection is required.", 0);
-	
-		if (cooldownTimer.isTimerRunning())
-			return Engine.showMessageBox("Cool Down", "Please wait a few seconds before syncing again.", 0);
-
-		if (Content.isCtrlDown())
-			clearCache();
-
-		updateCache(false);
-		Expansions.refresh();
-		UpdateChecker.checkForAppUpdate();
-	}
-	
-	App.broadcasters.isDownloading.addListener(btnSync, "Disable sync button while downloads are in progress", function(state)
-	{
-		this.set("enabled", !state);
-	});
-
-	// Cooldown Timer
-	const cooldownTimer = Engine.createTimerObject();
-	
-	cooldownTimer.setTimerCallback(function()
-	{
-		btnSync.set("enabled", true);
-		this.stopTimer();
-	});
 
 	// Functions
-	inline function autoSync()
-	{
-		if (!Account.isLoggedIn())
-			return;
-
-		if (!Server.isOnline() || cooldownTimer.isTimerRunning())
-			return;
-
-		local lastSync = UserSettings.getProperty(Engine.getName(), "lastSync");
-		local now = Date.getSystemTimeMs();
-
-		if ((now - lastSync) / 86400000 > 1)
-			updateCache(true);
-	}
-
 	inline function getCombinedCacheAndManifestData()
 	{
 		local manifest = loadManifest();
@@ -243,181 +156,7 @@ namespace Library
 		if (isDefined(cache) && cache.isDirectory())
 			cache.deleteFileOrDirectory();
 
-		Server.cleanFinishedDownloads();
 		cache = appData.createDirectory("cache");
-	}
-
-	inline function updateCache(suppressErrors)
-	{
-		local token = Account.readToken();
-		
-		if (!isDefined(token) || !Server.isOnline())
-			return;
-
-		local endpoint = App.apiPrefix + "get_catalogue/";
-		local headers = ["Authorization: Bearer " + token];
-		local p = {};
-
-		Server.setBaseURL(App.baseUrl[App.mode]);
-		Server.setHttpHeader(headers.join("\n"));
-		
-		Spinner.show("Syncing with Server");
-
-		Server.callWithGET(endpoint, p, function[suppressErrors](status, response)
-		{
-			if (status == 200 && typeof response == "object" && response.length > 0)
-			{
-				var f = cache.getChildFile("cache.json");
-				f.writeEncryptedObject(response, App.systemId);
-
-				updateCatalogue();
-
-				if (haveAnyImagesBeenDownloaded())
-				{
-					var imageUrls = getImageUrls(response);
-					downloadIndividualImages(imageUrls);
-				}
-				else
-				{
-					downloadZippedImages();
-				}
-
-				btnSync.set("enabled", false);
-				cooldownTimer.startTimer(15000);
-				UserSettings.setProperty(Engine.getName(), "lastSync", Date.getSystemTimeMs());
-			}
-			else
-			{
-				if (isDefined(response.message) && response.message.contains("You are not currently logged in"))
-					Account.autoLogout();
-
-				if (suppressErrors)
-					return Spinner.hide();
-					
-				if (isDefined(response.message))
-					Engine.showMessageBox("Error", response.message, 3);
-				else
-					Engine.showMessageBox("Error", "The server reported an error, please try again later or contact support.", 3);
-			}
-			
-			Spinner.hide();
-		});
-	}
-			
-	inline function haveAnyImagesBeenDownloaded()
-	{
-		local files = FileSystem.findFiles(cache, "*.jpg", false);
-		return files.length > 0;
-	}
-	
-	inline function getImageUrls(data)
-	{
-		local result = [];
-		local cachedImages = getCachedImageNames();
-		
-		for (x in data)
-		{
-			if (!isDefined(x.projectName))
-				continue;
-
-			if (cachedImages.contains(x.projectName))
-				continue;
-
-			if (isDefined(x.image))
-				result.push({"projectName": x.projectName, "url": x.image.replace(".b-cdn.net", ".com")});
-		}
-
-		return result;		
-	}
-	
-	inline function getCachedImageNames()
-	{
-		local result = [];	
-		local files = FileSystem.findFiles(cache, "*.jpg", false);
-	
-		for (x in files)
-			result.push(x.toString(x.NoExtension));
-	
-		return result;
-	}
-		
-	inline function downloadIndividualImages(urls)
-	{
-		if (!urls.length)
-			return;
-
-		Server.cleanFinishedDownloads();
-		Server.setBaseURL(App.baseUrl[App.mode]);
-
-		local completed = [];
-		local total = urls.length;
-		
-		App.broadcasters.isDownloading.state = true;
-
-		for (x in urls)
-		{
-			local projectName = x.projectName;
-			local url = x.url.replace(App.baseUrl[App.mode], "");
-			local f = cache.getChildFile(projectName + ".jpg");
-
-			Server.downloadFile(url, {}, f, function[total, projectName, completed]()
-			{
-				Spinner.show("Downloading Images");
-
-				if (this.data.finished)
-				{
-					completed.pushIfNotAlreadyThere(projectName);
-
-					if (this.data.success)
-						Grid.updateImage(projectName);
-					else
-						Console.print("Failed to download image for " + projectName);
-				}
-				
-				if (completed.length >= total)
-				{
-					Spinner.hide();
-					App.broadcasters.isDownloading.state = false;
-				}					
-			});
-		}
-	}
-
-	inline function downloadZippedImages()
-	{
-		Server.cleanFinishedDownloads();
-		Server.setBaseURL(App.baseUrl[App.mode]);
-				
-		App.broadcasters.isDownloading.state = true;
-
-		local url = "wp-content/uploads/product_images.zip";
-		local f = cache.getChildFile("product_images.zip");
-
-		Server.downloadFile(url, {}, f, function()
-		{
-			Spinner.show("Downloading Images");
-		
-			if (this.data.finished)
-			{
-				if (this.data.success)
-					extractImageArchive(this.getDownloadedTarget());
-
-				App.broadcasters.isDownloading.state = false;
-			}
-		});
-	}
-
-	inline function extractImageArchive(archive)
-	{
-		archive.extractZipFile(cache, true, function[archive](obj)
-		{
-			if (obj.Status == 2)
-			{
-				archive.deleteFileOrDirectory();
-				updateCatalogue();
-				Spinner.hide();
-			}				
-		});
 	}
 
 	inline function toggleFavourite(projectName)
@@ -481,21 +220,7 @@ namespace Library
 			
 		return obj;
 	}
-
-	// Listeners	
-	App.broadcasters.loginChanged.addListener("Library login", "Respond to login changes", function(state)
-	{
-		clearCache();
-
-		if (state)
-			updateCache(true);
-		else
-			updateCatalogue();
-			
-		btnSync.set("enabled", state);
-	});
 	
 	// Calls
 	updateCatalogue();
-	autoSync();
 }

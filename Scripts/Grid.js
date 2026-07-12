@@ -61,16 +61,11 @@ namespace Grid
 	// Functions
 	inline function update(data)
 	{
-		local isOnline = false;
-
-		if (Account.isLoggedIn())
-			isOnline = Server.isOnline();
-
 		removeAllTiles();
 
 		for (x in data)
 		{
-			local cp = Tile.create(pnlGrid, [0, 0, TILE_WIDTH, TILE_HEIGHT], x, isOnline);
+			local cp = Tile.create(pnlGrid, [0, 0, TILE_WIDTH, TILE_HEIGHT], x);
 			updateImage(x.projectName);
 		}
 
@@ -137,7 +132,7 @@ namespace Grid
 		local cp = getChildPanel(projectName);
 		cp.data = data;
 		Tile.removeButtons(cp);
-		Tile.addButtons(cp, Server.isOnline());
+		Tile.addButtons(cp);
 		cp.repaint();	
 	}
 

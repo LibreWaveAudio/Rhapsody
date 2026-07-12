@@ -1,5 +1,5 @@
 /*
-    Copyright 2022, 2023, 2024 David Healey
+    Copyright 2022, 2023, 2024, 2026 David Healey
 
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,14 +17,21 @@
 
 namespace Expansions
 {
-	const appData = FileSystem.getFolder(FileSystem.AppData).getParentDirectory().createDirectory("Rhapsody");
+	const appData = FileSystem.getFolder(FileSystem.AppData);
 	const expHandler = Engine.createExpansionHandler();
 
 	reg extractionCount;
 	reg numZips;
 	reg callback;
 	reg abort;
-	reg isManual = false;
+	reg isManual = true;
+	
+	expHandler.setErrorFunction(function(message, isCritical)
+	{
+		Engine.showMessageBox("Error", message, 1);
+		Spinner.hide();
+	});
+	
 	
 	inline function askForSampleDirectory(data, callback)
 	{
@@ -202,8 +209,6 @@ namespace Expansions
 
 		if (isManual)
 			Library.updateCatalogue();
-		else
-			Downloader.cleanUp();
 
 		isManual = false;
 		Spinner.hide();

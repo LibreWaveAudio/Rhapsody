@@ -35,10 +35,23 @@ namespace App
 		"release": "https://librewave.com/"
 	};
 	
-	const broadcasters = {
-		isDownloading: Engine.createBroadcaster({"id": "Global download State", "args": ["state"]}),
-		loginChanged: Engine.createBroadcaster({"id": "Triggered when user logs in or out", "args": ["state"]})
-	};
+	inline function createDefaultLinkFile()
+	{
+		local filename = "";
+		local appData = FileSystem.getFolder(FileSystem.AppData);
+
+		switch (Engine.getOS())
+		{
+			case "OSX": filename = "LinkOSX"; break;
+			case "LINUX": filename = "LinkLinux"; break;
+			case "WIN": filename = "LinkWindows"; break;
+		}
+
+		local f = appData.getChildFile(filename);
 	
-	broadcasters.isDownloading.state = false;
+		if (!isDefined(f) || !f.isFile())
+			f.writeString(appData.toString(appData.FullPath));		
+	}
+	
+	createDefaultLinkFile();
 }
