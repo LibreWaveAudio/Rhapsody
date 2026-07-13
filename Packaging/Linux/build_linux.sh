@@ -16,7 +16,7 @@ PROJUCER_PATH=$HISE_SOURCE"/JUCE/projucer/Projucer"
 if [ "$BUILD_HISE" -eq 1 ]; then
 	cd "$(dirname "$PROJECT_DIR")"
 	rm -R -f HISE
-	git clone --branch master --recurse-submodules https://github.com/davidhealey/HISE.git
+	git clone --branch rhapsody2 --recurse-submodules https://github.com/davidhealey/HISE.git
 	cd "$HISE_SOURCE"
 
 	# Extract SDKs

@@ -24,7 +24,7 @@ if (( BUILD_HISE == 1 )); then
 
   cd "$(dirname "$PROJECT_DIR")"
 	rm -R -f HISE
-	git clone --branch master --recurse-submodules https://github.com/davidhealey/HISE.git
+	git clone --branch rhapsody2 --recurse-submodules https://github.com/davidhealey/HISE.git
 
   # Copy AAX SDK to HISE source
   cp -Rf aax-sdk $HISE_SOURCE/tools/SDK/AAX

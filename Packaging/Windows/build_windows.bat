@@ -19,7 +19,7 @@ if %BUILD_HISE%==1 (
   echo Downloading HISE
   cd %PARENT_DIR%
   if exist HISE rd /q /s HISE
-  git clone --branch master --recurse-submodules https://github.com/davidhealey/HISE.git
+  git clone --branch rhapsody2 --recurse-submodules https://github.com/davidhealey/HISE.git
   
   echo Extracting SDKs
   cd "%HISE_SOURCE%\tools\SDK"
