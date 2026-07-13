@@ -38,7 +38,7 @@
 									<key>GID</key>
 									<integer>80</integer>
 									<key>PATH</key>
-									<string>payload/Rhapsody.app</string>
+									<string>payload/Rhapsody2.app</string>
 									<key>PATH_TYPE</key>
 									<integer>1</integer>
 									<key>PERMISSIONS</key>
@@ -499,7 +499,7 @@
 				<key>FOLLOW_SYMBOLIC_LINKS</key>
 				<false/>
 				<key>IDENTIFIER</key>
-				<string>com.LibreWave.pkg.RhapsodyStandalone</string>
+				<string>com.LibreWave.pkg.Rhapsody2Standalone</string>
 				<key>LOCATION</key>
 				<integer>0</integer>
 				<key>NAME</key>
@@ -597,7 +597,7 @@
 															<key>GID</key>
 															<integer>0</integer>
 															<key>PATH</key>
-															<string>payload/Rhapsody.vst3</string>
+															<string>payload/Rhapsody2.vst3</string>
 															<key>PATH_TYPE</key>
 															<integer>1</integer>
 															<key>PERMISSIONS</key>
@@ -1052,7 +1052,7 @@
 				<key>FOLLOW_SYMBOLIC_LINKS</key>
 				<false/>
 				<key>IDENTIFIER</key>
-				<string>com.LibreWave.pkg.RhapsodyVST3</string>
+				<string>com.LibreWave.pkg.Rhapsody2VST3</string>
 				<key>LOCATION</key>
 				<integer>0</integer>
 				<key>NAME</key>
@@ -1150,7 +1150,7 @@
 															<key>GID</key>
 															<integer>0</integer>
 															<key>PATH</key>
-															<string>payload/Rhapsody.component</string>
+															<string>payload/Rhapsody2.component</string>
 															<key>PATH_TYPE</key>
 															<integer>1</integer>
 															<key>PERMISSIONS</key>
@@ -1605,7 +1605,7 @@
 				<key>FOLLOW_SYMBOLIC_LINKS</key>
 				<false/>
 				<key>IDENTIFIER</key>
-				<string>com.LibreWave.pkg.RhapsodyAU</string>
+				<string>com.LibreWave.pkg.Rhapsody2AU</string>
 				<key>LOCATION</key>
 				<integer>0</integer>
 				<key>NAME</key>
@@ -1690,7 +1690,7 @@
 																	<key>GID</key>
 																	<integer>80</integer>
 																	<key>PATH</key>
-																	<string>payload/Rhapsody.aaxplugin</string>
+																	<string>payload/Rhapsody2.aaxplugin</string>
 																	<key>PATH_TYPE</key>
 																	<integer>1</integer>
 																	<key>PERMISSIONS</key>
@@ -2159,7 +2159,7 @@
 				<key>FOLLOW_SYMBOLIC_LINKS</key>
 				<false/>
 				<key>IDENTIFIER</key>
-				<string>com.LibreWave.pkg.RhapsodyAAX</string>
+				<string>com.LibreWave.pkg.Rhapsody2AAX</string>
 				<key>LOCATION</key>
 				<integer>0</integer>
 				<key>NAME</key>
@@ -2406,7 +2406,7 @@
 						<key>LANGUAGE</key>
 						<string>English</string>
 						<key>VALUE</key>
-						<string>Rhapsody</string>
+						<string>Rhapsody2</string>
 					</dict>
 				</array>
 			</dict>
@@ -2691,7 +2691,7 @@
 				</dict>
 			</array>
 			<key>NAME</key>
-			<string>Rhapsody</string>
+			<string>Rhapsody2</string>
 			<key>PAYLOAD_ONLY</key>
 			<false/>
 			<key>TREAT_MISSING_PRESENTATION_DOCUMENTS_AS_WARNING</key>
