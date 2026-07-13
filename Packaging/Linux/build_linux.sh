@@ -4,7 +4,7 @@ BUILD_HISE=$1
 BUILD_PROJECT=$2
 BUILD_INSTALLER=$3
 
-PROJECT_NAME="Rhapsody"
+PROJECT_NAME="Rhapsody2"
 PROJECT_DIR="$(dirname "$(dirname "$(dirname "${BASH_SOURCE[0]}")")")"
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PAYLOAD_DIR=$SCRIPT_DIR/payload
