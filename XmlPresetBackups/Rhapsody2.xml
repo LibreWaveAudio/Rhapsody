@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<Processor Type="SynthChain" ID="Rhapsody" Bypassed="0" Gain="1.0" Balance="0.0"
+<Processor Type="SynthChain" ID="Rhapsody2" Bypassed="0" Gain="1.0" Balance="0.0"
            VoiceLimit="64.0" KillFadeTime="20.0" IconColour="0" packageName=""
            BuildVersion="650">
   <ChildProcessors>
@@ -11,7 +11,7 @@
           <Content>
             <Control type="ScriptedViewport" id="vptGrid" value="0.0"/>
           </Content>
-          <UIData Source="RhapsodyUIData"/>
+          <UIData Source="Rhapsody2UIData"/>
         </Processor>
       </ChildProcessors>
     </Processor>
