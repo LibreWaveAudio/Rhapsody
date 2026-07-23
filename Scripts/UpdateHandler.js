@@ -82,7 +82,7 @@ namespace UpdateHandler
 			if (e.companyUrl == "")
 				continue;
 
-			if (getBlacklistCount(e.companyUrl) >= 2)
+			if (getBlacklistCount(e.companyUrl) >= 9)
 				continue;			
 
 			expansionData.push({name: e.name, uuid: e.uuid, company: e.company, url: e.companyUrl, version: e.version});
