@@ -40,7 +40,7 @@ namespace Expansions
 			removeFromCache(obj.Expansion);
 			refresh();
 
-	    	Engine.showYesNoWindow("Installation Complete", "Do you want to delete the hr file?", function[archive](response)
+	    	Engine.showYesNoWindow("Installation Complete", "The installation is complete.  Do you want to delete the hr file?", function[archive](response)
 	    	{
 	    	    if (response)	    	    
 	    	        deleteArchives(archive);
