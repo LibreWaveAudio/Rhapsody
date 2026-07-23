@@ -58,8 +58,17 @@ namespace ManualInstaller
 			return Expansions.install(archive, sampleFolder);
 		}
 
+		local startFolder;
+		local lastFolder = UserSettings.getProperty("rhapsody", "lastSampleFolder");		
+
+		if (isDefined(lastFolder))
+			startFolder = FileSystem.fromAbsolutePath(lastFolder);
+
+		if (!isDefined(startFolder) || !startFolder.isDirectory())
+			startFolder = FileSystem.getFolder(FileSystem.UserHome);
+
 		FilePicker.show({
-			startFolder: FileSystem.getFolder(FileSystem.UserHome),
+			startFolder: startFolder,
 			mode: 1,
 			filter: "",
 			title: "Install from File",

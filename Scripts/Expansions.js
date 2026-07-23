@@ -113,10 +113,12 @@ namespace Expansions
 			return Engine.showMessageBox("Invalid Format", "Archive format was not recognised.", 0);
 
 		local data = eh.getMetaDataFromPackage(archive);
-		local dir = getExpansionNamedSubFolder(data.Name, sampleFolder);
+		local dir = getExpansionNamedSubFolder(data.Name, sampleFolder);	
 
 		if (!dir.isDirectory())
 			return;
+
+		UserSettings.setProperty("rhapsody", "lastSampleFolder", dir.getParentDirectory().toString(dir.FullPath));
 
 		return eh.installExpansionFromPackage(archive, dir);		
 	}
