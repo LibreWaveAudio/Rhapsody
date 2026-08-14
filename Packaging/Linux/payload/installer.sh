@@ -61,55 +61,48 @@ if $HAS_STANDALONE; then
 
         INSTALL_DATA=true
 
-        echo "Please enter the installation directory for the standalone application:"
-        read -r STANDALONE_PATH
+        # Install standalone application
+        STANDALONE_PATH="$HOME/.local/bin"
 
-        until [ -d "$STANDALONE_PATH" ]; do
-            echo "That directory does not exist. Please enter a valid directory:"
-            read -r STANDALONE_PATH
-        done
+        mkdir -p "$STANDALONE_PATH"
+        cp -i "standalone/$PROJECT_NAME" "$STANDALONE_PATH/"
 
-        # Remove any trailing slash
-        STANDALONE_PATH="${STANDALONE_PATH%/}"
-
-        cp -i "standalone/$PROJECT_NAME" "$STANDALONE_PATH"
-
+        # Desktop integration
         read -r -p "Would you like to add a shortcut to the standalone application in your desktop menu? [y/N] " INSTALL_DESKTOP
 
         if [[ "$INSTALL_DESKTOP" =~ ^([yY][eE][sS]|[yY])$ ]]; then
 
-            ICONS_BASE="/usr/share/icons/hicolor"
+            LOCAL_SHARE="$HOME/.local/share"
+            ICONS_BASE="$LOCAL_SHARE/icons/hicolor"
+            APPLICATIONS_BASE="$LOCAL_SHARE/applications"
             ICON_NAME="$(printf '%s' "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]')"
+            EXEC_PATH="$STANDALONE_PATH/$PROJECT_NAME"
 
             # Install SVG icon
-            sudo mkdir -p "$ICONS_BASE/scalable/apps"
-            sudo cp "icons/icon.svg" \
+            mkdir -p "$ICONS_BASE/scalable/apps"
+            cp "icons/icon.svg" \
                 "$ICONS_BASE/scalable/apps/$ICON_NAME.svg"
 
             # Install PNG icons
             for size in 16 32 48 64 128 256; do
-                sudo mkdir -p "$ICONS_BASE/${size}x${size}/apps"
-                sudo cp "icons/${size}.png" \
+                mkdir -p "$ICONS_BASE/${size}x${size}/apps"
+                cp "icons/${size}.png" \
                     "$ICONS_BASE/${size}x${size}/apps/$ICON_NAME.png"
             done
 
-            # Ensure icons are readable
-            sudo chmod 644 /usr/share/icons/hicolor/*/apps/$ICON_NAME.*
-
             # Create desktop entry
-            sudo tee "/usr/share/applications/$ICON_NAME.desktop" >/dev/null <<EOF
+            mkdir -p "$APPLICATIONS_BASE"
+
+            cat > "$APPLICATIONS_BASE/$ICON_NAME.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=$PROJECT_NAME
 Comment=$PROJECT_NAME Standalone
-Exec=$STANDALONE_PATH/$PROJECT_NAME
+Exec=$EXEC_PATH
 Icon=$ICON_NAME
 Categories=AudioVideo;Audio;Music;
 Terminal=false
 EOF
-
-            sudo chmod 644 "/usr/share/applications/$ICON_NAME.desktop"
-            sudo gtk-update-icon-cache /usr/share/icons/hicolor
 
             echo "Desktop integration complete."
         else
