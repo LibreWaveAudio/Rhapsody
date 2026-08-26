@@ -2,7 +2,7 @@
 
 <ProjectSettings>
   <Name value="Rhapsody"/>
-  <Version value="3.2.1"/>
+  <Version value="3.2.2"/>
   <Description value="Rhapsody player plugin and app"/>
   <BundleIdentifier value="com.librewave.rhapsody"/>
   <PluginCode value="Lwrp"/>
@@ -30,7 +30,7 @@
   <LinkExpansionsToProject value="No"/>
   <ReadOnlyFactoryPresets value="Yes"/>
   <ForceStereoOutput value="No"/>
-  <AdminPermissions value="1"/>
+  <AdminPermissions value="0"/>
   <EmbedUserPresets value="1"/>
   <EnableGlobalPreprocessor value="No"/>
   <UseGlobalAppDataFolderWindows value="No"/>
