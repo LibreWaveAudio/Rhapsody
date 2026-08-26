@@ -28,9 +28,25 @@ namespace ManualInstaller
 			promptForArchive();
 	}
 
+	//! cmbBitDepth
+	const cmbBitDepth = Content.getComponent("cmbBitDepth");
+	cmbBitDepth.setLocalLookAndFeel(LookAndFeel.comboBox);
+	cmbBitDepth.setControlCallback(oncmbBitDepthControl);
+	cmbBitDepth.setValue(2);
+	
+	inline function oncmbBitDepthControl(component, value)
+	{
+		if (value < 1)
+			return;
+
+		Expansions.setInstallFullDynamics(value == 1 ? false : true);
+	}
+
 	//! Functions
 	inline function promptForArchive()
 	{
+		cmbBitDepth.showControl(false);
+
 		FilePicker.show({
 			startFolder: FileSystem.getFolder(FileSystem.Downloads),
 			mode: 0,
@@ -66,6 +82,8 @@ namespace ManualInstaller
 
 		if (!isDefined(startFolder) || !startFolder.isDirectory())
 			startFolder = FileSystem.getFolder(FileSystem.UserHome);
+
+		cmbBitDepth.showControl(true);
 
 		FilePicker.show({
 			startFolder: startFolder,

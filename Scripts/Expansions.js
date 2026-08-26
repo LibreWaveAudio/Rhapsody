@@ -21,8 +21,7 @@ namespace Expansions
 
 	//! Expansion Handler
 	const eh = Engine.createExpansionHandler();
-	eh.setInstallFullDynamics(true);
-
+	
 	eh.setInstallCallback(function(obj)
 	{
 		broadcasters.installationProgress.sendAsyncMessage([
@@ -324,12 +323,18 @@ namespace Expansions
 			Console.print(trace(e.getProperties()));
 	}
 
+	inline function setInstallFullDynamics(shouldInstallFullDynamics: number)
+	{
+		eh.setInstallFullDynamics(shouldInstallFullDynamics);
+	}
+
 	//! Broadcasters
 	const broadcasters = {};
 	broadcasters.installationProgress = Engine.createBroadcaster({id: "installationProgress", args: ["progress", "title", "message"]});
 	broadcasters.isLoadingExpansion = Engine.createBroadcaster({id: "isLoadingExpansion", args: ["title", "isLoading"]});
 
 	//! Function Calls
+	setInstallFullDynamics(true);
 	allowDuplicateSamples();
 	rebuildList();
 }

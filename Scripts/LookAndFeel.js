@@ -190,6 +190,49 @@ namespace LookAndFeel
 	    g.drawAlignedText(String.fromCharCode(obj.text), obj.area, "centred");
     });
 	
+	//! ComboBox
+	const comboBox = Content.createLocalLookAndFeel();
+	
+	comboBox.registerFunction("drawComboBox", function(g, obj)
+	{
+		var a = obj.area;
+		var radius = 2;
+		var borderSize = 1;
+		var down = obj.down || obj.value;
+
+		var c = Colours.withMultipliedBrightness(obj.bgColour, obj.hover ? 1.2 : 1.0);
+		g.setColour(Colours.withAlpha(c, obj.enabled ? 1.0 : 0.5));
+
+		if (obj.bgColour != 0x0)
+			g.fillRoundedRectangle(a, radius);
+		
+		g.setColour(Colours.withMultipliedBrightness(obj.itemColour1, obj.hover ? 1.2 : 1.0));
+		g.drawRoundedRectangle(a.reduced(borderSize / 2), radius, borderSize);
+		
+		g.setColour(Colours.withMultipliedBrightness(obj.textColour, 0.8));
+		g.setFont("monoMedium", 18);
+		g.drawAlignedText(obj.text, a.translated(10), "left");
+		
+		g.setColour(Colours.withMultipliedBrightness(obj.textColour, obj.hover ? 1.1 - 0.1 * down : 0.8));
+		g.setFont("phosphor", 16);
+		g.drawAlignedText("\ue136", a.translated(-5), "right");
+	});
+	
+	comboBox.registerFunction("drawPopupMenuBackground", function(g, obj)
+	{
+	   	drawPopupMenuBackground();
+	});
+	
+	comboBox.registerFunction("drawPopupMenuItem", function(g, obj)
+	{
+		drawPopupMenuItem();
+	});
+	
+	comboBox.registerFunction("getIdealPopupMenuItemSize", function(obj)
+	{
+		return getIdealPopupMenuItemSize();
+	});
+	
 	//! Popup Menu
 	laf.registerFunction("drawPopupMenuBackground", function(g, obj)
 	{
@@ -223,7 +266,6 @@ namespace LookAndFeel
 		local a = obj.area;
 		local hasIcon = obj.text.startsWith("e");
 		local icon = obj.text.substring(0, obj.text.indexOf("-"));
-		local text = obj.text.replace(icon + "-");
 		local itemColour2 =0x995E6167;
 		local textColour = 0xffd7d8da;
 		local font = "monoRegular";
@@ -233,6 +275,11 @@ namespace LookAndFeel
 		local subMenuIcon = "e13a";
 		local subMenuIconFontSize = 16;
 		local radius = 2;
+		
+		local text = obj.text;
+		
+		if (!["16-bit", "24-bit"].contains(text))
+			text = text.replace(icon + "-");
 
 		if (obj.isSeparator)
 		{

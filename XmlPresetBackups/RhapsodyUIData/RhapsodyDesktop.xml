@@ -93,6 +93,10 @@
                  text="CANCEL" width="125" height="34" bgColour="0" itemColour="4282992970"
                  itemColour2="0" saveInPreset="0" parentComponent="pnlFilePicker"
                  isMomentary="1" enableMidiLearn="0" textColour="4292270813" mouseCursor="PointingHandCursor"/>
+      <Component type="ScriptComboBox" id="cmbBitDepth" x="241" y="395" width="95"
+                 height="30" max="2" parentComponent="pnlFilePicker" items="16-bit&#10;24-bit"
+                 defaultValue="2.0" bgColour="0" itemColour="4282992970" textColour="4292270813"
+                 itemColour2="0" saveInPreset="0" visible="0"/>
     </Component>
     <Component type="ScriptPanel" id="pnlSpinnerContainer" x="0" y="0" text=""
                width="1000" height="710" bgColour="4279967008" itemColour="0"
