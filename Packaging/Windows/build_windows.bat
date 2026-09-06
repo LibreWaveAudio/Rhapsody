@@ -73,7 +73,7 @@ if %CODESIGN%==1 (
   signtool.exe sign /tr http://timestamp.sectigo.com /td sha256 /fd sha256 /a "%PAYLOAD_DIR%\%PROJECT_NAME%.exe"
 
   echo Signing AAX
-  wraptool sign --verbose --account "%AAX_ACCOUNT_NAME%" --signid "%AAX_SIGN_ID%" --wcguid "%AAX_GUID%" --in "%PAYLOAD_DIR%\%PROJECT_NAME%.aaxplugin" --out "%PAYLOAD_DIR%\%PROJECT_NAME%.aaxplugin" --extrasigningoptions "digest_sha256"
+  wraptool sign --verbose --account "%AAX_ACCOUNT_NAME%" --signid "%AAX_SIGN_ID%" --wcguid "%AAX_GUID%" --signtool "%SIGNTOOL%" --in "%PAYLOAD_DIR%\%PROJECT_NAME%.aaxplugin" --out "%PAYLOAD_DIR%\%PROJECT_NAME%.aaxplugin" --extrasigningoptions "digest_sha256"
 )
 
 if %BUILD_INSTALLER%==1 (
