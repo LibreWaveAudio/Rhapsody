@@ -114,8 +114,8 @@ namespace Expansions
 		local data = eh.getMetaDataFromPackage(archive);
 		local dir = getExpansionNamedSubFolder(data.Name, sampleFolder);	
 
-		if (!dir.isDirectory())
-			return;
+		if (!dir.hasWriteAccess() || !dir.isDirectory())
+			return Engine.showMessageBox("Unwritable Directory", "Rhapsody is unable to write to the selected folder.", 1);
 
 		UserSettings.setProperty("rhapsody", "lastSampleFolder", dir.getParentDirectory().toString(dir.FullPath));
 

@@ -50,13 +50,18 @@ namespace ManualInstaller
 		FilePicker.show({
 			startFolder: FileSystem.getFolder(FileSystem.Downloads),
 			mode: 0,
-			filter: "*.hr1",
+			filter: "*.hr1|*.lwz",
 			title: "Install from File",
-			message: "Select a .hr1 file to install.",
+			message: "Select a .hr1 or .lwz file to install.",
 			buttonText: "Ok",
 			hideOnSubmit: false,
 		}, function(file, data)
 		{
+			cmbBitDepth.showControl(true);
+
+			if (file.toString(file.Extension) == ".lwz")				
+				return LegacyInstaller.install(file);
+
 			promptForSampleFolder(file);
 		});
 	}
@@ -83,8 +88,6 @@ namespace ManualInstaller
 		if (!isDefined(startFolder) || !startFolder.isDirectory())
 			startFolder = FileSystem.getFolder(FileSystem.UserHome);
 
-		cmbBitDepth.showControl(true);
-
 		FilePicker.show({
 			startFolder: startFolder,
 			mode: 1,
@@ -104,10 +107,10 @@ namespace ManualInstaller
 	//! Broadcasters
 	
 	//! bcbtnManualInstallVisibility
-	const var bcbtnManualInstallVisibility = Engine.createBroadcaster({id: "bcbtnManualInstallVisibility", args: ["component", "isVisible"]});
+	const bcbtnManualInstallVisibility = Engine.createBroadcaster({id: "bcbtnManualInstallVisibility", args: ["component", "isVisible"]});
 	bcbtnManualInstallVisibility.attachToComponentVisibility(["pnlProductGridContainer"], "");
 	
-	bcbtnManualInstallVisibility.addComponentPropertyListener(["btnManualInstall"], ["visible"], "Only show manual install button when library is visible", function(index, component, isVisible)
+	bcbtnManualInstallVisibility.addComponentPropertyListener(["btnManualInstall"], ["visible"], "Only show install button when library is visible", function(index, component, isVisible)
 	{
 		return isVisible;
 	});

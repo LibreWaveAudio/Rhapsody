@@ -28,6 +28,7 @@ include("UpdateHandler.js");
 include("ProductGrid.js");
 include("ProductTile.js");
 include("ManualInstaller.js");
+include("LegacyInstaller.js");
 include("ZoomHandler.js");
 include("UserMenu.js");
 include("FilePicker.js");
