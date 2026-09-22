@@ -75,7 +75,6 @@ namespace UpdateHandler
 
 		for (e in Expansions.getList())
 		{
-			// Skip those already known to have an available update
 			if (isDefined(e.hasUpdate) && e.hasUpdate)
 				continue;
 
@@ -158,9 +157,12 @@ namespace UpdateHandler
 		{
 			if (status != Server.StatusOK || !isDefined(response.tag_name))
 				return;
+				
+			if (response.tag_name.contains("beta") || response.tag_name.contains("rc"))
+				return;
 
 			var hasUpdate = compareVersion(response.tag_name, Engine.getVersion()) == 1;
-				
+
 			if (!hasUpdate)
 				return;
 
