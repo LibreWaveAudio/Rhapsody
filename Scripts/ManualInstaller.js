@@ -47,10 +47,19 @@ namespace ManualInstaller
 	{
 		cmbBitDepth.showControl(false);
 
+		local startFolder;
+		local lastFolder = UserSettings.getProperty("rhapsody", "lastArchiveFolder");
+		
+		if (isDefined(lastFolder))
+			startFolder = FileSystem.fromAbsolutePath(lastFolder);
+		
+		if (!isDefined(startFolder) || !startFolder.isDirectory())
+			startFolder = FileSystem.getFolder(FileSystem.Downloads);
+
 		FilePicker.show({
-			startFolder: FileSystem.getFolder(FileSystem.Downloads),
+			startFolder: startFolder,
 			mode: 0,
-			filter: "*.hr1|*.lwz",
+			filter: "*.hr1;*.lwz",
 			title: "Install from File",
 			message: "Select a .hr1 or .lwz file to install.",
 			buttonText: "Ok",
@@ -58,6 +67,8 @@ namespace ManualInstaller
 		}, function(file, data)
 		{
 			cmbBitDepth.showControl(true);
+
+			UserSettings.setProperty("rhapsody", "lastArchiveFolder", file.getParentDirectory().toString(file.FullPath));
 
 			if (file.toString(file.Extension) == ".lwz")				
 				return LegacyInstaller.install(file);
@@ -80,7 +91,7 @@ namespace ManualInstaller
 		}
 
 		local startFolder;
-		local lastFolder = UserSettings.getProperty("rhapsody", "lastSampleFolder");		
+		local lastFolder = UserSettings.getProperty("rhapsody", "lastSampleFolder");
 
 		if (isDefined(lastFolder))
 			startFolder = FileSystem.fromAbsolutePath(lastFolder);
