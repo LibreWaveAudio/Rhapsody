@@ -57,7 +57,7 @@ namespace UpdateHandler
 		if ((now - parseInt(lastChecked)) < msPerMonth)
 			return;
 
-		Engine.showYesNoWindow("Update Check", "It's been a while since you last checked for updates. Check now?", function(response)
+		Engine.showYesNoWindow("Update Check", "It's been a while since you last checked for Rhapsody updates. Check now?", function(response)
 		{
 			UserSettings.setProperty("rhapsody", "lastUpdateChecked", Date.getSystemTimeMs());
 

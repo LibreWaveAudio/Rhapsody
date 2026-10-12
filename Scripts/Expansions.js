@@ -53,7 +53,7 @@ namespace Expansions
 	eh.setErrorFunction(function(message, isCritical)
 	{
 		broadcasters.isLoadingExpansion.sendSyncMessage(["", false]);
-		Engine.showMessageBox("Error", message, 1);
+		Engine.showMessageBox(isCritical ? " Critical Error" : "Error", message, 1);
 	});
 
 	inline function rebuildList()
