@@ -66,7 +66,7 @@ namespace ProgressBar
 		Engine.showYesNoWindow("Cancel", "Do you want to cancel the installation?", function(response)
 		{
 			if (response)
-				Expansions.abortInstallation();
+				Expansions.cancelInstallation();
 		});
 	}	
 
@@ -108,6 +108,7 @@ namespace ProgressBar
 	//! Broadcasters			
 	Expansions.broadcasters.installationProgress.addListener(0, "Update the progress bar", function(progress, title, message)
 	{
+		btnProgressCancel.showControl(progress > 0.0 && progress < 1.0);
 		setProgress(progress, {productName: title, text: message});
 	});
 
@@ -115,6 +116,7 @@ namespace ProgressBar
 	{
 		this.data.productName = title;
 		this.data.message = "Loading";
+		btnProgressCancel.showControl(false);
 		isLoading ? this.startTimer(40) : this.stopTimer();
 	});
 }

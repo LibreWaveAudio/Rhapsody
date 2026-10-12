@@ -264,8 +264,8 @@ namespace Expansions
 		for (e in eh.getExpansionList())
 			e.setAllowDuplicateSamples(false);
 	}
-	
-	inline function abortInstallation()
+
+	inline function cancelInstallation()
 	{
 		eh.cancelInstallation();
 	}
