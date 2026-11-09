@@ -18,9 +18,8 @@
 namespace ZoomHandler
 {
 	const interfaceSize = Content.getInterfaceSize();
-	const screenBounds = Content.getScreenBounds(false);
 	const minZoom = 0.5;
-	const maxZoom = Math.floor(screenBounds[3] / interfaceSize[1] * 4) / 4;
+	const maxZoom = 3.0;
 	const zoomStep = 0.05;
 
 	//! pnlZoom
@@ -66,6 +65,7 @@ namespace ZoomHandler
 		else
 			dragPixel = (event.dragY * currentZoom) / interfaceSize[1];
 		
+		var screenBounds = Content.getScreenBounds(false);
 		var maxScaleFactor = screenBounds[3] / interfaceSize[1];
 		var diagonalDrag = this.data.zoomStart + dragPixel;
 
@@ -87,7 +87,7 @@ namespace ZoomHandler
 		local result = [];
 		local level = 0.5;
 		
-		while(level <= maxZoom || level >= 4)
+		while(level <= maxZoom)
 		{
 			result.push(level);
 			level += 0.25;
